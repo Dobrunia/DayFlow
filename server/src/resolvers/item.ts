@@ -1,5 +1,5 @@
 import type { Context } from '../lib/context.js';
-import type { ItemType } from '@prisma/client';
+import type { ItemType, Prisma } from '@prisma/client';
 
 export interface CreateItemInput {
   title: string;
@@ -121,7 +121,7 @@ export const itemResolvers = {
           content: input.content,
           workspaceId: input.workspaceId,
           userId: context.user.id,
-          ...(meta !== undefined && { meta }),
+          ...(meta !== undefined && { meta: meta as Prisma.InputJsonValue }),
         },
       });
     },

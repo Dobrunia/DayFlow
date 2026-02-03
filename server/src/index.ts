@@ -42,11 +42,7 @@ const requestCookies = new WeakMap<
 >();
 
 // Логирование запросов и действий пользователя
-function logPayload(
-  operationName: string | undefined,
-  userId: string | null,
-  extra?: string
-) {
+function logPayload(operationName: string | undefined, userId: string | null, extra?: string) {
   const ts = new Date().toISOString();
   const user = userId ?? 'anonymous';
   const op = operationName ?? 'unknown';
@@ -57,14 +53,20 @@ const yoga = createYoga({
   schema,
   plugins: [
     {
-      onExecute: ({ args }) => {
+      onExecute: ({
+        args,
+      }: {
+        args: { operationName?: string; contextValue?: unknown; variableValues?: unknown };
+      }) => {
         const op = args.operationName ?? undefined;
         const ctx = args.contextValue as { user?: { id: string } | null };
         const userId = ctx?.user?.id ?? null;
         const vars = args.variableValues as Record<string, unknown> | undefined;
         const safeVars =
           vars && typeof vars === 'object'
-            ? Object.keys(vars).filter((k) => k !== 'password').join(',')
+            ? Object.keys(vars)
+                .filter((k) => k !== 'password')
+                .join(',')
             : '';
         logPayload(op, userId, safeVars ? `vars=${safeVars}` : undefined);
       },

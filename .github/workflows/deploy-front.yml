@@ -27,7 +27,7 @@ jobs:
           VITE_GRAPHQL_URL: ${{ secrets.VITE_GRAPHQL_URL || 'https://api.example.com/graphql' }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@4
+        uses: actions/upload-artifact@v4
         with:
           name: front-dist
           path: client/dist
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@4
+        uses: actions/download-artifact@v4
         with:
           name: front-dist
 

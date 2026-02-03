@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { createServer } from 'node:http';
 import { createYoga } from 'graphql-yoga';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -11,16 +11,21 @@ import { createContext } from './lib/context.js';
 // Absolute dir of *current file* (src in dev, dist in prod)
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load .env "near index" (src/.env in dev, dist/.env in prod),
-// fallback to project root ../.env (handy for deploys)
-const envNearIndex = join(__dirname, '.env');
-const envProjectRoot = join(__dirname, '..', '.env');
+// Env: загружаем .env; если нет — используем значения для локального теста
+const envDir = join(__dirname, '..');
+dotenv.config({ path: join(envDir, '.env') });
 
-dotenv.config({
-  path: existsSync(envNearIndex) ? envNearIndex : envProjectRoot,
-});
+const defaults = {
+  DATABASE_URL: 'mysql://dayflow:dayflow@localhost:3306/dayflow',
+  SESSION_SECRET: 'dev-secret-local-only',
+  CORS_ORIGIN: 'http://localhost:5173',
+  PORT: '4000',
+} as const;
+for (const [key, value] of Object.entries(defaults)) {
+  if (!process.env[key]) process.env[key] = value;
+}
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+const CORS_ORIGIN = process.env.CORS_ORIGIN ?? defaults.CORS_ORIGIN;
 
 // Read GraphQL schema
 const typeDefs = readFileSync(join(__dirname, 'schema', 'schema.graphql'), 'utf-8');
@@ -155,5 +160,4 @@ const PORT = Number(process.env.PORT ?? 4000);
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} (GraphQL at /graphql)`);
-  console.log(`dotenv: using ${existsSync(envNearIndex) ? envNearIndex : envProjectRoot}`);
 });

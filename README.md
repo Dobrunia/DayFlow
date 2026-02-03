@@ -1,109 +1,39 @@
 # DayFlow
 
-Веб-приложение для глубокого погружения в темы через воркспейсы и быстрого сохранения ссылок/идей/видео "на потом".
+## Локальная разработка
 
-## Структура проекта
-
-```
-DayFlow/
-├── client/     # Vue 3 + TypeScript + Vite
-├── server/     # GraphQL API + Prisma + MySQL
-└── README.md
-```
-
-## Технологии
-
-### Frontend (client)
-
-- Vue 3 + TypeScript
-- Vite
-- Vue Router + Pinia
-- Apollo Client (GraphQL)
-- UnoCSS + Radix Vue
-- Lucide Icons
-
-### Backend (server)
-
-- GraphQL Yoga
-- Prisma ORM + MySQL
-- Lucia Auth
-- Zod (валидация)
-- DataLoader
-
-## Запуск
-
-### Требования
-
-- Node.js 20+
-- MySQL 8+
-
-### Настройка базы данных
-
-1. Создайте MySQL базу данных:
-
-```sql
-CREATE DATABASE dayflow;
-```
-
-2. Настройте переменные окружения в `server/.env`:
-
-```
-DATABASE_URL="mysql://root:password@localhost:3306/dayflow"
-SESSION_SECRET="your-super-secret-key"
-```
-
-### Установка и запуск
+**БД (Docker):**
 
 ```bash
-# Установка зависимостей
-cd server && npm install
-cd ../client && npm install
+cd server && npm run docker:up
+```
 
-# Генерация Prisma клиента и миграции
-cd server
-npm run db:generate
-npm run db:push
+Поднимает MySQL на `localhost:3306`. Без `.env` сервер подставит `dayflow:dayflow@localhost:3306/dayflow`.
 
-# Запуск сервера (в отдельном терминале)
+**Схема БД:**
+
+```bash
+cd server && cp .env.example .env && npm run db:push
+```
+
+Применяет Prisma-схему к базе (для Prisma нужен `.env`).
+
+**Сервер:**
+
+```bash
 cd server && npm run dev
+```
 
-# Запуск клиента (в отдельном терминале)
+GraphQL на `http://localhost:4000/graphql`.
+
+**Клиент:**
+
+```bash
 cd client && npm run dev
 ```
 
-Приложение будет доступно по адресу: http://localhost:5173
+Фронт на `http://localhost:5173`, проксирует `/graphql` на сервер.
 
-GraphQL Playground: http://localhost:4000/graphql
+---
 
-## Основные сущности
-
-- **User** — пользователь с email авторизацией
-- **Workspace** — доска для изучения темы (колонки + карточки)
-- **Column** — столбец в воркспейсе
-- **Card** — карточка (видео/заметка/чеклист) внутри столбца
-- **Item** — универсальная запись для Library
-
-## Скрипты
-
-### Server
-
-```bash
-npm run dev          # Запуск в режиме разработки
-npm run build        # Сборка
-npm run db:push      # Применить схему к БД
-npm run db:migrate   # Создать миграцию
-npm run db:studio    # Открыть Prisma Studio
-```
-
-### Client
-
-```bash
-npm run dev          # Запуск в режиме разработки
-npm run build        # Сборка для продакшена
-npm run preview      # Просмотр сборки
-npm run typecheck    # Проверка типов
-```
-
-## Лицензия
-
-MIT
+Итого: в двух терминалах — `server`: `docker:up` → `db:push` → `dev`; `client`: `dev`.

@@ -1,0 +1,52 @@
+# Деплой фронта при push в ветку front-prod (мерж PR → front-prod).
+# Сборка client/ и загрузка на хостинг по FTP (домашняя директория FTP-пользователя: /www/dayflow.today).
+name: Deploy Frontend (prod)
+
+on:
+  push:
+    branches: [front-prod]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix client
+
+      - name: Build
+        run: npm run build --prefix client
+        env:
+          VITE_GRAPHQL_URL: ${{ secrets.VITE_GRAPHQL_URL || 'https://api.example.com/graphql' }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@4
+        with:
+          name: front-dist
+          path: client/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@4
+        with:
+          name: front-dist
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: ./
+          dangerous-clean-slate: false

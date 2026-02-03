@@ -102,13 +102,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { id, input },
       });
 
-      // Update in list
       const index = workspaces.value.findIndex((w) => w.id === id);
       if (index !== -1) {
-        workspaces.value[index] = { ...workspaces.value[index], ...data.updateWorkspace };
+        const next = [...workspaces.value];
+        next[index] = { ...next[index], ...data.updateWorkspace };
+        workspaces.value = next;
       }
 
-      // Update current if it's the same
       if (currentWorkspace.value?.id === id) {
         currentWorkspace.value = { ...currentWorkspace.value, ...data.updateWorkspace };
       }
@@ -153,10 +153,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
 
       if (currentWorkspace.value?.id === workspaceId && currentWorkspace.value.columns) {
-        currentWorkspace.value.columns = [
-          ...currentWorkspace.value.columns,
-          { ...data.createColumn, cards: [] },
-        ];
+        const next = [...currentWorkspace.value.columns, { ...data.createColumn, cards: [] }];
+        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
       }
 
       return data.createColumn;
@@ -179,10 +177,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (currentWorkspace.value?.columns) {
         const index = currentWorkspace.value.columns.findIndex((c) => c.id === id);
         if (index !== -1) {
-          currentWorkspace.value.columns[index] = {
-            ...currentWorkspace.value.columns[index],
-            ...data.updateColumn,
-          };
+          const next = [...currentWorkspace.value.columns];
+          next[index] = { ...next[index], ...data.updateColumn };
+          currentWorkspace.value = { ...currentWorkspace.value, columns: next };
         }
       }
 
@@ -204,7 +201,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
 
       if (currentWorkspace.value?.columns) {
-        currentWorkspace.value.columns = currentWorkspace.value.columns.filter((c) => c.id !== id);
+        const next = currentWorkspace.value.columns.filter((c) => c.id !== id);
+        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
       }
     } catch (e: unknown) {
       const err = e as Error;
@@ -222,12 +220,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { workspaceId, columnIds },
       });
 
-      // Reorder locally
       if (currentWorkspace.value?.columns) {
         const columnMap = new Map(currentWorkspace.value.columns.map((c) => [c.id, c]));
-        currentWorkspace.value.columns = columnIds
-          .map((id) => columnMap.get(id))
-          .filter(Boolean) as Column[];
+        const next = columnIds.map((id) => columnMap.get(id)).filter(Boolean) as Column[];
+        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
       }
     } catch (e: unknown) {
       const err = e as Error;
@@ -247,16 +243,19 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
 
       if (currentWorkspace.value?.columns) {
-        const column = currentWorkspace.value.columns.find((c) => c.id === columnId);
-        if (column) {
-          column.cards = [...(column.cards || []), data.createCard];
-        }
+        const columns = currentWorkspace.value.columns.map((c) =>
+          c.id === columnId ? { ...c, cards: [...(c.cards || []), data.createCard] } : c
+        );
+        currentWorkspace.value = { ...currentWorkspace.value, columns };
       }
 
       return data.createCard;
     } catch (e: unknown) {
       const err = e as Error;
       error.value = err.message;
+      if (currentWorkspace.value?.id) {
+        await fetchWorkspace(currentWorkspace.value.id);
+      }
       throw e;
     }
   }
@@ -265,21 +264,30 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     try {
       error.value = null;
 
+      const payload = { ...input };
+      if (payload.checklistItems?.length) {
+        payload.checklistItems = payload.checklistItems.map(({ id: i, text: t, checked: c }) => ({
+          id: i,
+          text: t,
+          checked: c,
+        }));
+      }
+
       const { data } = await apolloClient.mutate({
         mutation: UPDATE_CARD_MUTATION,
-        variables: { id, input },
+        variables: { id, input: payload },
       });
 
       if (currentWorkspace.value?.columns) {
-        for (const column of currentWorkspace.value.columns) {
-          if (column.cards) {
-            const index = column.cards.findIndex((c) => c.id === id);
-            if (index !== -1) {
-              column.cards[index] = { ...column.cards[index], ...data.updateCard };
-              break;
-            }
-          }
-        }
+        const columns = currentWorkspace.value.columns.map((col) => {
+          if (!col.cards) return col;
+          const index = col.cards.findIndex((c) => c.id === id);
+          if (index === -1) return col;
+          const next = [...col.cards];
+          next[index] = { ...next[index], ...data.updateCard };
+          return { ...col, cards: next };
+        });
+        currentWorkspace.value = { ...currentWorkspace.value, columns };
       }
 
       return data.updateCard;
@@ -300,11 +308,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
 
       if (currentWorkspace.value?.columns) {
-        for (const column of currentWorkspace.value.columns) {
-          if (column.cards) {
-            column.cards = column.cards.filter((c) => c.id !== id);
-          }
-        }
+        const columns = currentWorkspace.value.columns.map((col) =>
+          col.cards ? { ...col, cards: col.cards.filter((c) => c.id !== id) } : col
+        );
+        currentWorkspace.value = { ...currentWorkspace.value, columns };
       }
     } catch (e: unknown) {
       const err = e as Error;
@@ -323,15 +330,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
 
       if (currentWorkspace.value?.columns) {
-        for (const column of currentWorkspace.value.columns) {
-          if (column.cards) {
-            const card = column.cards.find((c) => c.id === id);
-            if (card) {
-              card.checked = data.toggleCardChecked.checked;
-              break;
-            }
-          }
-        }
+        const columns = currentWorkspace.value.columns.map((col) => {
+          if (!col.cards) return col;
+          const index = col.cards.findIndex((c) => c.id === id);
+          if (index === -1) return col;
+          const next = [...col.cards];
+          next[index] = { ...next[index], checked: data.toggleCardChecked.checked };
+          return { ...col, cards: next };
+        });
+        currentWorkspace.value = { ...currentWorkspace.value, columns };
       }
 
       return data.toggleCardChecked;

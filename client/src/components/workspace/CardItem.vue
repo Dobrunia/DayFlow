@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { Card } from '@/graphql/types';
+import { useInlineEdit } from '@/composables/useInlineEdit';
 import { extractYouTubeId, getYouTubeThumbnail } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 
@@ -10,9 +11,14 @@ const props = defineProps<{
 }>();
 
 const workspaceStore = useWorkspaceStore();
+const titleBlockRef = ref<HTMLElement | null>(null);
 
-const isEditing = ref(false);
-const editTitle = ref('');
+const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
+  titleBlockRef,
+  () => props.card.title,
+  (newTitle) => workspaceStore.updateCard(props.card.id, { title: newTitle })
+);
+
 const expandedNote = ref(false);
 
 const youtubeId = computed(() => {
@@ -30,30 +36,18 @@ const thumbnail = computed(() => {
 });
 
 const completedChecklist = computed(() => {
-  if (!props.card.checklistItems) return { done: 0, total: 0 };
+  if (!props.card.checklistItems || !Array.isArray(props.card.checklistItems)) {
+    return { done: 0, total: 0 };
+  }
   const total = props.card.checklistItems.length;
   const done = props.card.checklistItems.filter((i) => i.checked).length;
   return { done, total };
 });
 
-function startEdit() {
-  editTitle.value = props.card.title;
-  isEditing.value = true;
-}
-
-async function saveEdit() {
-  if (editTitle.value.trim() === props.card.title) {
-    isEditing.value = false;
-    return;
-  }
-
-  try {
-    await workspaceStore.updateCard(props.card.id, { title: editTitle.value.trim() });
-    isEditing.value = false;
-  } catch {
-    toast.error('Ошибка сохранения');
-  }
-}
+const progressPercent = computed(() => {
+  const { done, total } = completedChecklist.value;
+  return total > 0 ? Math.round((done / total) * 100) : 0;
+});
 
 async function toggleChecked() {
   try {
@@ -115,27 +109,25 @@ function openVideo() {
     <div class="p-3">
       <!-- Header -->
       <div class="flex items-start gap-2">
-        <!-- Checkbox -->
-        <button @click="toggleChecked" class="mt-0.5 flex-shrink-0">
-          <span v-if="card.checked" class="w-4 h-4 flex-center rounded bg-success text-on-primary">
-            <span class="i-lucide-check text-xs" />
-          </span>
-          <span
-            v-else
-            class="w-4 h-4 rounded border border-border hover:border-success transition-colors"
-          />
+        <button
+          type="button"
+          @click="toggleChecked"
+          class="mt-0.5 checkbox-btn checkbox-btn-sm checkbox-btn-square"
+          :class="card.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+        >
+          <span v-if="card.checked" class="i-lucide-check text-xs" />
         </button>
 
         <!-- Title -->
-        <div class="flex-1 min-w-0">
+        <div ref="titleBlockRef" class="flex-1 min-w-0">
           <div v-if="isEditing">
             <input
+              ref="inputRef"
               v-model="editTitle"
               @keyup.enter="saveEdit"
               @keyup.escape="isEditing = false"
               @blur="saveEdit"
               class="input text-sm py-0.5"
-              autofocus
             />
           </div>
           <p
@@ -151,7 +143,7 @@ function openVideo() {
         <!-- Delete -->
         <button
           @click="deleteCard"
-          class="btn-icon p-1 opacity-0 group-hover:opacity-100 text-fg-muted hover:text-danger"
+          class="btn-icon p-1 card-actions-hover text-fg-muted hover:text-danger"
         >
           <span class="i-lucide-trash-2 text-xs" />
         </button>
@@ -165,7 +157,7 @@ function openVideo() {
         <button
           v-if="card.noteContent.length > 100"
           @click="expandedNote = !expandedNote"
-          class="text-xs text-primary mt-1"
+          class="text-xs link-primary mt-1"
         >
           {{ expandedNote ? 'Свернуть' : 'Развернуть' }}
         </button>
@@ -178,14 +170,13 @@ function openVideo() {
           :key="item.id"
           class="flex items-center gap-2"
         >
-          <button @click="toggleChecklistItem(index)" class="flex-shrink-0">
-            <span
-              v-if="item.checked"
-              class="w-3.5 h-3.5 flex-center rounded bg-success text-on-primary"
-            >
-              <span class="i-lucide-check text-[10px]" />
-            </span>
-            <span v-else class="w-3.5 h-3.5 rounded border border-border" />
+          <button
+            type="button"
+            @click="toggleChecklistItem(index)"
+            class="checkbox-btn checkbox-btn-xs checkbox-btn-square"
+            :class="item.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+          >
+            <span v-if="item.checked" class="i-lucide-check text-[10px]" />
           </button>
           <span
             class="text-xs text-fg-muted"
@@ -197,21 +188,22 @@ function openVideo() {
 
         <button
           v-if="card.checklistItems.length > 3"
+          type="button"
           @click="expandedNote = !expandedNote"
-          class="text-xs text-primary"
+          class="btn-add-dashed mt-2"
         >
           {{ expandedNote ? 'Свернуть' : `Ещё ${card.checklistItems.length - 3}` }}
         </button>
 
-        <!-- Progress -->
-        <div class="flex items-center gap-2 mt-2">
-          <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <!-- Progress: скрыт при 0 пунктов (иначе 0/0 → NaN% и зелёный прямоугольник) -->
+        <div v-if="completedChecklist.total > 0" class="flex items-center gap-2 mt-2">
+          <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden min-w-0">
             <div
-              class="h-full bg-success transition-all"
-              :style="{ width: `${(completedChecklist.done / completedChecklist.total) * 100}%` }"
+              class="h-full bg-success transition-all rounded-full"
+              :style="{ width: `${progressPercent}%` }"
             />
           </div>
-          <span class="text-[10px] text-fg-muted">
+          <span class="text-[10px] text-fg-muted shrink-0">
             {{ completedChecklist.done }}/{{ completedChecklist.total }}
           </span>
         </div>
@@ -219,24 +211,15 @@ function openVideo() {
 
       <!-- Type Badge -->
       <div class="flex items-center gap-2 mt-2">
-        <span
-          v-if="card.cardType === 'VIDEO'"
-          class="inline-flex items-center gap-1 text-[10px] text-primary bg-muted px-1.5 py-0.5 rounded"
-        >
+        <span v-if="card.cardType === 'VIDEO'" class="card-type-badge">
           <span class="i-lucide-video text-xs" />
           Видео
         </span>
-        <span
-          v-else-if="card.cardType === 'NOTE'"
-          class="inline-flex items-center gap-1 text-[10px] text-primary bg-muted px-1.5 py-0.5 rounded"
-        >
+        <span v-else-if="card.cardType === 'NOTE'" class="card-type-badge">
           <span class="i-lucide-file-text text-xs" />
           Заметка
         </span>
-        <span
-          v-else-if="card.cardType === 'CHECKLIST'"
-          class="inline-flex items-center gap-1 text-[10px] text-success bg-success/10 px-1.5 py-0.5 rounded"
-        >
+        <span v-else-if="card.cardType === 'CHECKLIST'" class="card-type-badge">
           <span class="i-lucide-check-square text-xs" />
           Чеклист
         </span>

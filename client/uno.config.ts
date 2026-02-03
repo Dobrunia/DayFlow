@@ -36,6 +36,62 @@ export default defineConfig({
       'w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:border-primary transition-colors outline-none focus:outline-none focus:ring-0',
     textarea: 'input resize-none',
     checkbox: 'h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer',
+    /* Универсальный чекбокс-кнопка: не сплющивается, один стиль везде */
+    'checkbox-btn':
+      'flex-shrink-0 min-w-5 min-h-5 w-5 h-5 rounded-full flex-center p-0 border-2 border-transparent bg-transparent transition-colors outline-none focus:outline-none focus:ring-0',
+    'checkbox-btn-checked': 'bg-success text-on-primary border-success',
+    'checkbox-btn-unchecked':
+      'border-2 border-border bg-muted hover:border-success hover:bg-success/10 transition-colors',
+    'checkbox-btn-sm': 'min-w-4 min-h-4 w-4 h-4',
+    'checkbox-btn-xs': 'min-w-3.5 min-h-3.5 w-3.5 h-3.5',
+    'checkbox-btn-square': 'rounded',
+    /* Бейдж типа карточки (Видео / Заметка / Чеклист) — один стиль */
+    'card-type-badge':
+      'inline-flex items-center gap-1 text-[10px] text-primary bg-muted px-1.5 py-0.5 rounded',
+    /* Модалки */
+    'dialog-overlay': 'fixed inset-0 z-[100] bg-overlay backdrop-blur-sm',
+    'dialog-content':
+      'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-border rounded-xl shadow-xl z-[101] p-6',
+    'dialog-content-scroll':
+      'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-border rounded-xl shadow-xl z-[101] p-6 max-h-[90vh] overflow-y-auto',
+    'dialog-header': 'flex-between mb-6',
+    'dialog-title': 'text-lg font-semibold text-fg',
+    'dialog-close': 'btn-icon btn-ghost p-1.5',
+    /* Формы */
+    'form-label': 'block text-sm font-medium text-fg-muted mb-1',
+    'form-label-fg': 'block text-sm font-medium text-fg mb-1',
+    'form-actions': 'flex justify-end gap-3 pt-4',
+    'type-selector-btn':
+      'px-3 py-1.5 text-sm rounded-lg border transition-colors inline-flex items-center gap-1.5',
+    'type-selector-btn-active': 'bg-primary border-primary text-on-primary',
+    'type-selector-btn-inactive': 'bg-bg border-border text-fg-muted hover:border-border-hover',
+    /* Кнопка «добавить» с пунктиром (карточка, колонка) */
+    'btn-add-dashed':
+      'w-full p-3 border border-dashed border-border rounded-lg text-sm text-fg-muted hover:text-fg hover:border-border-hover hover:bg-bg transition-colors flex-center gap-1.5',
+    'btn-add-column':
+      'flex-shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-xl flex-center flex-col gap-2 text-fg-muted hover:text-fg hover:border-border-hover hover:bg-muted transition-colors',
+    /* Пустое состояние */
+    'empty-state-icon': 'w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex-center',
+    'empty-state-title': 'text-lg font-medium text-fg mb-2',
+    'empty-state-desc': 'text-sm text-fg-muted mb-6',
+    /* Загрузка */
+    'loading-spinner': 'animate-spin i-lucide-loader-2 text-2xl text-fg-muted',
+    /* Выпадающий список */
+    'dropdown-panel':
+      'absolute top-full left-0 right-0 mt-1 bg-bg border border-border rounded-lg shadow-lg overflow-hidden z-50',
+    'dropdown-item':
+      'w-full flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors text-left',
+    'select-option':
+      'relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none hover:bg-muted data-[highlighted]:bg-muted',
+    /* Прочее */
+    'page-title': 'text-2xl font-bold text-fg',
+    'link-primary': 'text-primary hover:opacity-90',
+    'filter-pill': 'inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors min-w-0 shadow-[0_0_transparent]',
+    'filter-pill-active': 'bg-bg text-fg shadow-sm',
+    'filter-pill-inactive': 'text-fg-muted hover:text-fg',
+    'card-actions-hover': 'opacity-0 group-hover:opacity-100 transition-opacity',
+    'header-icon-hover':
+      'btn-icon p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-muted-hover text-fg-muted transition-opacity',
   },
   theme: {
     colors: {
@@ -67,6 +123,7 @@ export default defineConfig({
     'i-lucide-check',
     'i-lucide-trash-2',
     'i-lucide-edit-2',
+    'i-lucide-pencil',
     'i-lucide-log-out',
     'i-lucide-user',
     'i-lucide-folder',

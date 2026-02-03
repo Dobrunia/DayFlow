@@ -73,12 +73,12 @@ function navigateToWorkspace(id: string) {
     <!-- Dashboard for authenticated users (Библиотека только в шапке) -->
     <template v-else>
       <div class="mb-8">
-        <h1 class="text-2xl font-bold text-fg">Мои воркспейсы</h1>
+        <h1 class="page-title">Мои воркспейсы</h1>
       </div>
 
       <!-- Loading -->
       <div v-if="workspaceStore.loading" class="text-center py-12">
-        <div class="animate-spin i-lucide-loader-2 text-2xl text-fg-muted mx-auto" />
+        <div class="loading-spinner mx-auto" />
       </div>
 
       <!-- Workspaces Grid -->
@@ -113,11 +113,11 @@ function navigateToWorkspace(id: string) {
 
       <!-- Empty State -->
       <div v-else class="text-center py-16">
-        <div class="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex-center">
+        <div class="empty-state-icon">
           <span class="i-lucide-folder text-2xl text-fg-muted" />
         </div>
-        <h2 class="text-lg font-medium text-fg mb-2">Нет воркспейсов</h2>
-        <p class="text-sm text-fg-muted mb-6">Создайте первый воркспейс для изучения новой темы</p>
+        <h2 class="empty-state-title">Нет воркспейсов</h2>
+        <p class="empty-state-desc">Создайте первый воркспейс для изучения новой темы</p>
         <button class="btn-primary" @click="router.push('/workspace/new')">
           <span class="i-lucide-plus mr-1.5" />
           Создать воркспейс

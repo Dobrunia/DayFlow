@@ -78,10 +78,7 @@ function getItemIcon(type: string) {
     </div>
 
     <!-- Results Dropdown -->
-    <div
-      v-if="isOpen && (results.length > 0 || loading)"
-      class="absolute top-full left-0 right-0 mt-1 bg-bg border border-border rounded-lg shadow-lg overflow-hidden z-50"
-    >
+    <div v-if="isOpen && (results.length > 0 || loading)" class="dropdown-panel">
       <div v-if="loading" class="p-4 text-center text-sm text-fg-muted">Поиск...</div>
 
       <template v-else>
@@ -89,7 +86,7 @@ function getItemIcon(type: string) {
           v-for="item in results"
           :key="item.id"
           @click="selectResult(item)"
-          class="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors text-left"
+          class="dropdown-item"
         >
           <span :class="getItemIcon(item.type)" class="text-fg-muted" />
           <div class="flex-1 min-w-0">

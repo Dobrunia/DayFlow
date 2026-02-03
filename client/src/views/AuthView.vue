@@ -76,7 +76,7 @@ function toggleMode() {
       <!-- Form -->
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label for="email" class="block text-sm font-medium text-fg mb-1"> Email </label>
+          <label for="email" class="form-label-fg"> Email </label>
           <input
             id="email"
             v-model="email"
@@ -89,7 +89,7 @@ function toggleMode() {
         </div>
 
         <div>
-          <label for="password" class="block text-sm font-medium text-fg mb-1"> Пароль </label>
+          <label for="password" class="form-label-fg"> Пароль </label>
           <input
             id="password"
             v-model="password"
@@ -102,9 +102,7 @@ function toggleMode() {
         </div>
 
         <div v-if="mode === 'signup'">
-          <label for="confirmPassword" class="block text-sm font-medium text-fg mb-1">
-            Подтвердите пароль
-          </label>
+          <label for="confirmPassword" class="form-label-fg"> Подтвердите пароль </label>
           <input
             id="confirmPassword"
             v-model="confirmPassword"
@@ -125,7 +123,7 @@ function toggleMode() {
       <!-- Toggle Mode -->
       <p class="mt-6 text-center text-sm text-fg-muted">
         {{ togglePromptText }}
-        <button @click="toggleMode" class="text-primary hover:opacity-90 font-medium ml-1">
+        <button @click="toggleMode" class="link-primary font-medium ml-1">
           {{ toggleLinkText }}
         </button>
       </p>

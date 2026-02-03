@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useLibraryStore } from '@/stores/library';
 import type { Item } from '@/graphql/types';
+import { useInlineEdit } from '@/composables/useInlineEdit';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 
@@ -10,9 +11,13 @@ const props = defineProps<{
 }>();
 
 const libraryStore = useLibraryStore();
+const contentRef = ref<HTMLElement | null>(null);
 
-const isEditing = ref(false);
-const editTitle = ref('');
+const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
+  contentRef,
+  () => props.item.title,
+  (newTitle) => libraryStore.updateItem(props.item.id, { title: newTitle })
+);
 
 const typeIcons: Record<string, string> = {
   NOTE: 'i-lucide-file-text',
@@ -29,25 +34,6 @@ const typeLabels: Record<string, string> = {
   REPO: 'Репозиторий',
   TASK: 'Задача',
 };
-
-function startEdit() {
-  editTitle.value = props.item.title;
-  isEditing.value = true;
-}
-
-async function saveEdit() {
-  if (editTitle.value.trim() === props.item.title) {
-    isEditing.value = false;
-    return;
-  }
-
-  try {
-    await libraryStore.updateItem(props.item.id, { title: editTitle.value.trim() });
-    isEditing.value = false;
-  } catch {
-    toast.error('Ошибка сохранения');
-  }
-}
 
 function cancelEdit() {
   isEditing.value = false;
@@ -82,31 +68,26 @@ function openUrl() {
 <template>
   <div class="card-hover group" :class="{ 'opacity-60': item.done }">
     <div class="flex items-start gap-4">
-      <!-- Checkbox: фиксированный размер и круг -->
       <button
         type="button"
         @click="toggleDone"
-        class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex-center p-0 border-0 focus:outline-none focus:ring-0"
-        :class="
-          item.done
-            ? 'bg-success text-on-primary'
-            : 'border-2 border-border hover:border-success transition-colors bg-transparent'
-        "
+        class="mt-0.5 checkbox-btn"
+        :class="item.done ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
       >
         <span v-if="item.done" class="i-lucide-check text-xs" />
       </button>
 
       <!-- Content -->
-      <div class="flex-1 min-w-0">
+      <div ref="contentRef" class="flex-1 min-w-0">
         <!-- Title (editable) -->
         <div v-if="isEditing" class="flex items-center gap-2">
           <input
+            ref="inputRef"
             v-model="editTitle"
             @keyup.enter="saveEdit"
             @keyup.escape="cancelEdit"
             @blur="saveEdit"
             class="input flex-1"
-            autofocus
           />
         </div>
 
@@ -123,7 +104,7 @@ function openUrl() {
           <button
             v-if="item.url"
             @click="openUrl"
-            class="text-sm text-primary hover:opacity-90 truncate max-w-full flex items-center gap-1 mt-1"
+            class="text-sm link-primary truncate max-w-full flex items-center gap-1 mt-1"
           >
             <span class="i-lucide-external-link text-xs" />
             {{ item.url }}
@@ -146,7 +127,7 @@ function openUrl() {
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div class="flex items-center gap-1 card-actions-hover">
         <button @click="startEdit" class="btn-icon btn-ghost p-1.5" title="Редактировать">
           <span class="i-lucide-edit-2 text-fg-muted" />
         </button>

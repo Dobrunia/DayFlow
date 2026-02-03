@@ -70,18 +70,12 @@ async function handleSubmit() {
 <template>
   <DialogRoot v-model:open="openProxy">
     <DialogPortal>
-      <DialogOverlay
-        class="fixed inset-0 z-[100] bg-overlay backdrop-blur-sm"
-        @click="openProxy = false"
-      />
+      <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
 
-      <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-border rounded-xl shadow-xl z-[101] p-6"
-        @escape-key-down="openProxy = false"
-      >
-        <div class="flex-between mb-6">
-          <DialogTitle class="text-lg font-semibold text-fg"> Новый воркспейс </DialogTitle>
-          <DialogClose class="btn-icon btn-ghost p-1.5">
+      <DialogContent class="dialog-content" @escape-key-down="openProxy = false">
+        <div class="dialog-header">
+          <DialogTitle class="dialog-title"> Новый воркспейс </DialogTitle>
+          <DialogClose class="dialog-close">
             <span class="i-lucide-x text-fg-muted" />
           </DialogClose>
         </div>
@@ -89,9 +83,7 @@ async function handleSubmit() {
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Title -->
           <div>
-            <label for="ws-title" class="block text-sm font-medium text-fg mb-1">
-              Название *
-            </label>
+            <label for="ws-title" class="form-label-fg"> Название * </label>
             <input
               id="ws-title"
               v-model="title"
@@ -104,9 +96,7 @@ async function handleSubmit() {
 
           <!-- Description -->
           <div>
-            <label for="ws-description" class="block text-sm font-medium text-fg mb-1">
-              Описание
-            </label>
+            <label for="ws-description" class="form-label-fg"> Описание </label>
             <textarea
               id="ws-description"
               v-model="description"
@@ -116,7 +106,7 @@ async function handleSubmit() {
           </div>
 
           <!-- Submit -->
-          <div class="flex justify-end gap-3 pt-4">
+          <div class="form-actions">
             <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5" />

@@ -108,22 +108,19 @@ async function handleSubmit() {
 <template>
   <DialogRoot v-model:open="openProxy">
     <DialogPortal>
-      <DialogOverlay
-        class="fixed inset-0 z-[100] bg-overlay backdrop-blur-sm"
-        @click="openProxy = false"
-      />
+      <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
 
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-border rounded-xl shadow-xl z-[101] p-6"
+        class="dialog-content"
         aria-describedby="add-item-dialog-description"
         @escape-key-down="openProxy = false"
       >
         <DialogDescription id="add-item-dialog-description" class="sr-only">
           Форма добавления элемента в библиотеку или воркспейс
         </DialogDescription>
-        <div class="flex-between mb-6">
-          <DialogTitle class="text-lg font-semibold text-fg">Добавить</DialogTitle>
-          <DialogClose class="btn-icon btn-ghost p-1.5">
+        <div class="dialog-header">
+          <DialogTitle class="dialog-title">Добавить</DialogTitle>
+          <DialogClose class="dialog-close">
             <span class="i-lucide-x text-fg-muted" />
           </DialogClose>
         </div>
@@ -131,9 +128,7 @@ async function handleSubmit() {
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Title -->
           <div>
-            <label for="item-title" class="block text-sm font-medium text-fg-muted mb-1">
-              Название *
-            </label>
+            <label for="item-title" class="form-label"> Название * </label>
             <input
               id="item-title"
               v-model="title"
@@ -146,19 +141,15 @@ async function handleSubmit() {
 
           <!-- Type -->
           <div>
-            <label class="block text-sm font-medium text-fg-muted mb-2">Тип</label>
+            <label class="form-label mb-2">Тип</label>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="t in types"
                 :key="t.value"
                 type="button"
                 @click="type = t.value"
-                class="px-3 py-1.5 text-sm rounded-lg border transition-colors flex items-center gap-1.5"
-                :class="
-                  type === t.value
-                    ? 'bg-primary border-primary text-on-primary'
-                    : 'bg-bg border-border text-fg-muted hover:border-border-hover'
-                "
+                class="type-selector-btn"
+                :class="type === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
               >
                 <span :class="t.icon" />
                 {{ t.label }}
@@ -169,7 +160,7 @@ async function handleSubmit() {
           <!-- URL / Content: фиксированная высота блока — при смене типа вёрстка не дёргается -->
           <div class="min-h-[7.5rem]">
             <div v-if="showUrlField">
-              <label for="item-url" class="block text-sm font-medium text-fg-muted mb-1">URL</label>
+              <label for="item-url" class="form-label">URL</label>
               <input
                 id="item-url"
                 v-model="url"
@@ -179,9 +170,7 @@ async function handleSubmit() {
               />
             </div>
             <div v-else-if="showContentField">
-              <label for="item-content" class="block text-sm font-medium text-fg-muted mb-1">
-                Содержимое
-              </label>
+              <label for="item-content" class="form-label"> Содержимое </label>
               <textarea
                 id="item-content"
                 v-model="content"
@@ -193,9 +182,7 @@ async function handleSubmit() {
 
           <!-- Workspace (optional) -->
           <div>
-            <label for="item-workspace" class="block text-sm font-medium text-fg-muted mb-1">
-              Воркспейс
-            </label>
+            <label for="item-workspace" class="form-label"> Воркспейс </label>
             <SelectRoot v-model="workspaceId">
               <SelectTrigger id="item-workspace" class="input flex-between min-h-[38px]">
                 <SelectValue placeholder="Библиотека (без воркспейса)" />
@@ -206,18 +193,10 @@ async function handleSubmit() {
                   position="popper"
                   :side-offset="4"
                 >
-                  <SelectItem
-                    :value="NO_WORKSPACE"
-                    class="relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none hover:bg-muted data-[highlighted]:bg-muted"
-                  >
+                  <SelectItem :value="NO_WORKSPACE" class="select-option">
                     Библиотека (без воркспейса)
                   </SelectItem>
-                  <SelectItem
-                    v-for="ws in workspaces"
-                    :key="ws.id"
-                    :value="ws.id"
-                    class="relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none hover:bg-muted data-[highlighted]:bg-muted"
-                  >
+                  <SelectItem v-for="ws in workspaces" :key="ws.id" :value="ws.id" class="select-option">
                     {{ ws.title }}
                   </SelectItem>
                 </SelectContent>
@@ -226,7 +205,7 @@ async function handleSubmit() {
           </div>
 
           <!-- Submit -->
-          <div class="flex justify-end gap-3 pt-4">
+          <div class="form-actions">
             <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5" />

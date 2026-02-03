@@ -50,7 +50,7 @@ function handleSignOut() {
 
             <!-- Dropdown -->
             <div
-              class="absolute right-0 mt-1 w-48 bg-bg border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+              class="absolute right-0 mt-1 w-48 bg-bg border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
             >
               <div class="p-3 border-b border-border">
                 <p class="text-sm font-medium text-fg truncate">

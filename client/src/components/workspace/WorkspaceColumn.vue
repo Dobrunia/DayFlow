@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { Column } from '@/graphql/types';
+import { useInlineEdit } from '@/composables/useInlineEdit';
 import CardItem from './CardItem.vue';
 import AddCardDialog from './AddCardDialog.vue';
 import { toast } from 'vue-sonner';
@@ -12,31 +13,16 @@ const props = defineProps<{
 }>();
 
 const workspaceStore = useWorkspaceStore();
-
-const isEditing = ref(false);
-const editTitle = ref('');
 const showAddCard = ref(false);
+const headerRef = ref<HTMLElement | null>(null);
+
+const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
+  headerRef,
+  () => props.column.title,
+  (newTitle) => workspaceStore.updateColumn(props.column.id, newTitle)
+);
 
 const cards = computed(() => props.column.cards ?? []);
-
-function startEdit() {
-  editTitle.value = props.column.title;
-  isEditing.value = true;
-}
-
-async function saveEdit() {
-  if (editTitle.value.trim() === props.column.title) {
-    isEditing.value = false;
-    return;
-  }
-
-  try {
-    await workspaceStore.updateColumn(props.column.id, editTitle.value.trim());
-    isEditing.value = false;
-  } catch {
-    toast.error('Ошибка сохранения');
-  }
-}
 
 async function deleteColumn() {
   if (!confirm('Удалить колонку и все карточки в ней?')) return;
@@ -51,34 +37,35 @@ async function deleteColumn() {
 
 <template>
   <div class="flex-shrink-0 w-72 flex flex-col bg-muted rounded-xl">
-    <!-- Header -->
-    <div class="p-3 flex-between">
-      <div v-if="isEditing" class="flex-1 mr-2">
+    <!-- Header: group для показа иконок по hover -->
+    <div ref="headerRef" class="group p-3 flex-between">
+      <div v-if="isEditing" class="flex-1 mr-2 min-w-0">
         <input
+          ref="inputRef"
           v-model="editTitle"
           @keyup.enter="saveEdit"
           @keyup.escape="isEditing = false"
           @blur="saveEdit"
           class="input text-sm font-medium py-1"
-          autofocus
         />
       </div>
       <h3
         v-else
         @dblclick="startEdit"
-        class="font-medium text-fg truncate cursor-text flex-1"
+        class="font-medium text-fg truncate cursor-text flex-1 min-w-0"
       >
         {{ column.title }}
       </h3>
 
-      <div class="flex items-center gap-1">
-        <span class="text-xs text-fg-muted mr-1">{{ cards.length }}</span>
+      <div class="flex items-center gap-0.5 shrink-0">
+        <span class="text-xs text-fg-muted mr-0.5">{{ cards.length }}</span>
         <button
+          type="button"
           @click="deleteColumn"
-          class="btn-icon p-1 opacity-0 group-hover:opacity-100 hover:bg-muted-hover rounded"
+          class="header-icon-hover hover:text-danger"
           title="Удалить колонку"
         >
-          <span class="i-lucide-trash-2 text-xs text-fg-muted" />
+          <span class="i-lucide-trash-2 text-xs" />
         </button>
       </div>
     </div>
@@ -88,10 +75,7 @@ async function deleteColumn() {
       <CardItem v-for="card in cards" :key="card.id" :card="card" />
 
       <!-- Add Card Button -->
-      <button
-        @click="showAddCard = true"
-        class="w-full p-3 border border-dashed border-border rounded-lg text-sm text-fg-muted hover:text-fg hover:border-border-hover hover:bg-bg transition-colors flex-center gap-1.5"
-      >
+      <button @click="showAddCard = true" class="btn-add-dashed">
         <span class="i-lucide-plus text-sm" />
         Добавить карточку
       </button>

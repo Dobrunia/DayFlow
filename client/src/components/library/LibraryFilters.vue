@@ -35,10 +35,8 @@ function toggleShowDone() {
         v-for="type in types"
         :key="type.label"
         @click="setType(type.value)"
-        class="inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors min-w-0 shadow-[0_0_transparent]"
-        :class="
-          currentType === type.value ? 'bg-bg text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
-        "
+        class="filter-pill"
+        :class="currentType === type.value ? 'filter-pill-active' : 'filter-pill-inactive'"
       >
         <span :class="type.icon" class="mr-1.5 shrink-0 inline-block align-middle" />
         {{ type.label }}

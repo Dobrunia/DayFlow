@@ -100,7 +100,7 @@ function handleDialogClose() {
 
     <!-- Loading -->
     <div v-if="loading && !isNewWorkspace" class="flex-1 flex-center">
-      <div class="animate-spin i-lucide-loader-2 text-2xl text-fg-muted" />
+      <div class="loading-spinner" />
     </div>
 
     <!-- Workspace Content -->
@@ -164,10 +164,7 @@ function handleDialogClose() {
           />
 
           <!-- Add Column Button (placeholder) -->
-          <button
-            @click="addColumn"
-            class="flex-shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-xl flex-center flex-col gap-2 text-fg-muted hover:text-fg hover:border-border-hover hover:bg-muted transition-colors"
-          >
+          <button @click="addColumn" class="btn-add-column flex-shrink-0">
             <span class="i-lucide-plus text-xl" />
             <span class="text-sm">Добавить колонку</span>
           </button>

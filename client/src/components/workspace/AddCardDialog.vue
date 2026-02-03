@@ -117,18 +117,12 @@ async function handleSubmit() {
 <template>
   <DialogRoot v-model:open="openProxy">
     <DialogPortal>
-      <DialogOverlay
-        class="fixed inset-0 z-[100] bg-overlay backdrop-blur-sm"
-        @click="openProxy = false"
-      />
+      <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
 
-      <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-border rounded-xl shadow-xl z-[101] p-6 max-h-[90vh] overflow-y-auto"
-        @escape-key-down="openProxy = false"
-      >
-        <div class="flex-between mb-6">
-          <DialogTitle class="text-lg font-semibold text-fg"> Новая карточка </DialogTitle>
-          <DialogClose class="btn-icon btn-ghost p-1.5">
+      <DialogContent class="dialog-content-scroll" @escape-key-down="openProxy = false">
+        <div class="dialog-header">
+          <DialogTitle class="dialog-title"> Новая карточка </DialogTitle>
+          <DialogClose class="dialog-close">
             <span class="i-lucide-x text-fg-muted" />
           </DialogClose>
         </div>
@@ -136,9 +130,7 @@ async function handleSubmit() {
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Title -->
           <div>
-            <label for="card-title" class="block text-sm font-medium text-fg mb-1">
-              Название *
-            </label>
+            <label for="card-title" class="form-label-fg"> Название * </label>
             <input
               id="card-title"
               v-model="title"
@@ -151,18 +143,16 @@ async function handleSubmit() {
 
           <!-- Type -->
           <div>
-            <label class="block text-sm font-medium text-fg mb-2"> Тип </label>
+            <label class="form-label-fg mb-2"> Тип </label>
             <div class="flex gap-2">
               <button
                 v-for="t in types"
                 :key="t.value"
                 type="button"
                 @click="cardType = t.value"
-                class="flex-1 px-3 py-2 text-sm rounded-lg border transition-colors flex-center gap-1.5"
+                class="flex-1 type-selector-btn flex-center"
                 :class="
-                  cardType === t.value
-                    ? 'bg-primary border-primary text-on-primary'
-                    : 'bg-bg border-border text-fg-muted hover:border-border-hover'
+                  cardType === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive'
                 "
               >
                 <span :class="t.icon" />
@@ -173,9 +163,7 @@ async function handleSubmit() {
 
           <!-- Video URL -->
           <div v-if="cardType === 'VIDEO'">
-            <label for="card-video-url" class="block text-sm font-medium text-fg mb-1">
-              URL видео
-            </label>
+            <label for="card-video-url" class="form-label-fg"> URL видео </label>
             <input
               id="card-video-url"
               v-model="videoUrl"
@@ -187,9 +175,7 @@ async function handleSubmit() {
 
           <!-- Note Content -->
           <div v-if="cardType === 'NOTE'">
-            <label for="card-note" class="block text-sm font-medium text-fg mb-1">
-              Текст заметки
-            </label>
+            <label for="card-note" class="form-label-fg"> Текст заметки </label>
             <textarea
               id="card-note"
               v-model="noteContent"
@@ -200,7 +186,7 @@ async function handleSubmit() {
 
           <!-- Checklist Items -->
           <div v-if="cardType === 'CHECKLIST'">
-            <label class="block text-sm font-medium text-fg mb-2"> Пункты чеклиста </label>
+            <label class="form-label-fg mb-2"> Пункты чеклиста </label>
             <div class="space-y-2">
               <div
                 v-for="(item, index) in checklistItems"
@@ -224,18 +210,14 @@ async function handleSubmit() {
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              @click="addChecklistItem"
-              class="mt-2 text-sm text-primary hover:opacity-90 flex items-center gap-1"
-            >
+            <button type="button" @click="addChecklistItem" class="mt-2 text-sm link-primary flex items-center gap-1">
               <span class="i-lucide-plus" />
               Добавить пункт
             </button>
           </div>
 
           <!-- Submit -->
-          <div class="flex justify-end gap-3 pt-4">
+          <div class="form-actions">
             <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5 text-fg-muted" />

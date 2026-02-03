@@ -1,0 +1,193 @@
+scalar DateTime
+
+type User {
+  id: ID!
+  email: String!
+  createdAt: DateTime!
+  workspaces: [Workspace!]!
+}
+
+type Workspace {
+  id: ID!
+  title: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  owner: User!
+  columns: [Column!]!
+  items: [Item!]!
+}
+
+type Column {
+  id: ID!
+  title: String!
+  order: Int!
+  workspace: Workspace!
+  cards: [Card!]!
+}
+
+enum ItemType {
+  NOTE
+  LINK
+  VIDEO
+  REPO
+  TASK
+}
+
+type Item {
+  id: ID!
+  title: String!
+  type: ItemType!
+  url: String
+  content: String
+  status: String
+  done: Boolean!
+  meta: String
+  workspace: Workspace
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum CardType {
+  VIDEO
+  NOTE
+  CHECKLIST
+}
+
+type Card {
+  id: ID!
+  title: String!
+  cardType: CardType!
+  checked: Boolean!
+  order: Int!
+  column: Column!
+  item: Item!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  # Video-specific
+  videoUrl: String
+  videoPreview: String
+  videoDuration: Int
+  videoSource: String
+  # Note-specific
+  noteContent: String
+  # Checklist-specific
+  checklistItems: [ChecklistItem!]
+}
+
+type ChecklistItem {
+  id: String!
+  text: String!
+  checked: Boolean!
+}
+
+type AuthPayload {
+  user: User!
+}
+
+# Inputs
+
+input CreateWorkspaceInput {
+  title: String!
+  description: String
+}
+
+input UpdateWorkspaceInput {
+  title: String
+  description: String
+}
+
+input CreateItemInput {
+  title: String!
+  type: ItemType!
+  url: String
+  content: String
+  workspaceId: ID
+}
+
+input UpdateItemInput {
+  title: String
+  url: String
+  content: String
+  status: String
+  done: Boolean
+}
+
+input CreateCardInput {
+  title: String!
+  cardType: CardType!
+  # Video fields
+  videoUrl: String
+  # Note fields
+  noteContent: String
+  # Checklist fields
+  checklistItems: [ChecklistItemInput!]
+}
+
+input UpdateCardInput {
+  title: String
+  checked: Boolean
+  # Video fields
+  videoUrl: String
+  videoPreview: String
+  videoDuration: Int
+  videoSource: String
+  # Note fields
+  noteContent: String
+  # Checklist fields
+  checklistItems: [ChecklistItemInput!]
+}
+
+input ChecklistItemInput {
+  id: String!
+  text: String!
+  checked: Boolean!
+}
+
+input LibraryFilter {
+  type: ItemType
+  done: Boolean
+  search: String
+}
+
+# Queries
+
+type Query {
+  me: User
+  workspace(id: ID!): Workspace
+  myWorkspaces: [Workspace!]!
+  library(filter: LibraryFilter): [Item!]!
+  searchItems(query: String!): [Item!]!
+}
+
+# Mutations
+
+type Mutation {
+  # Auth
+  signUp(email: String!, password: String!): AuthPayload!
+  signIn(email: String!, password: String!): AuthPayload!
+  signOut: Boolean!
+
+  # Workspace
+  createWorkspace(input: CreateWorkspaceInput!): Workspace!
+  updateWorkspace(id: ID!, input: UpdateWorkspaceInput!): Workspace!
+  deleteWorkspace(id: ID!): Boolean!
+
+  # Column
+  createColumn(workspaceId: ID!, title: String!): Column!
+  updateColumn(id: ID!, title: String!): Column!
+  deleteColumn(id: ID!): Boolean!
+  reorderColumns(workspaceId: ID!, columnIds: [ID!]!): [Column!]!
+
+  # Item (Library)
+  createItem(input: CreateItemInput!): Item!
+  updateItem(id: ID!, input: UpdateItemInput!): Item!
+  deleteItem(id: ID!): Boolean!
+
+  # Card (Workspace)
+  createCard(columnId: ID!, input: CreateCardInput!): Card!
+  updateCard(id: ID!, input: UpdateCardInput!): Card!
+  deleteCard(id: ID!): Boolean!
+  toggleCardChecked(id: ID!): Card!
+  moveCard(id: ID!, columnId: ID!, order: Int!): Card!
+}

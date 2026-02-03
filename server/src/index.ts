@@ -1,0 +1,147 @@
+import 'dotenv/config';
+import { createServer } from 'node:http';
+import { createYoga } from 'graphql-yoga';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { resolvers } from './resolvers/index.js';
+import { createContext } from './lib/context.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
+
+// Read GraphQL schema
+const typeDefs = readFileSync(join(__dirname, 'schema', 'schema.graphql'), 'utf-8');
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+});
+
+// Cookie storage per request
+const requestCookies = new WeakMap<
+  Request,
+  Map<string, { value: string; attributes: Record<string, unknown> } | null>
+>();
+
+// Create Yoga instance
+const yoga = createYoga({
+  schema,
+  context: async (ctx) => {
+    const cookies = new Map<
+      string,
+      { value: string; attributes: Record<string, unknown> } | null
+    >();
+    requestCookies.set(ctx.request, cookies);
+
+    const baseContext = await createContext(ctx);
+
+    return {
+      ...baseContext,
+      setCookie: (name: string, value: string, attributes: Record<string, unknown>) => {
+        cookies.set(name, { value, attributes });
+      },
+      deleteCookie: (name: string) => {
+        cookies.set(name, null);
+      },
+    };
+  },
+  cors: {
+    origin: CORS_ORIGIN,
+    credentials: true,
+  },
+});
+
+// Create HTTP server
+const server = createServer(async (req, res) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': CORS_ORIGIN,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
+    });
+    res.end();
+    return;
+  }
+
+  // Build request
+  const request = new Request(`http://${req.headers.host}${req.url}`, {
+    method: req.method,
+    headers: req.headers as HeadersInit,
+    body:
+      req.method !== 'GET' && req.method !== 'HEAD'
+        ? new Uint8Array(
+            await new Promise<Buffer>((resolve) => {
+              const chunks: Buffer[] = [];
+              req.on('data', (chunk) => chunks.push(chunk));
+              req.on('end', () => resolve(Buffer.concat(chunks)));
+            })
+          )
+        : undefined,
+  });
+
+  // Process request through Yoga
+  const response = await yoga.fetch(request, { req, res });
+
+  // Get cookies set during request
+  const cookies = requestCookies.get(request);
+  const setCookieHeaders: string[] = [];
+
+  if (cookies) {
+    for (const [name, cookie] of cookies) {
+      if (cookie === null) {
+        // Delete cookie
+        setCookieHeaders.push(`${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
+      } else {
+        // Set cookie
+        let cookieStr = `${name}=${cookie.value}`;
+        const attrs = cookie.attributes;
+
+        if (attrs.path) cookieStr += `; Path=${attrs.path}`;
+        if (attrs.maxAge) cookieStr += `; Max-Age=${attrs.maxAge}`;
+        if (attrs.expires) cookieStr += `; Expires=${(attrs.expires as Date).toUTCString()}`;
+        if (attrs.httpOnly) cookieStr += '; HttpOnly';
+        if (attrs.secure) cookieStr += '; Secure';
+        if (attrs.sameSite) cookieStr += `; SameSite=${attrs.sameSite}`;
+
+        setCookieHeaders.push(cookieStr);
+      }
+    }
+    requestCookies.delete(request);
+  }
+
+  // Set response headers
+  const headers: Record<string, string | string[]> = {
+    ...Object.fromEntries(response.headers.entries()),
+    'Access-Control-Allow-Origin': CORS_ORIGIN,
+    'Access-Control-Allow-Credentials': 'true',
+  };
+
+  if (setCookieHeaders.length > 0) {
+    headers['Set-Cookie'] = setCookieHeaders;
+  }
+
+  res.writeHead(response.status, headers);
+
+  // Send response body
+  if (response.body) {
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+  }
+  res.end();
+});
+
+const PORT = process.env.PORT ?? 4000;
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}/graphql`);
+});

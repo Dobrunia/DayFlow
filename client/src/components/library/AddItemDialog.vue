@@ -22,6 +22,8 @@ import {
 
 const props = defineProps<{
   open: boolean;
+  /** При переданном item — режим редактирования (подстановка данных, кнопка "Сохранить") */
+  item?: import('@/graphql/types').Item | null;
 }>();
 
 const emit = defineEmits<{
@@ -46,6 +48,8 @@ const NO_WORKSPACE = '__none__';
 const workspaceId = ref<string>(NO_WORKSPACE);
 const loading = ref(false);
 
+const isEditMode = computed(() => !!props.item);
+
 const types: { value: ItemType; label: string; icon: string }[] = [
   { value: 'LINK', label: 'Ссылка', icon: 'i-lucide-link' },
   { value: 'VIDEO', label: 'Видео', icon: 'i-lucide-video' },
@@ -60,17 +64,23 @@ const showUrlField = computed(() => ['LINK', 'VIDEO', 'REPO'].includes(type.valu
 const showContentField = computed(() => type.value === 'NOTE');
 
 watch(
-  () => props.open,
-  (isOpen) => {
+  () => [props.open, props.item] as const,
+  ([isOpen, item]) => {
     if (isOpen) {
-      // Reset form
-      title.value = '';
-      type.value = 'LINK';
-      url.value = '';
-      content.value = '';
-      workspaceId.value = NO_WORKSPACE;
+      if (item) {
+        title.value = item.title;
+        type.value = item.type;
+        url.value = item.url ?? '';
+        content.value = item.content ?? '';
+        workspaceId.value = item.workspace?.id ?? NO_WORKSPACE;
+      } else {
+        title.value = '';
+        type.value = 'LINK';
+        url.value = '';
+        content.value = '';
+        workspaceId.value = NO_WORKSPACE;
+      }
 
-      // Fetch workspaces if not loaded
       if (workspaces.value.length === 0) {
         workspaceStore.fetchWorkspaces();
       }
@@ -87,18 +97,28 @@ async function handleSubmit() {
   try {
     loading.value = true;
 
-    await libraryStore.createItem({
+    const payload = {
       title: title.value.trim(),
       type: type.value,
       url: showUrlField.value ? url.value.trim() || undefined : undefined,
       content: showContentField.value ? content.value.trim() || undefined : undefined,
       workspaceId: workspaceId.value === NO_WORKSPACE ? undefined : workspaceId.value,
-    });
+    };
 
-    toast.success('Добавлено!');
+    if (props.item) {
+      await libraryStore.updateItem(props.item.id, {
+        title: payload.title,
+        url: payload.url,
+        content: payload.content,
+      });
+      toast.success('Сохранено!');
+    } else {
+      await libraryStore.createItem(payload);
+      toast.success('Добавлено!');
+    }
     emit('close');
-  } catch (e) {
-    toast.error('Ошибка добавления');
+  } catch {
+    toast.error(props.item ? 'Ошибка сохранения' : 'Ошибка добавления');
   } finally {
     loading.value = false;
   }
@@ -119,7 +139,9 @@ async function handleSubmit() {
           Форма добавления элемента в библиотеку или воркспейс
         </DialogDescription>
         <div class="dialog-header">
-          <DialogTitle class="dialog-title">Добавить</DialogTitle>
+          <DialogTitle class="dialog-title">{{
+            isEditMode ? 'Редактировать' : 'Добавить'
+          }}</DialogTitle>
           <DialogClose class="dialog-close">
             <span class="i-lucide-x text-fg-muted" />
           </DialogClose>
@@ -139,7 +161,7 @@ async function handleSubmit() {
             />
           </div>
 
-          <!-- Type -->
+          <!-- Type (при редактировании менять нельзя) -->
           <div>
             <label class="form-label mb-2">Тип</label>
             <div class="flex flex-wrap gap-2">
@@ -147,9 +169,13 @@ async function handleSubmit() {
                 v-for="t in types"
                 :key="t.value"
                 type="button"
-                @click="type = t.value"
+                :disabled="isEditMode"
+                @click="!isEditMode && (type = t.value)"
                 class="type-selector-btn"
-                :class="type === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
+                :class="[
+                  type === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive',
+                  isEditMode && 'opacity-70 cursor-not-allowed pointer-events-none',
+                ]"
               >
                 <span :class="t.icon" />
                 {{ t.label }}
@@ -196,7 +222,12 @@ async function handleSubmit() {
                   <SelectItem :value="NO_WORKSPACE" class="select-option">
                     Библиотека (без воркспейса)
                   </SelectItem>
-                  <SelectItem v-for="ws in workspaces" :key="ws.id" :value="ws.id" class="select-option">
+                  <SelectItem
+                    v-for="ws in workspaces"
+                    :key="ws.id"
+                    :value="ws.id"
+                    class="select-option"
+                  >
                     {{ ws.title }}
                   </SelectItem>
                 </SelectContent>
@@ -209,7 +240,7 @@ async function handleSubmit() {
             <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5" />
-              Добавить
+              {{ isEditMode ? 'Сохранить' : 'Добавить' }}
             </button>
           </div>
         </form>

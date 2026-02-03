@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useLibraryStore } from '@/stores/library';
 import type { Item } from '@/graphql/types';
-import { useInlineEdit } from '@/composables/useInlineEdit';
+import AddItemDialog from '@/components/library/AddItemDialog.vue';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 
@@ -11,13 +11,7 @@ const props = defineProps<{
 }>();
 
 const libraryStore = useLibraryStore();
-const contentRef = ref<HTMLElement | null>(null);
-
-const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
-  contentRef,
-  () => props.item.title,
-  (newTitle) => libraryStore.updateItem(props.item.id, { title: newTitle })
-);
+const showEditDialog = ref(false);
 
 const typeIcons: Record<string, string> = {
   NOTE: 'i-lucide-file-text',
@@ -35,8 +29,8 @@ const typeLabels: Record<string, string> = {
   TASK: 'Задача',
 };
 
-function cancelEdit() {
-  isEditing.value = false;
+function openEdit() {
+  showEditDialog.value = true;
 }
 
 async function toggleDone() {
@@ -78,43 +72,29 @@ function openUrl() {
       </button>
 
       <!-- Content -->
-      <div ref="contentRef" class="flex-1 min-w-0">
-        <!-- Title (editable) -->
-        <div v-if="isEditing" class="flex items-center gap-2">
-          <input
-            ref="inputRef"
-            v-model="editTitle"
-            @keyup.enter="saveEdit"
-            @keyup.escape="cancelEdit"
-            @blur="saveEdit"
-            class="input flex-1"
-          />
-        </div>
+      <div class="flex-1 min-w-0">
+        <h3
+          @dblclick="openEdit"
+          class="font-medium text-fg truncate cursor-text"
+          :class="{ 'line-through': item.done }"
+        >
+          {{ item.title }}
+        </h3>
 
-        <div v-else>
-          <h3
-            @dblclick="startEdit"
-            class="font-medium text-fg truncate cursor-text"
-            :class="{ 'line-through': item.done }"
-          >
-            {{ item.title }}
-          </h3>
+        <!-- URL -->
+        <button
+          v-if="item.url"
+          @click="openUrl"
+          class="text-sm link-primary truncate max-w-full flex items-center gap-1 mt-1"
+        >
+          <span class="i-lucide-external-link text-xs" />
+          {{ item.url }}
+        </button>
 
-          <!-- URL -->
-          <button
-            v-if="item.url"
-            @click="openUrl"
-            class="text-sm link-primary truncate max-w-full flex items-center gap-1 mt-1"
-          >
-            <span class="i-lucide-external-link text-xs" />
-            {{ item.url }}
-          </button>
-
-          <!-- Content preview -->
-          <p v-if="item.content" class="text-sm text-fg-muted mt-1 line-clamp-2">
-            {{ item.content }}
-          </p>
-        </div>
+        <!-- Content preview -->
+        <p v-if="item.content" class="text-sm text-fg-muted mt-1 line-clamp-2">
+          {{ item.content }}
+        </p>
 
         <!-- Meta -->
         <div class="flex items-center gap-3 mt-2 text-xs text-fg-muted">
@@ -128,7 +108,7 @@ function openUrl() {
 
       <!-- Actions -->
       <div class="flex items-center gap-1 card-actions-hover">
-        <button @click="startEdit" class="btn-icon btn-ghost p-1.5" title="Редактировать">
+        <button @click="openEdit" class="btn-icon btn-ghost p-1.5" title="Редактировать">
           <span class="i-lucide-edit-2 text-fg-muted" />
         </button>
         <button @click="deleteItem" class="btn-icon btn-ghost p-1.5" title="Удалить">
@@ -136,5 +116,7 @@ function openUrl() {
         </button>
       </div>
     </div>
+
+    <AddItemDialog :open="showEditDialog" :item="item" @close="showEditDialog = false" />
   </div>
 </template>

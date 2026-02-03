@@ -15,11 +15,11 @@ const loading = computed(() => libraryStore.loading);
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto px-5 py-10">
     <div class="flex-between mb-8">
       <div>
-        <h1 class="page-title">Библиотека</h1>
-        <p class="text-sm text-fg-muted mt-1">Сохранённые ссылки и идеи</p>
+        <h1 class="page-title mb-1">Библиотека</h1>
+        <p class="text-sm text-fg-muted">Сохранённые ссылки и идеи</p>
       </div>
     </div>
 

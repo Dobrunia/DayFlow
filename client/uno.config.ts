@@ -25,8 +25,12 @@ export default defineConfig({
   shortcuts: {
     'flex-center': 'flex items-center justify-center',
     'flex-between': 'flex items-center justify-between',
-    card: 'bg-bg border border-border rounded-xl p-4 shadow-sm',
-    'card-hover': 'card hover:shadow-md hover:border-border-hover transition-all duration-200',
+    card: 'bg-bg border border-border rounded-2xl p-4',
+    'card-hover': 'card hover:bg-muted/50 transition-colors duration-200',
+    'workspace-card':
+      'block w-full text-left rounded-2xl p-5 border border-border bg-bg hover:bg-muted/50 hover:border-border-hover transition-all duration-200',
+    'workspace-card-new':
+      'flex-shrink-0 rounded-2xl border-2 border-dashed border-border bg-transparent hover:border-primary hover:bg-primary/5 transition-all duration-200 flex-center flex-col gap-3 min-h-[140px]',
     btn: 'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none outline-none',
     'btn-primary': 'btn bg-primary text-on-primary hover:opacity-90',
     'btn-secondary': 'btn bg-muted text-fg hover:bg-muted-hover',
@@ -84,9 +88,10 @@ export default defineConfig({
     'select-option':
       'relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none hover:bg-muted data-[highlighted]:bg-muted',
     /* Прочее */
-    'page-title': 'text-2xl font-bold text-fg',
+    'page-title': 'text-2xl font-bold text-fg tracking-tight',
     'link-primary': 'text-primary hover:opacity-90',
-    'filter-pill': 'inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors min-w-0 shadow-[0_0_transparent]',
+    'filter-pill':
+      'inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors min-w-0 shadow-[0_0_transparent]',
     'filter-pill-active': 'bg-bg text-fg shadow-sm',
     'filter-pill-inactive': 'text-fg-muted hover:text-fg',
     'card-actions-hover': 'opacity-0 group-hover:opacity-100 transition-opacity',

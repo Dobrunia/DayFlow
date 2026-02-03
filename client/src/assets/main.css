@@ -1,36 +1,35 @@
 /*
-  Единственный набор цветов темы. Меняем только здесь при смене светлой/тёмной темы.
-  В компонентах: text-fg, text-fg-muted, bg-bg, bg-muted, border-border, text-primary, bg-primary, text-on-primary, text-success, bg-success, text-danger, bg-overlay.
+  Цвета темы. X/Twitter-подобный воздушный стиль: мягкие границы, много воздуха.
 */
 :root {
-  --fg: #171717;
-  --fg-muted: #525252;
-  --bg: #fafafa;
-  --muted: #f5f5f5;
-  --muted-hover: #e5e5e5;
-  --border: #e5e5e5;
-  --border-hover: #d4d4d4;
-  --primary: #2563eb;
+  --fg: #0f1419;
+  --fg-muted: #536471;
+  --bg: #ffffff;
+  --muted: #e7eaec;
+  --muted-hover: #dde1e4;
+  --border: #eff3f4;
+  --border-hover: #cfd9de;
+  --primary: #1d9bf0;
   --on-primary: #ffffff;
-  --success: #22c55e;
-  --danger: #ef4444;
+  --success: #00ba7c;
+  --danger: #f4212e;
   --overlay: rgba(0, 0, 0, 0.4);
 }
 
-/* Obsidian-style dark: тёмно-серый фон, фиолетовый акцент */
+/* Тёмная тема в духе X */
 .dark {
-  --fg: #d4d4d4;
-  --fg-muted: #9ca3af;
-  --bg: #1e1e1e;
-  --muted: #252526;
-  --muted-hover: #2d2d30;
-  --border: #404040;
-  --border-hover: #525252;
-  --primary: #8b5cf6;
+  --fg: #e7e9ea;
+  --fg-muted: #71767b;
+  --bg: #000000;
+  --muted: #16181c;
+  --muted-hover: #1d1f23;
+  --border: #2f3336;
+  --border-hover: #3e4144;
+  --primary: #1d9bf0;
   --on-primary: #ffffff;
-  --success: #22c55e;
-  --danger: #f87171;
-  --overlay: rgba(0, 0, 0, 0.6);
+  --success: #00ba7c;
+  --danger: #f4212e;
+  --overlay: rgba(0, 0, 0, 0.65);
 }
 
 body {

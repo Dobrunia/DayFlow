@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick, onUnmounted } from 'vue';
+import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { CardType, ChecklistItem } from '@/graphql/types';
 import { toast } from 'vue-sonner';
@@ -15,6 +16,8 @@ import {
 const props = defineProps<{
   open: boolean;
   columnId: string;
+  /** При переданной карточке — режим редактирования */
+  card?: import('@/graphql/types').Card | null;
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +39,10 @@ const videoUrl = ref('');
 const noteContent = ref('');
 const checklistItems = ref<ChecklistItem[]>([{ id: '1', text: '', checked: false }]);
 const loading = ref(false);
+const checklistListRef = ref<HTMLElement | null>(null);
+let checklistSortable: Sortable | null = null;
+
+const isEditMode = computed(() => !!props.card);
 
 const types: { value: CardType; label: string; icon: string }[] = [
   { value: 'NOTE', label: 'Заметка', icon: 'i-lucide-file-text' },
@@ -43,18 +50,67 @@ const types: { value: CardType; label: string; icon: string }[] = [
   { value: 'CHECKLIST', label: 'Чеклист', icon: 'i-lucide-check-square' },
 ];
 
+function initChecklistSortable() {
+  checklistSortable?.destroy();
+  checklistSortable = null;
+  if (!checklistListRef.value || cardType.value !== 'CHECKLIST') return;
+  checklistSortable = new Sortable(checklistListRef.value, {
+    animation: 150,
+    handle: '.checklist-grip',
+    ghostClass: 'opacity-50',
+    onEnd(evt) {
+      const from = evt.oldIndex ?? 0;
+      const to = evt.newIndex ?? 0;
+      if (from === to) return;
+      const arr = [...checklistItems.value];
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      checklistItems.value = arr;
+      nextTick(() => initChecklistSortable());
+    },
+  });
+}
+
 watch(
-  () => props.open,
-  (isOpen) => {
+  () => [props.open, props.card] as const,
+  ([isOpen, card]) => {
     if (isOpen) {
-      title.value = '';
-      cardType.value = 'NOTE';
-      videoUrl.value = '';
-      noteContent.value = '';
-      checklistItems.value = [{ id: '1', text: '', checked: false }];
+      if (card) {
+        title.value = card.title;
+        cardType.value = card.cardType;
+        videoUrl.value = card.videoUrl ?? '';
+        noteContent.value = card.noteContent ?? '';
+        checklistItems.value =
+          (card.checklistItems?.length ?? 0) > 0
+            ? card.checklistItems!.map((i) => ({ id: i.id, text: i.text, checked: i.checked }))
+            : [{ id: '1', text: '', checked: false }];
+      } else {
+        title.value = '';
+        cardType.value = 'NOTE';
+        videoUrl.value = '';
+        noteContent.value = '';
+        checklistItems.value = [{ id: '1', text: '', checked: false }];
+      }
+      nextTick(() => initChecklistSortable());
+    } else {
+      checklistSortable?.destroy();
+      checklistSortable = null;
     }
   }
 );
+
+watch(cardType, (t) => {
+  if (t === 'CHECKLIST') {
+    nextTick(() => initChecklistSortable());
+  } else {
+    checklistSortable?.destroy();
+    checklistSortable = null;
+  }
+});
+
+onUnmounted(() => {
+  checklistSortable?.destroy();
+});
 
 function addChecklistItem() {
   checklistItems.value.push({
@@ -62,11 +118,13 @@ function addChecklistItem() {
     text: '',
     checked: false,
   });
+  nextTick(() => initChecklistSortable());
 }
 
 function removeChecklistItem(index: number) {
   if (checklistItems.value.length > 1) {
     checklistItems.value.splice(index, 1);
+    nextTick(() => initChecklistSortable());
   }
 }
 
@@ -79,35 +137,42 @@ async function handleSubmit() {
   try {
     loading.value = true;
 
-    const input: {
-      title: string;
-      cardType: CardType;
-      videoUrl?: string;
-      noteContent?: string;
-      checklistItems?: ChecklistItem[];
-    } = {
-      title: title.value.trim(),
-      cardType: cardType.value,
-    };
-
-    if (cardType.value === 'VIDEO' && videoUrl.value.trim()) {
-      input.videoUrl = videoUrl.value.trim();
+    if (props.card) {
+      const updatePayload: {
+        title?: string;
+        videoUrl?: string;
+        noteContent?: string;
+        checklistItems?: ChecklistItem[];
+      } = { title: title.value.trim() };
+      if (cardType.value === 'VIDEO') {
+        updatePayload.videoUrl = videoUrl.value.trim() || undefined;
+      }
+      if (cardType.value === 'NOTE') {
+        updatePayload.noteContent = noteContent.value.trim() || undefined;
+      }
+      if (cardType.value === 'CHECKLIST') {
+        updatePayload.checklistItems = checklistItems.value.filter((item) => item.text.trim());
+      }
+      await workspaceStore.updateCard(props.card.id, updatePayload);
+      toast.success('Сохранено!');
+    } else {
+      const createInput = {
+        title: title.value.trim(),
+        cardType: cardType.value,
+        ...(cardType.value === 'VIDEO' &&
+          videoUrl.value.trim() && { videoUrl: videoUrl.value.trim() }),
+        ...(cardType.value === 'NOTE' &&
+          noteContent.value.trim() && { noteContent: noteContent.value.trim() }),
+        ...(cardType.value === 'CHECKLIST' && {
+          checklistItems: checklistItems.value.filter((item) => item.text.trim()),
+        }),
+      };
+      await workspaceStore.createCard(props.columnId, createInput);
+      toast.success('Карточка создана!');
     }
-
-    if (cardType.value === 'NOTE' && noteContent.value.trim()) {
-      input.noteContent = noteContent.value.trim();
-    }
-
-    if (cardType.value === 'CHECKLIST') {
-      input.checklistItems = checklistItems.value.filter((item) => item.text.trim());
-    }
-
-    await workspaceStore.createCard(props.columnId, input);
-
-    toast.success('Карточка создана!');
     emit('close');
   } catch {
-    toast.error('Ошибка создания карточки');
+    toast.error(props.card ? 'Ошибка сохранения' : 'Ошибка создания карточки');
   } finally {
     loading.value = false;
   }
@@ -121,7 +186,9 @@ async function handleSubmit() {
 
       <DialogContent class="dialog-content-scroll" @escape-key-down="openProxy = false">
         <div class="dialog-header">
-          <DialogTitle class="dialog-title"> Новая карточка </DialogTitle>
+          <DialogTitle class="dialog-title">
+            {{ isEditMode ? 'Редактировать карточку' : 'Новая карточка' }}
+          </DialogTitle>
           <DialogClose class="dialog-close">
             <span class="i-lucide-x text-fg-muted" />
           </DialogClose>
@@ -141,7 +208,7 @@ async function handleSubmit() {
             />
           </div>
 
-          <!-- Type -->
+          <!-- Type (в режиме редактирования менять нельзя) -->
           <div>
             <label class="form-label-fg mb-2"> Тип </label>
             <div class="flex gap-2">
@@ -149,11 +216,13 @@ async function handleSubmit() {
                 v-for="t in types"
                 :key="t.value"
                 type="button"
-                @click="cardType = t.value"
+                :disabled="isEditMode"
+                @click="!isEditMode && (cardType = t.value)"
                 class="flex-1 type-selector-btn flex-center"
-                :class="
-                  cardType === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive'
-                "
+                :class="[
+                  cardType === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive',
+                  isEditMode && 'opacity-70 cursor-not-allowed pointer-events-none',
+                ]"
               >
                 <span :class="t.icon" />
                 {{ t.label }}
@@ -187,13 +256,15 @@ async function handleSubmit() {
           <!-- Checklist Items -->
           <div v-if="cardType === 'CHECKLIST'">
             <label class="form-label-fg mb-2"> Пункты чеклиста </label>
-            <div class="space-y-2">
+            <div ref="checklistListRef" class="space-y-2">
               <div
                 v-for="(item, index) in checklistItems"
                 :key="item.id"
                 class="flex items-center gap-2"
               >
-                <span class="i-lucide-grip-vertical text-fg-muted cursor-move" />
+                <span
+                  class="checklist-grip i-lucide-grip-vertical text-fg-muted cursor-grab active:cursor-grabbing touch-none"
+                />
                 <input
                   v-model="item.text"
                   type="text"
@@ -210,7 +281,11 @@ async function handleSubmit() {
                 </button>
               </div>
             </div>
-            <button type="button" @click="addChecklistItem" class="mt-2 text-sm link-primary flex items-center gap-1">
+            <button
+              type="button"
+              @click="addChecklistItem"
+              class="mt-2 text-sm link-primary flex items-center gap-1"
+            >
               <span class="i-lucide-plus" />
               Добавить пункт
             </button>
@@ -221,7 +296,7 @@ async function handleSubmit() {
             <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5 text-fg-muted" />
-              Создать
+              {{ isEditMode ? 'Сохранить' : 'Создать' }}
             </button>
           </div>
         </form>

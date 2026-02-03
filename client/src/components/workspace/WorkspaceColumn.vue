@@ -104,7 +104,7 @@ async function deleteColumn() {
       class="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[2rem]"
       :data-column-id="column.id"
     >
-      <CardItem v-for="card in cards" :key="card.id" :card="card" />
+      <CardItem v-for="card in cards" :key="card.id" :card="card" :column-id="column.id" />
 
       <!-- Add Card Button (not draggable) -->
       <button @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">

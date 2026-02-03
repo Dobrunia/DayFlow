@@ -2,24 +2,22 @@
 import { ref, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { Card } from '@/graphql/types';
-import { useInlineEdit } from '@/composables/useInlineEdit';
+import AddCardDialog from './AddCardDialog.vue';
 import { extractYouTubeId, getYouTubeThumbnail } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
   card: Card;
+  columnId: string;
 }>();
 
 const workspaceStore = useWorkspaceStore();
-const titleBlockRef = ref<HTMLElement | null>(null);
-
-const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
-  titleBlockRef,
-  () => props.card.title,
-  (newTitle) => workspaceStore.updateCard(props.card.id, { title: newTitle })
-);
-
+const showEditDialog = ref(false);
 const expandedNote = ref(false);
+
+function openEdit() {
+  showEditDialog.value = true;
+}
 
 const youtubeId = computed(() => {
   if (props.card.cardType === 'VIDEO' && props.card.videoUrl) {
@@ -120,20 +118,9 @@ function openVideo() {
         </button>
 
         <!-- Title -->
-        <div ref="titleBlockRef" class="flex-1 min-w-0">
-          <div v-if="isEditing">
-            <input
-              ref="inputRef"
-              v-model="editTitle"
-              @keyup.enter="saveEdit"
-              @keyup.escape="isEditing = false"
-              @blur="saveEdit"
-              class="input text-sm py-0.5"
-            />
-          </div>
+        <div class="flex-1 min-w-0">
           <p
-            v-else
-            @dblclick="startEdit"
+            @dblclick="openEdit"
             class="text-sm font-medium text-fg cursor-text"
             :class="{ 'line-through': card.checked }"
           >
@@ -141,13 +128,19 @@ function openVideo() {
           </p>
         </div>
 
-        <!-- Delete -->
-        <button
-          @click="deleteCard"
-          class="btn-icon p-1 card-actions-hover text-fg-muted hover:text-danger"
-        >
-          <span class="i-lucide-trash-2 text-xs" />
-        </button>
+        <!-- Actions -->
+        <div class="flex items-center gap-0.5 card-actions-hover">
+          <button @click="openEdit" class="btn-icon p-1 text-fg-muted" title="Редактировать">
+            <span class="i-lucide-edit-2 text-xs" />
+          </button>
+          <button
+            @click="deleteCard"
+            class="btn-icon p-1 text-fg-muted hover:text-danger"
+            title="Удалить"
+          >
+            <span class="i-lucide-trash-2 text-xs" />
+          </button>
+        </div>
       </div>
 
       <!-- Note Content -->
@@ -226,5 +219,12 @@ function openVideo() {
         </span>
       </div>
     </div>
+
+    <AddCardDialog
+      :open="showEditDialog"
+      :column-id="columnId"
+      :card="card"
+      @close="showEditDialog = false"
+    />
   </div>
 </template>

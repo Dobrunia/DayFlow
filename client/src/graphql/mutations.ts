@@ -114,10 +114,13 @@ export const UPDATE_ITEM_MUTATION = gql`
     updateItem(id: $id, input: $input) {
       id
       title
+      type
       url
       content
       status
       done
+      createdAt
+      updatedAt
     }
   }
 `;

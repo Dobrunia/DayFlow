@@ -50,7 +50,7 @@ async function deleteColumn() {
 </script>
 
 <template>
-  <div class="flex-shrink-0 w-72 flex flex-col bg-gray-50 rounded-xl">
+  <div class="flex-shrink-0 w-72 flex flex-col bg-muted rounded-xl">
     <!-- Header -->
     <div class="p-3 flex-between">
       <div v-if="isEditing" class="flex-1 mr-2">
@@ -66,19 +66,19 @@ async function deleteColumn() {
       <h3
         v-else
         @dblclick="startEdit"
-        class="font-medium text-gray-700 truncate cursor-text flex-1"
+        class="font-medium text-fg truncate cursor-text flex-1"
       >
         {{ column.title }}
       </h3>
 
       <div class="flex items-center gap-1">
-        <span class="text-xs text-gray-400 mr-1">{{ cards.length }}</span>
+        <span class="text-xs text-fg-muted mr-1">{{ cards.length }}</span>
         <button
           @click="deleteColumn"
-          class="btn-icon p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 rounded"
+          class="btn-icon p-1 opacity-0 group-hover:opacity-100 hover:bg-muted-hover rounded"
           title="Удалить колонку"
         >
-          <span class="i-lucide-trash-2 text-xs text-gray-400" />
+          <span class="i-lucide-trash-2 text-xs text-fg-muted" />
         </button>
       </div>
     </div>
@@ -90,7 +90,7 @@ async function deleteColumn() {
       <!-- Add Card Button -->
       <button
         @click="showAddCard = true"
-        class="w-full p-3 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 hover:bg-white transition-colors flex-center gap-1.5"
+        class="w-full p-3 border border-dashed border-border rounded-lg text-sm text-fg-muted hover:text-fg hover:border-border-hover hover:bg-bg transition-colors flex-center gap-1.5"
       >
         <span class="i-lucide-plus text-sm" />
         Добавить карточку

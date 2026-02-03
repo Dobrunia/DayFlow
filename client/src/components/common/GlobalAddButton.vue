@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import AddItemDialog from '../library/AddItemDialog.vue';
 
 const isDialogOpen = ref(false);
 
-// Keyboard shortcut
 function handleKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
@@ -12,10 +11,8 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-// Register global shortcut
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', handleKeydown);
-}
+onMounted(() => window.addEventListener('keydown', handleKeydown));
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <template>

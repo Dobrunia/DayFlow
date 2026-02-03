@@ -45,13 +45,13 @@ export function getYouTubeThumbnail(videoId: string): string {
   return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
-export function debounce<T extends (...args: unknown[]) => unknown>(
-  fn: T,
+export function debounce<A extends unknown[]>(
+  fn: (...args: A) => unknown,
   delay: number
-): (...args: Parameters<T>) => void {
+): (...args: A) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  return (...args: Parameters<T>) => {
+  return (...args: A) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };

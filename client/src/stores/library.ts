@@ -7,13 +7,7 @@ import {
   UPDATE_ITEM_MUTATION,
   DELETE_ITEM_MUTATION,
 } from '@/graphql/mutations';
-import type {
-  Item,
-  ItemType,
-  CreateItemInput,
-  UpdateItemInput,
-  LibraryFilter,
-} from '@/graphql/types';
+import type { Item, CreateItemInput, UpdateItemInput, LibraryFilter } from '@/graphql/types';
 
 export const useLibraryStore = defineStore('library', () => {
   const items = ref<Item[]>([]);
@@ -84,13 +78,25 @@ export const useLibraryStore = defineStore('library', () => {
         variables: { id, input },
       });
 
-      // Update in list
-      const index = items.value.findIndex((item) => item.id === id);
-      if (index !== -1) {
-        items.value[index] = { ...items.value[index], ...data.updateItem };
+      if (!data?.updateItem) {
+        throw new Error('Нет ответа от сервера');
       }
 
-      return data.updateItem;
+      const updated = data.updateItem as Item;
+      const index = items.value.findIndex((item) => item.id === id);
+      if (index === -1) return updated;
+
+      // Если включён фильтр "только невыполненные" и элемент стал выполненным — убираем из списка
+      if (filter.value.done === false && updated.done) {
+        items.value = items.value.filter((item) => item.id !== id);
+        return updated;
+      }
+
+      // Замена по индексу через новый массив — иначе Vue 3 может не обновить UI
+      const next = [...items.value];
+      next[index] = { ...next[index], ...updated };
+      items.value = next;
+      return updated;
     } catch (e: unknown) {
       const err = e as Error;
       error.value = err.message;

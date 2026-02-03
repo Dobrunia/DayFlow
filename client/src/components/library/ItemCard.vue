@@ -82,15 +82,18 @@ function openUrl() {
 <template>
   <div class="card-hover group" :class="{ 'opacity-60': item.done }">
     <div class="flex items-start gap-4">
-      <!-- Checkbox -->
-      <button @click="toggleDone" class="mt-0.5 flex-shrink-0">
-        <span v-if="item.done" class="w-5 h-5 flex-center rounded-full bg-green-500 text-white">
-          <span class="i-lucide-check text-xs" />
-        </span>
-        <span
-          v-else
-          class="w-5 h-5 rounded-full border-2 border-gray-300 hover:border-green-500 transition-colors"
-        />
+      <!-- Checkbox: фиксированный размер и круг -->
+      <button
+        type="button"
+        @click="toggleDone"
+        class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex-center p-0 border-0 focus:outline-none focus:ring-0"
+        :class="
+          item.done
+            ? 'bg-success text-on-primary'
+            : 'border-2 border-border hover:border-success transition-colors bg-transparent'
+        "
+      >
+        <span v-if="item.done" class="i-lucide-check text-xs" />
       </button>
 
       <!-- Content -->
@@ -110,7 +113,7 @@ function openUrl() {
         <div v-else>
           <h3
             @dblclick="startEdit"
-            class="font-medium text-gray-900 truncate cursor-text"
+            class="font-medium text-fg truncate cursor-text"
             :class="{ 'line-through': item.done }"
           >
             {{ item.title }}
@@ -120,20 +123,20 @@ function openUrl() {
           <button
             v-if="item.url"
             @click="openUrl"
-            class="text-sm text-blue-600 hover:text-blue-700 truncate max-w-full flex items-center gap-1 mt-1"
+            class="text-sm text-primary hover:opacity-90 truncate max-w-full flex items-center gap-1 mt-1"
           >
             <span class="i-lucide-external-link text-xs" />
             {{ item.url }}
           </button>
 
           <!-- Content preview -->
-          <p v-if="item.content" class="text-sm text-gray-500 mt-1 line-clamp-2">
+          <p v-if="item.content" class="text-sm text-fg-muted mt-1 line-clamp-2">
             {{ item.content }}
           </p>
         </div>
 
         <!-- Meta -->
-        <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
+        <div class="flex items-center gap-3 mt-2 text-xs text-fg-muted">
           <span class="flex items-center gap-1">
             <span :class="typeIcons[item.type]" />
             {{ typeLabels[item.type] }}
@@ -145,10 +148,10 @@ function openUrl() {
       <!-- Actions -->
       <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button @click="startEdit" class="btn-icon btn-ghost p-1.5" title="Редактировать">
-          <span class="i-lucide-edit-2 text-gray-400" />
+          <span class="i-lucide-edit-2 text-fg-muted" />
         </button>
         <button @click="deleteItem" class="btn-icon btn-ghost p-1.5" title="Удалить">
-          <span class="i-lucide-trash-2 text-gray-400 hover:text-red-500" />
+          <span class="i-lucide-trash-2 text-fg-muted hover:text-danger" />
         </button>
       </div>
     </div>

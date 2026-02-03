@@ -15,12 +15,12 @@ export const apolloClient = new ApolloClient({
       Query: {
         fields: {
           library: {
-            merge(existing, incoming) {
+            merge(_existing, incoming) {
               return incoming;
             },
           },
           myWorkspaces: {
-            merge(existing, incoming) {
+            merge(_existing, incoming) {
               return incoming;
             },
           },
@@ -29,7 +29,7 @@ export const apolloClient = new ApolloClient({
       Workspace: {
         fields: {
           columns: {
-            merge(existing, incoming) {
+            merge(_existing, incoming) {
               return incoming;
             },
           },
@@ -38,7 +38,7 @@ export const apolloClient = new ApolloClient({
       Column: {
         fields: {
           cards: {
-            merge(existing, incoming) {
+            merge(_existing, incoming) {
               return incoming;
             },
           },

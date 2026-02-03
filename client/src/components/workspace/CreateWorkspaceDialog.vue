@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { toast } from 'vue-sonner';
 import {
@@ -19,6 +19,13 @@ const emit = defineEmits<{
   close: [];
   created: [id: string];
 }>();
+
+const openProxy = computed({
+  get: () => props.open,
+  set: (v: boolean) => {
+    if (!v) emit('close');
+  },
+});
 
 const workspaceStore = useWorkspaceStore();
 
@@ -61,24 +68,28 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <DialogRoot :open="open" @update:open="(v) => !v && emit('close')">
+  <DialogRoot v-model:open="openProxy">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+      <DialogOverlay
+        class="fixed inset-0 z-[100] bg-overlay backdrop-blur-sm"
+        @click="openProxy = false"
+      />
 
       <DialogContent
-        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-xl shadow-xl z-50 p-6"
+        class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-border rounded-xl shadow-xl z-[101] p-6"
+        @escape-key-down="openProxy = false"
       >
         <div class="flex-between mb-6">
-          <DialogTitle class="text-lg font-semibold text-gray-900"> Новый воркспейс </DialogTitle>
+          <DialogTitle class="text-lg font-semibold text-fg"> Новый воркспейс </DialogTitle>
           <DialogClose class="btn-icon btn-ghost p-1.5">
-            <span class="i-lucide-x text-gray-400" />
+            <span class="i-lucide-x text-fg-muted" />
           </DialogClose>
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Title -->
           <div>
-            <label for="ws-title" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="ws-title" class="block text-sm font-medium text-fg mb-1">
               Название *
             </label>
             <input
@@ -93,7 +104,7 @@ async function handleSubmit() {
 
           <!-- Description -->
           <div>
-            <label for="ws-description" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="ws-description" class="block text-sm font-medium text-fg mb-1">
               Описание
             </label>
             <textarea

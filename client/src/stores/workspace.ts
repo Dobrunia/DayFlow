@@ -19,7 +19,6 @@ import {
 import type {
   Workspace,
   Column,
-  Card,
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
   CreateCardInput,

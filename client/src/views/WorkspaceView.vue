@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
@@ -100,18 +100,18 @@ function handleDialogClose() {
 
     <!-- Loading -->
     <div v-if="loading && !isNewWorkspace" class="flex-1 flex-center">
-      <div class="animate-spin i-lucide-loader-2 text-2xl text-gray-400" />
+      <div class="animate-spin i-lucide-loader-2 text-2xl text-fg-muted" />
     </div>
 
     <!-- Workspace Content -->
     <template v-else-if="workspace">
       <!-- Header -->
-      <div class="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white">
+      <div class="flex-shrink-0 px-6 py-4 border-b border-border bg-bg">
         <div class="flex-between">
           <div class="flex items-center gap-4">
             <!-- Back button -->
             <RouterLink to="/" class="btn-icon btn-ghost p-1.5">
-              <span class="i-lucide-arrow-left text-gray-400" />
+              <span class="i-lucide-arrow-left text-fg-muted" />
             </RouterLink>
 
             <!-- Title (editable) -->
@@ -125,11 +125,7 @@ function handleDialogClose() {
                 autofocus
               />
             </div>
-            <h1
-              v-else
-              @dblclick="startEditTitle"
-              class="text-xl font-bold text-gray-900 cursor-text"
-            >
+            <h1 v-else @dblclick="startEditTitle" class="text-xl font-bold text-fg cursor-text">
               {{ workspace.title }}
             </h1>
           </div>
@@ -146,13 +142,13 @@ function handleDialogClose() {
               class="btn-icon btn-ghost p-2"
               title="Удалить воркспейс"
             >
-              <span class="i-lucide-trash-2 text-gray-400 hover:text-red-500" />
+              <span class="i-lucide-trash-2 text-fg-muted hover:text-danger" />
             </button>
           </div>
         </div>
 
         <!-- Description -->
-        <p v-if="workspace.description" class="text-sm text-gray-500 mt-2 ml-12">
+        <p v-if="workspace.description" class="text-sm text-fg-muted mt-2 ml-12">
           {{ workspace.description }}
         </p>
       </div>
@@ -170,7 +166,7 @@ function handleDialogClose() {
           <!-- Add Column Button (placeholder) -->
           <button
             @click="addColumn"
-            class="flex-shrink-0 w-72 h-32 border-2 border-dashed border-gray-200 rounded-xl flex-center flex-col gap-2 text-gray-400 hover:text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            class="flex-shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-xl flex-center flex-col gap-2 text-fg-muted hover:text-fg hover:border-border-hover hover:bg-muted transition-colors"
           >
             <span class="i-lucide-plus text-xl" />
             <span class="text-sm">Добавить колонку</span>
@@ -181,8 +177,8 @@ function handleDialogClose() {
 
     <!-- Not Found -->
     <div v-else-if="!isNewWorkspace" class="flex-1 flex-center flex-col gap-4">
-      <span class="i-lucide-folder-x text-4xl text-gray-300" />
-      <p class="text-gray-500">Воркспейс не найден</p>
+      <span class="i-lucide-folder-x text-4xl text-fg-muted" />
+      <p class="text-fg-muted">Воркспейс не найден</p>
       <RouterLink to="/" class="btn-primary"> На главную </RouterLink>
     </div>
   </div>

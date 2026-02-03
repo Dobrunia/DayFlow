@@ -41,9 +41,35 @@ const requestCookies = new WeakMap<
   Map<string, { value: string; attributes: Record<string, unknown> } | null>
 >();
 
-// Create Yoga instance
+// Логирование запросов и действий пользователя
+function logPayload(
+  operationName: string | undefined,
+  userId: string | null,
+  extra?: string
+) {
+  const ts = new Date().toISOString();
+  const user = userId ?? 'anonymous';
+  const op = operationName ?? 'unknown';
+  console.log(`[${ts}] ${op} | user=${user}${extra ? ` | ${extra}` : ''}`);
+}
+
 const yoga = createYoga({
   schema,
+  plugins: [
+    {
+      onExecute: ({ args }) => {
+        const op = args.operationName ?? undefined;
+        const ctx = args.contextValue as { user?: { id: string } | null };
+        const userId = ctx?.user?.id ?? null;
+        const vars = args.variableValues as Record<string, unknown> | undefined;
+        const safeVars =
+          vars && typeof vars === 'object'
+            ? Object.keys(vars).filter((k) => k !== 'password').join(',')
+            : '';
+        logPayload(op, userId, safeVars ? `vars=${safeVars}` : undefined);
+      },
+    },
+  ],
   context: async (ctx) => {
     const cookies = new Map<
       string,
@@ -100,7 +126,7 @@ const server = createServer(async (req, res) => {
         : undefined,
   });
 
-  // Process request through Yoga
+  // Process request through Yoga (логирование — в плагине onExecute)
   const response = await yoga.fetch(request, { req, res });
 
   // Get cookies set during request

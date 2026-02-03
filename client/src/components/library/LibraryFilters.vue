@@ -22,32 +22,31 @@ function setType(type: ItemType | undefined) {
 }
 
 function toggleShowDone() {
-  libraryStore.setFilter({ done: showDone.value ? undefined : false });
+  // Сейчас показываем только невыполненные (done === false) → включить все. Иначе — скрыть выполненные.
+  libraryStore.setFilter({ done: showDone.value === false ? undefined : false });
 }
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-4">
     <!-- Type Filter -->
-    <div class="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+    <div class="flex items-center gap-1 p-1 bg-muted rounded-lg">
       <button
         v-for="type in types"
         :key="type.label"
         @click="setType(type.value)"
-        class="px-3 py-1.5 text-sm rounded-md transition-colors"
+        class="inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors min-w-0 shadow-[0_0_transparent]"
         :class="
-          currentType === type.value
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-600 hover:text-gray-900'
+          currentType === type.value ? 'bg-bg text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
         "
       >
-        <span :class="type.icon" class="mr-1.5" />
+        <span :class="type.icon" class="mr-1.5 shrink-0 inline-block align-middle" />
         {{ type.label }}
       </button>
     </div>
 
     <!-- Show/Hide Completed -->
-    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+    <label class="flex items-center gap-2 text-sm text-fg-muted cursor-pointer">
       <input
         type="checkbox"
         :checked="showDone === undefined"

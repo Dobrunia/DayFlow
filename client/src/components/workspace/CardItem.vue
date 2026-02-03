@@ -95,20 +95,20 @@ function openVideo() {
 
 <template>
   <div
-    class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow transition-shadow group"
+    class="bg-bg rounded-lg border border-border shadow-sm hover:shadow transition-shadow group"
     :class="{ 'opacity-60': card.checked }"
   >
     <!-- Video Thumbnail -->
     <div
       v-if="card.cardType === 'VIDEO' && thumbnail"
-      class="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden cursor-pointer"
+      class="relative aspect-video bg-muted rounded-t-lg overflow-hidden cursor-pointer"
       @click="openVideo"
     >
       <img :src="thumbnail" :alt="card.title" class="w-full h-full object-cover" />
       <div
-        class="absolute inset-0 flex-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity"
+        class="absolute inset-0 flex-center bg-overlay opacity-0 hover:opacity-100 transition-opacity"
       >
-        <span class="i-lucide-play-circle text-4xl text-white" />
+        <span class="i-lucide-play-circle text-4xl text-on-primary" />
       </div>
     </div>
 
@@ -117,12 +117,12 @@ function openVideo() {
       <div class="flex items-start gap-2">
         <!-- Checkbox -->
         <button @click="toggleChecked" class="mt-0.5 flex-shrink-0">
-          <span v-if="card.checked" class="w-4 h-4 flex-center rounded bg-green-500 text-white">
+          <span v-if="card.checked" class="w-4 h-4 flex-center rounded bg-success text-on-primary">
             <span class="i-lucide-check text-xs" />
           </span>
           <span
             v-else
-            class="w-4 h-4 rounded border border-gray-300 hover:border-green-500 transition-colors"
+            class="w-4 h-4 rounded border border-border hover:border-success transition-colors"
           />
         </button>
 
@@ -141,7 +141,7 @@ function openVideo() {
           <p
             v-else
             @dblclick="startEdit"
-            class="text-sm font-medium text-gray-800 cursor-text"
+            class="text-sm font-medium text-fg cursor-text"
             :class="{ 'line-through': card.checked }"
           >
             {{ card.title }}
@@ -151,7 +151,7 @@ function openVideo() {
         <!-- Delete -->
         <button
           @click="deleteCard"
-          class="btn-icon p-1 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
+          class="btn-icon p-1 opacity-0 group-hover:opacity-100 text-fg-muted hover:text-danger"
         >
           <span class="i-lucide-trash-2 text-xs" />
         </button>
@@ -159,13 +159,13 @@ function openVideo() {
 
       <!-- Note Content -->
       <div v-if="card.cardType === 'NOTE' && card.noteContent" class="mt-2">
-        <p class="text-xs text-gray-600" :class="expandedNote ? '' : 'line-clamp-3'">
+        <p class="text-xs text-fg-muted" :class="expandedNote ? '' : 'line-clamp-3'">
           {{ card.noteContent }}
         </p>
         <button
           v-if="card.noteContent.length > 100"
           @click="expandedNote = !expandedNote"
-          class="text-xs text-blue-600 mt-1"
+          class="text-xs text-primary mt-1"
         >
           {{ expandedNote ? 'Свернуть' : 'Развернуть' }}
         </button>
@@ -181,15 +181,15 @@ function openVideo() {
           <button @click="toggleChecklistItem(index)" class="flex-shrink-0">
             <span
               v-if="item.checked"
-              class="w-3.5 h-3.5 flex-center rounded bg-green-500 text-white"
+              class="w-3.5 h-3.5 flex-center rounded bg-success text-on-primary"
             >
               <span class="i-lucide-check text-[10px]" />
             </span>
-            <span v-else class="w-3.5 h-3.5 rounded border border-gray-300" />
+            <span v-else class="w-3.5 h-3.5 rounded border border-border" />
           </button>
           <span
-            class="text-xs text-gray-600"
-            :class="{ 'line-through text-gray-400': item.checked }"
+            class="text-xs text-fg-muted"
+            :class="{ 'line-through text-fg-muted opacity-70': item.checked }"
           >
             {{ item.text }}
           </span>
@@ -198,20 +198,20 @@ function openVideo() {
         <button
           v-if="card.checklistItems.length > 3"
           @click="expandedNote = !expandedNote"
-          class="text-xs text-blue-600"
+          class="text-xs text-primary"
         >
           {{ expandedNote ? 'Свернуть' : `Ещё ${card.checklistItems.length - 3}` }}
         </button>
 
         <!-- Progress -->
         <div class="flex items-center gap-2 mt-2">
-          <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
             <div
-              class="h-full bg-green-500 transition-all"
+              class="h-full bg-success transition-all"
               :style="{ width: `${(completedChecklist.done / completedChecklist.total) * 100}%` }"
             />
           </div>
-          <span class="text-[10px] text-gray-400">
+          <span class="text-[10px] text-fg-muted">
             {{ completedChecklist.done }}/{{ completedChecklist.total }}
           </span>
         </div>
@@ -221,21 +221,21 @@ function openVideo() {
       <div class="flex items-center gap-2 mt-2">
         <span
           v-if="card.cardType === 'VIDEO'"
-          class="inline-flex items-center gap-1 text-[10px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded"
+          class="inline-flex items-center gap-1 text-[10px] text-primary bg-muted px-1.5 py-0.5 rounded"
         >
           <span class="i-lucide-video text-xs" />
           Видео
         </span>
         <span
           v-else-if="card.cardType === 'NOTE'"
-          class="inline-flex items-center gap-1 text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded"
+          class="inline-flex items-center gap-1 text-[10px] text-primary bg-muted px-1.5 py-0.5 rounded"
         >
           <span class="i-lucide-file-text text-xs" />
           Заметка
         </span>
         <span
           v-else-if="card.cardType === 'CHECKLIST'"
-          class="inline-flex items-center gap-1 text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded"
+          class="inline-flex items-center gap-1 text-[10px] text-success bg-success/10 px-1.5 py-0.5 rounded"
         >
           <span class="i-lucide-check-square text-xs" />
           Чеклист

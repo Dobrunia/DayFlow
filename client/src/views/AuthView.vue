@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from 'vue-sonner';
@@ -13,19 +13,28 @@ const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 
+const titleText = computed(() => (mode.value === 'signin' ? 'Вход в аккаунт' : 'Регистрация'));
+const subtitleText = computed(() =>
+  mode.value === 'signin' ? 'Войдите, чтобы продолжить' : 'Создайте аккаунт для начала'
+);
+const submitButtonText = computed(() => (mode.value === 'signin' ? 'Войти' : 'Зарегистрироваться'));
+const togglePromptText = computed(() =>
+  mode.value === 'signin' ? 'Нет аккаунта?' : 'Уже есть аккаунт?'
+);
+const toggleLinkText = computed(() => (mode.value === 'signin' ? 'Зарегистрироваться' : 'Войти'));
+
 async function handleSubmit() {
+  const trimmedEmail = email.value.trim();
   if (mode.value === 'signup') {
     if (password.value !== confirmPassword.value) {
       toast.error('Пароли не совпадают');
       return;
     }
-
     if (password.value.length < 6) {
       toast.error('Пароль должен быть минимум 6 символов');
       return;
     }
-
-    const success = await authStore.signUp(email.value, password.value);
+    const success = await authStore.signUp(trimmedEmail, password.value);
     if (success) {
       toast.success('Регистрация успешна!');
       navigateAfterAuth();
@@ -33,7 +42,7 @@ async function handleSubmit() {
       toast.error(authStore.error || 'Ошибка регистрации');
     }
   } else {
-    const success = await authStore.signIn(email.value, password.value);
+    const success = await authStore.signIn(trimmedEmail, password.value);
     if (success) {
       toast.success('Добро пожаловать!');
       navigateAfterAuth();
@@ -50,6 +59,7 @@ function navigateAfterAuth() {
 
 function toggleMode() {
   mode.value = mode.value === 'signin' ? 'signup' : 'signin';
+  confirmPassword.value = '';
   authStore.clearError();
 }
 </script>
@@ -59,18 +69,14 @@ function toggleMode() {
     <div class="w-full max-w-sm">
       <!-- Header -->
       <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">
-          {{ mode === 'signin' ? 'Вход в аккаунт' : 'Регистрация' }}
-        </h1>
-        <p class="text-sm text-gray-500">
-          {{ mode === 'signin' ? 'Войдите, чтобы продолжить' : 'Создайте аккаунт для начала' }}
-        </p>
+        <h1 class="text-2xl font-bold text-fg mb-2">{{ titleText }}</h1>
+        <p class="text-sm text-fg-muted">{{ subtitleText }}</p>
       </div>
 
       <!-- Form -->
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1"> Email </label>
+          <label for="email" class="block text-sm font-medium text-fg mb-1"> Email </label>
           <input
             id="email"
             v-model="email"
@@ -83,9 +89,7 @@ function toggleMode() {
         </div>
 
         <div>
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-            Пароль
-          </label>
+          <label for="password" class="block text-sm font-medium text-fg mb-1"> Пароль </label>
           <input
             id="password"
             v-model="password"
@@ -98,7 +102,7 @@ function toggleMode() {
         </div>
 
         <div v-if="mode === 'signup'">
-          <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="confirmPassword" class="block text-sm font-medium text-fg mb-1">
             Подтвердите пароль
           </label>
           <input
@@ -114,15 +118,15 @@ function toggleMode() {
 
         <button type="submit" class="btn-primary w-full py-2.5" :disabled="authStore.loading">
           <span v-if="authStore.loading" class="i-lucide-loader-2 animate-spin mr-2" />
-          {{ mode === 'signin' ? 'Войти' : 'Зарегистрироваться' }}
+          {{ submitButtonText }}
         </button>
       </form>
 
       <!-- Toggle Mode -->
-      <p class="mt-6 text-center text-sm text-gray-500">
-        {{ mode === 'signin' ? 'Нет аккаунта?' : 'Уже есть аккаунт?' }}
-        <button @click="toggleMode" class="text-blue-600 hover:text-blue-700 font-medium ml-1">
-          {{ mode === 'signin' ? 'Зарегистрироваться' : 'Войти' }}
+      <p class="mt-6 text-center text-sm text-fg-muted">
+        {{ togglePromptText }}
+        <button @click="toggleMode" class="text-primary hover:opacity-90 font-medium ml-1">
+          {{ toggleLinkText }}
         </button>
       </p>
     </div>

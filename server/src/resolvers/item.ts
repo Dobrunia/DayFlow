@@ -135,15 +135,16 @@ export const itemResolvers = {
         throw new Error('Item not found');
       }
 
+      const data: Record<string, unknown> = {};
+      if (input.title !== undefined) data.title = input.title;
+      if (input.url !== undefined) data.url = input.url;
+      if (input.content !== undefined) data.content = input.content;
+      if (input.status !== undefined) data.status = input.status;
+      if (input.done !== undefined) data.done = input.done;
+
       return context.prisma.item.update({
         where: { id },
-        data: {
-          title: input.title ?? undefined,
-          url: input.url,
-          content: input.content,
-          status: input.status,
-          done: input.done ?? undefined,
-        },
+        data,
       });
     },
 

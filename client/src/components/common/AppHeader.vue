@@ -2,11 +2,13 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useThemeStore } from '@/stores/theme';
 import SearchBar from './SearchBar.vue';
 import GlobalAddButton from './GlobalAddButton.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const themeStore = useThemeStore();
 
 const isAuthenticated = computed(() => !!authStore.user);
 
@@ -17,11 +19,11 @@ function handleSignOut() {
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-gray-200">
+  <header class="fixed top-0 left-0 right-0 z-50 h-16 bg-bg border-b border-border">
     <div class="h-full max-w-7xl mx-auto px-4 flex-between">
       <!-- Logo -->
-      <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-gray-900">
-        <div class="w-8 h-8 bg-blue-600 rounded-lg flex-center text-white text-sm font-bold">D</div>
+      <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
+        <div class="w-8 h-8 bg-primary rounded-lg flex-center text-on-primary text-sm font-bold">D</div>
         DayFlow
       </RouterLink>
 
@@ -33,7 +35,7 @@ function handleSignOut() {
       <!-- Right: Navigation & User -->
       <nav class="flex items-center gap-4">
         <template v-if="isAuthenticated">
-          <RouterLink to="/library" class="btn-ghost text-sm text-gray-600 hover:text-gray-900">
+          <RouterLink to="/library" class="btn-ghost text-sm text-fg-muted hover:text-fg">
             <span class="i-lucide-folder mr-1.5" />
             Библиотека
           </RouterLink>
@@ -48,17 +50,17 @@ function handleSignOut() {
 
             <!-- Dropdown -->
             <div
-              class="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+              class="absolute right-0 mt-1 w-48 bg-bg border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
             >
-              <div class="p-3 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900 truncate">
+              <div class="p-3 border-b border-border">
+                <p class="text-sm font-medium text-fg truncate">
                   {{ authStore.user?.email }}
                 </p>
               </div>
               <div class="p-1">
                 <button
                   @click="handleSignOut"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
                 >
                   <span class="i-lucide-log-out" />
                   Выйти
@@ -69,8 +71,19 @@ function handleSignOut() {
         </template>
 
         <template v-else>
-          <RouterLink to="/auth" class="btn-primary"> Войти </RouterLink>
+          <RouterLink to="/auth" class="btn-primary">Войти</RouterLink>
         </template>
+
+        <!-- Смена темы -->
+        <button
+          type="button"
+          class="btn-icon btn-ghost p-2"
+          :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
+          @click="themeStore.toggle()"
+        >
+          <span v-if="themeStore.dark" class="i-lucide-sun text-lg" />
+          <span v-else class="i-lucide-moon text-lg" />
+        </button>
       </nav>
     </div>
   </header>

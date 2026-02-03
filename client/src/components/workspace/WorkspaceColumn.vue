@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { Column } from '@/graphql/types';
 import { useInlineEdit } from '@/composables/useInlineEdit';
@@ -15,6 +16,8 @@ const props = defineProps<{
 const workspaceStore = useWorkspaceStore();
 const showAddCard = ref(false);
 const headerRef = ref<HTMLElement | null>(null);
+const cardsListRef = ref<HTMLElement | null>(null);
+let sortable: Sortable | null = null;
 
 const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
   headerRef,
@@ -23,6 +26,31 @@ const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
 );
 
 const cards = computed(() => props.column.cards ?? []);
+
+function handleDragEnd(evt: Sortable.SortableEvent) {
+  const cardId = (evt.item as HTMLElement).dataset.cardId;
+  const toColumnId = (evt.to as HTMLElement).dataset.columnId;
+  if (!cardId || !toColumnId) return;
+  const order = evt.newIndex ?? 0;
+  workspaceStore.moveCard(cardId, toColumnId, order).catch(() => {
+    toast.error('Ошибка перемещения');
+  });
+}
+
+onMounted(() => {
+  if (!cardsListRef.value) return;
+  sortable = new Sortable(cardsListRef.value, {
+    group: { name: 'cards', pull: true, put: true },
+    animation: 150,
+    filter: '.sortable-no-drag',
+    onEnd: handleDragEnd,
+  });
+});
+
+onUnmounted(() => {
+  sortable?.destroy();
+  sortable = null;
+});
 
 async function deleteColumn() {
   if (!confirm('Удалить колонку и все карточки в ней?')) return;
@@ -70,12 +98,16 @@ async function deleteColumn() {
       </div>
     </div>
 
-    <!-- Cards -->
-    <div class="flex-1 overflow-y-auto px-2 pb-2 space-y-2">
+    <!-- Cards (Sortable list) -->
+    <div
+      ref="cardsListRef"
+      class="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[2rem]"
+      :data-column-id="column.id"
+    >
       <CardItem v-for="card in cards" :key="card.id" :card="card" />
 
-      <!-- Add Card Button -->
-      <button @click="showAddCard = true" class="btn-add-dashed">
+      <!-- Add Card Button (not draggable) -->
+      <button @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">
         <span class="i-lucide-plus text-sm" />
         Добавить карточку
       </button>

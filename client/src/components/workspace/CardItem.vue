@@ -89,8 +89,9 @@ function openVideo() {
 
 <template>
   <div
-    class="bg-bg rounded-lg border border-border shadow-sm hover:shadow transition-shadow group"
+    class="bg-bg rounded-lg border border-border shadow-sm hover:shadow transition-shadow group cursor-grab active:cursor-grabbing"
     :class="{ 'opacity-60': card.checked }"
+    :data-card-id="card.id"
   >
     <!-- Video Thumbnail -->
     <div

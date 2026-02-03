@@ -1,14 +1,24 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { createServer } from 'node:http';
 import { createYoga } from 'graphql-yoga';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { resolvers } from './resolvers/index.js';
 import { createContext } from './lib/context.js';
 
+// Absolute dir of *current file* (src in dev, dist in prod)
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Load .env "near index" (src/.env in dev, dist/.env in prod),
+// fallback to project root ../.env (handy for deploys)
+const envNearIndex = join(__dirname, '.env');
+const envProjectRoot = join(__dirname, '..', '.env');
+
+dotenv.config({
+  path: existsSync(envNearIndex) ? envNearIndex : envProjectRoot,
+});
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:5173';
 
@@ -102,12 +112,13 @@ const server = createServer(async (req, res) => {
         let cookieStr = `${name}=${cookie.value}`;
         const attrs = cookie.attributes;
 
-        if (attrs.path) cookieStr += `; Path=${attrs.path}`;
-        if (attrs.maxAge) cookieStr += `; Max-Age=${attrs.maxAge}`;
-        if (attrs.expires) cookieStr += `; Expires=${(attrs.expires as Date).toUTCString()}`;
-        if (attrs.httpOnly) cookieStr += '; HttpOnly';
-        if (attrs.secure) cookieStr += '; Secure';
-        if (attrs.sameSite) cookieStr += `; SameSite=${attrs.sameSite}`;
+        if ((attrs as any).path) cookieStr += `; Path=${(attrs as any).path}`;
+        if ((attrs as any).maxAge) cookieStr += `; Max-Age=${(attrs as any).maxAge}`;
+        if ((attrs as any).expires)
+          cookieStr += `; Expires=${((attrs as any).expires as Date).toUTCString()}`;
+        if ((attrs as any).httpOnly) cookieStr += '; HttpOnly';
+        if ((attrs as any).secure) cookieStr += '; Secure';
+        if ((attrs as any).sameSite) cookieStr += `; SameSite=${(attrs as any).sameSite}`;
 
         setCookieHeaders.push(cookieStr);
       }
@@ -140,8 +151,9 @@ const server = createServer(async (req, res) => {
   res.end();
 });
 
-const PORT = process.env.PORT ?? 4000;
+const PORT = Number(process.env.PORT ?? 4000);
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}/graphql`);
+  console.log(`🚀 Server running on port ${PORT} (GraphQL at /graphql)`);
+  console.log(`dotenv: using ${existsSync(envNearIndex) ? envNearIndex : envProjectRoot}`);
 });

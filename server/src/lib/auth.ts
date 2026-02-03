@@ -81,6 +81,8 @@ export async function invalidateSession(token: string): Promise<void> {
 // Cookie helpers
 export const SESSION_COOKIE_NAME = 'dayflow_session';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 export function createSessionCookie(
   token: string,
   expiresAt: Date
@@ -94,8 +96,8 @@ export function createSessionCookie(
     value: token,
     attributes: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
       path: '/',
       expires: expiresAt,
     },
@@ -112,8 +114,8 @@ export function createBlankSessionCookie(): {
     value: '',
     attributes: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'None' : 'Lax',
       path: '/',
       maxAge: 0,
     },

@@ -18,14 +18,22 @@ dotenv.config({ path: join(envDir, '.env') });
 const defaults = {
   DATABASE_URL: 'mysql://dayflow:dayflow@localhost:3306/dayflow',
   SESSION_SECRET: 'dev-secret-local-only',
-  CORS_ORIGIN: 'http://localhost:5173',
+  CORS_ORIGINS: 'http://localhost:5173',
   PORT: '4000',
 } as const;
 for (const [key, value] of Object.entries(defaults)) {
   if (!process.env[key]) process.env[key] = value;
 }
 
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? defaults.CORS_ORIGIN;
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? defaults.CORS_ORIGINS)
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function getCorsOrigin(reqOrigin: string | null): string | null {
+  if (!reqOrigin) return null;
+  return ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : null;
+}
 
 // Read GraphQL schema
 const typeDefs = readFileSync(join(__dirname, 'schema', 'schema.graphql'), 'utf-8');
@@ -91,18 +99,18 @@ const yoga = createYoga({
       },
     };
   },
-  cors: {
-    origin: CORS_ORIGIN,
-    credentials: true,
-  },
+  cors: false, // CORS обрабатываем вручную в createServer (whitelist по Origin)
 });
 
 // Create HTTP server
 const server = createServer(async (req, res) => {
-  // Handle CORS preflight
+  const reqOrigin = (req.headers.origin as string) ?? null;
+  const origin = getCorsOrigin(reqOrigin);
+
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': CORS_ORIGIN,
+      ...(origin ? { 'Access-Control-Allow-Origin': origin } : {}),
+      Vary: 'Origin',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',
@@ -128,7 +136,6 @@ const server = createServer(async (req, res) => {
         : undefined,
   });
 
-  // Process request through Yoga (логирование — в плагине onExecute)
   const response = await yoga.fetch(request, { req, res });
 
   // Get cookies set during request
@@ -138,8 +145,11 @@ const server = createServer(async (req, res) => {
   if (cookies) {
     for (const [name, cookie] of cookies) {
       if (cookie === null) {
-        // Delete cookie
-        setCookieHeaders.push(`${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
+        const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
+        const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+        setCookieHeaders.push(
+          `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=${sameSite}${secure}`
+        );
       } else {
         // Set cookie
         let cookieStr = `${name}=${cookie.value}`;
@@ -159,10 +169,10 @@ const server = createServer(async (req, res) => {
     requestCookies.delete(request);
   }
 
-  // Set response headers
   const headers: Record<string, string | string[]> = {
     ...Object.fromEntries(response.headers.entries()),
-    'Access-Control-Allow-Origin': CORS_ORIGIN,
+    ...(origin ? { 'Access-Control-Allow-Origin': origin } : {}),
+    Vary: 'Origin',
     'Access-Control-Allow-Credentials': 'true',
   };
 

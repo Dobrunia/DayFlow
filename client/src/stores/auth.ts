@@ -37,11 +37,17 @@ export const useAuthStore = defineStore('auth', () => {
         variables: { email, password },
       });
 
-      user.value = data.signIn.user;
-      return true;
+      const userFromResponse = data?.signIn?.user;
+      if (userFromResponse) {
+        user.value = userFromResponse;
+        return true;
+      }
+      error.value = 'Ошибка входа';
+      return false;
     } catch (e: unknown) {
-      const err = e as Error;
-      error.value = err.message || 'Ошибка входа';
+      const err = e as Error & { graphQLErrors?: Array<{ message?: string }> };
+      const msg = err.graphQLErrors?.[0]?.message || err.message || 'Ошибка входа';
+      error.value = msg;
       return false;
     } finally {
       loading.value = false;
@@ -58,11 +64,17 @@ export const useAuthStore = defineStore('auth', () => {
         variables: { email, password },
       });
 
-      user.value = data.signUp.user;
-      return true;
+      const userFromResponse = data?.signUp?.user;
+      if (userFromResponse) {
+        user.value = userFromResponse;
+        return true;
+      }
+      error.value = 'Ошибка регистрации';
+      return false;
     } catch (e: unknown) {
-      const err = e as Error;
-      error.value = err.message || 'Ошибка регистрации';
+      const err = e as Error & { graphQLErrors?: Array<{ message?: string }> };
+      const msg = err.graphQLErrors?.[0]?.message || err.message || 'Ошибка регистрации';
+      error.value = msg;
       return false;
     } finally {
       loading.value = false;

@@ -1,44 +1,88 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
-import type { Card } from '@/graphql/types';
+import type { Card, Item, ChecklistItem } from '@/graphql/types';
 import AddCardDialog from './AddCardDialog.vue';
+import AddItemDialog from '@/components/library/AddItemDialog.vue';
+import { useLibraryStore } from '@/stores/library';
 import { extractYouTubeId, getYouTubeThumbnail } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 
-const props = defineProps<{
-  card: Card;
-  columnId: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    card?: Card;
+    columnId?: string;
+    /** Режим беклога: элемент без колонки, тот же вид что и карточка */
+    item?: Item;
+  }>(),
+  { columnId: '' }
+);
 
 const workspaceStore = useWorkspaceStore();
+const libraryStore = useLibraryStore();
 const showEditDialog = ref(false);
+const showItemEditDialog = ref(false);
 const expandedNote = ref(false);
 
+const isBacklog = computed(() => !!props.item);
+
+const itemTypeToCardType = (type: string): 'VIDEO' | 'NOTE' | 'CHECKLIST' => {
+  const map: Record<string, 'VIDEO' | 'NOTE' | 'CHECKLIST'> = {
+    VIDEO: 'VIDEO',
+    NOTE: 'NOTE',
+    LINK: 'NOTE',
+    REPO: 'NOTE',
+    TASK: 'CHECKLIST',
+  };
+  return map[type] ?? 'NOTE';
+};
+
+/** Единый объект для отображения: либо card, либо card-форма из item */
+const display = computed(() => {
+  if (props.card) return props.card;
+  const it = props.item!;
+  let checklistItems: ChecklistItem[] = [];
+  if (it.type === 'TASK' && it.meta) {
+    try {
+      const meta = JSON.parse(it.meta) as { checklistItems?: ChecklistItem[] };
+      checklistItems = meta?.checklistItems ?? [];
+    } catch {
+      /* noop */
+    }
+  }
+  return {
+    id: it.id,
+    title: it.title,
+    cardType: itemTypeToCardType(it.type),
+    checked: it.done,
+    videoUrl: it.type === 'VIDEO' ? it.url : null,
+    noteContent: it.type === 'NOTE' ? it.content : null,
+    checklistItems,
+  };
+});
+
 function openEdit() {
-  showEditDialog.value = true;
+  if (isBacklog.value) showItemEditDialog.value = true;
+  else showEditDialog.value = true;
 }
 
 const youtubeId = computed(() => {
-  if (props.card.cardType === 'VIDEO' && props.card.videoUrl) {
-    return extractYouTubeId(props.card.videoUrl);
+  if (display.value.cardType === 'VIDEO' && display.value.videoUrl) {
+    return extractYouTubeId(display.value.videoUrl);
   }
   return null;
 });
 
 const thumbnail = computed(() => {
-  if (youtubeId.value) {
-    return getYouTubeThumbnail(youtubeId.value);
-  }
-  return props.card.videoPreview;
+  if (youtubeId.value) return getYouTubeThumbnail(youtubeId.value);
+  return props.card?.videoPreview ?? null;
 });
 
 const completedChecklist = computed(() => {
-  if (!props.card.checklistItems || !Array.isArray(props.card.checklistItems)) {
-    return { done: 0, total: 0 };
-  }
-  const total = props.card.checklistItems.length;
-  const done = props.card.checklistItems.filter((i) => i.checked).length;
+  const list = display.value.checklistItems;
+  if (!list || !Array.isArray(list)) return { done: 0, total: 0 };
+  const total = list.length;
+  const done = list.filter((i) => i.checked).length;
   return { done, total };
 });
 
@@ -48,19 +92,18 @@ const progressPercent = computed(() => {
 });
 
 async function toggleChecked() {
+  if (isBacklog.value) return;
   try {
-    await workspaceStore.toggleCardChecked(props.card.id);
+    await workspaceStore.toggleCardChecked(props.card!.id);
   } catch {
     toast.error('Ошибка обновления');
   }
 }
 
 async function toggleChecklistItem(index: number) {
-  if (!props.card.checklistItems) return;
-
+  if (isBacklog.value || !props.card?.checklistItems) return;
   const items = [...props.card.checklistItems];
   items[index] = { ...items[index], checked: !items[index].checked };
-
   try {
     await workspaceStore.updateCard(props.card.id, { checklistItems: items });
   } catch {
@@ -69,35 +112,47 @@ async function toggleChecklistItem(index: number) {
 }
 
 async function deleteCard() {
+  if (isBacklog.value) {
+    if (!confirm('Удалить из воркспейса?')) return;
+    try {
+      await libraryStore.deleteItem(props.item!.id);
+      if (workspaceStore.currentWorkspace) {
+        await workspaceStore.fetchWorkspace(workspaceStore.currentWorkspace.id);
+      }
+    } catch {
+      toast.error('Ошибка удаления');
+    }
+    return;
+  }
   if (!confirm('Удалить карточку?')) return;
-
   try {
-    await workspaceStore.deleteCard(props.card.id);
+    await workspaceStore.deleteCard(props.card!.id);
   } catch {
     toast.error('Ошибка удаления');
   }
 }
 
 function openVideo() {
-  if (props.card.videoUrl) {
-    window.open(props.card.videoUrl, '_blank');
-  }
+  const url =
+    display.value.cardType === 'VIDEO' && display.value.videoUrl ? display.value.videoUrl : null;
+  if (url) window.open(url, '_blank');
 }
 </script>
 
 <template>
   <div
     class="bg-bg rounded-lg border border-border shadow-sm hover:shadow transition-shadow group cursor-grab active:cursor-grabbing"
-    :class="{ 'opacity-60': card.checked }"
-    :data-card-id="card.id"
+    :class="{ 'opacity-60': display.checked }"
+    :data-card-id="isBacklog ? undefined : card?.id"
+    :data-item-id="isBacklog ? item?.id : undefined"
   >
     <!-- Video Thumbnail -->
     <div
-      v-if="card.cardType === 'VIDEO' && thumbnail"
+      v-if="display.cardType === 'VIDEO' && thumbnail"
       class="relative aspect-video bg-muted rounded-t-lg overflow-hidden cursor-pointer"
       @click="openVideo"
     >
-      <img :src="thumbnail" :alt="card.title" class="w-full h-full object-cover" />
+      <img :src="thumbnail" :alt="display.title" class="w-full h-full object-cover" />
       <div
         class="absolute inset-0 flex-center bg-overlay opacity-0 hover:opacity-100 transition-opacity"
       >
@@ -110,11 +165,12 @@ function openVideo() {
       <div class="flex items-start gap-2">
         <button
           type="button"
+          :disabled="isBacklog"
           @click="toggleChecked"
           class="mt-0.5 checkbox-btn checkbox-btn-sm checkbox-btn-square"
-          :class="card.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+          :class="display.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
         >
-          <span v-if="card.checked" class="i-lucide-check text-xs" />
+          <span v-if="display.checked" class="i-lucide-check text-xs" />
         </button>
 
         <!-- Title -->
@@ -122,9 +178,9 @@ function openVideo() {
           <p
             @dblclick="openEdit"
             class="text-sm font-medium text-fg cursor-text"
-            :class="{ 'line-through': card.checked }"
+            :class="{ 'line-through': display.checked }"
           >
-            {{ card.title }}
+            {{ display.title }}
           </p>
         </div>
 
@@ -144,12 +200,12 @@ function openVideo() {
       </div>
 
       <!-- Note Content -->
-      <div v-if="card.cardType === 'NOTE' && card.noteContent" class="mt-2">
+      <div v-if="display.cardType === 'NOTE' && display.noteContent" class="mt-2">
         <p class="text-xs text-fg-muted" :class="expandedNote ? '' : 'line-clamp-3'">
-          {{ card.noteContent }}
+          {{ display.noteContent }}
         </p>
         <button
-          v-if="card.noteContent.length > 100"
+          v-if="display.noteContent.length > 100"
           @click="expandedNote = !expandedNote"
           class="text-xs link-primary mt-1"
         >
@@ -157,39 +213,46 @@ function openVideo() {
         </button>
       </div>
 
-      <!-- Checklist Items -->
-      <div v-if="card.cardType === 'CHECKLIST' && card.checklistItems" class="mt-2 space-y-1">
+      <!-- Checklist Items (в беклоге только отображение, без toggle) -->
+      <div v-if="display.cardType === 'CHECKLIST' && display.checklistItems" class="mt-2 space-y-1">
         <div
-          v-for="(item, index) in card.checklistItems.slice(0, expandedNote ? undefined : 3)"
-          :key="item.id"
+          v-for="(sub, index) in display.checklistItems.slice(0, expandedNote ? undefined : 3)"
+          :key="sub.id"
           class="flex items-center gap-2"
         >
           <button
+            v-if="!isBacklog"
             type="button"
             @click="toggleChecklistItem(index)"
             class="checkbox-btn checkbox-btn-xs checkbox-btn-square"
-            :class="item.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+            :class="sub.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
           >
-            <span v-if="item.checked" class="i-lucide-check text-[10px]" />
+            <span v-if="sub.checked" class="i-lucide-check text-[10px]" />
           </button>
+          <div
+            v-else
+            class="checkbox-btn checkbox-btn-xs checkbox-btn-square flex-shrink-0"
+            :class="sub.checked ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+          >
+            <span v-if="sub.checked" class="i-lucide-check text-[10px]" />
+          </div>
           <span
             class="text-xs text-fg-muted"
-            :class="{ 'line-through text-fg-muted opacity-70': item.checked }"
+            :class="{ 'line-through text-fg-muted opacity-70': sub.checked }"
           >
-            {{ item.text }}
+            {{ sub.text }}
           </span>
         </div>
 
         <button
-          v-if="card.checklistItems.length > 3"
+          v-if="display.checklistItems.length > 3"
           type="button"
           @click="expandedNote = !expandedNote"
           class="btn-add-dashed mt-2"
         >
-          {{ expandedNote ? 'Свернуть' : `Ещё ${card.checklistItems.length - 3}` }}
+          {{ expandedNote ? 'Свернуть' : `Ещё ${display.checklistItems.length - 3}` }}
         </button>
 
-        <!-- Progress: скрыт при 0 пунктов (иначе 0/0 → NaN% и зелёный прямоугольник) -->
         <div v-if="completedChecklist.total > 0" class="flex items-center gap-2 mt-2">
           <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden min-w-0">
             <div
@@ -205,15 +268,15 @@ function openVideo() {
 
       <!-- Type Badge -->
       <div class="flex items-center gap-2 mt-2">
-        <span v-if="card.cardType === 'VIDEO'" class="card-type-badge">
+        <span v-if="display.cardType === 'VIDEO'" class="card-type-badge">
           <span class="i-lucide-video text-xs" />
           Видео
         </span>
-        <span v-else-if="card.cardType === 'NOTE'" class="card-type-badge">
+        <span v-else-if="display.cardType === 'NOTE'" class="card-type-badge">
           <span class="i-lucide-file-text text-xs" />
           Заметка
         </span>
-        <span v-else-if="card.cardType === 'CHECKLIST'" class="card-type-badge">
+        <span v-else-if="display.cardType === 'CHECKLIST'" class="card-type-badge">
           <span class="i-lucide-check-square text-xs" />
           Чеклист
         </span>
@@ -221,10 +284,21 @@ function openVideo() {
     </div>
 
     <AddCardDialog
+      v-if="card"
       :open="showEditDialog"
-      :column-id="columnId"
+      :column-id="columnId!"
       :card="card"
       @close="showEditDialog = false"
+    />
+    <AddItemDialog
+      v-if="item"
+      :open="showItemEditDialog"
+      :item="item"
+      @close="
+        showItemEditDialog = false;
+        if (workspaceStore.currentWorkspace)
+          workspaceStore.fetchWorkspace(workspaceStore.currentWorkspace.id);
+      "
     />
   </div>
 </template>

@@ -15,6 +15,7 @@ import {
   DELETE_CARD_MUTATION,
   TOGGLE_CARD_CHECKED_MUTATION,
   MOVE_CARD_MUTATION,
+  ADD_ITEM_TO_COLUMN_MUTATION,
 } from '@/graphql/mutations';
 import type {
   Workspace,
@@ -307,11 +308,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { id },
       });
 
-      if (currentWorkspace.value?.columns) {
-        const columns = currentWorkspace.value.columns.map((col) =>
-          col.cards ? { ...col, cards: col.cards.filter((c) => c.id !== id) } : col
-        );
-        currentWorkspace.value = { ...currentWorkspace.value, columns };
+      if (currentWorkspace.value) {
+        await fetchWorkspace(currentWorkspace.value.id);
       }
     } catch (e: unknown) {
       const err = e as Error;
@@ -358,7 +356,25 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { id, columnId, order },
       });
 
-      // Refetch workspace to get updated card positions
+      if (currentWorkspace.value) {
+        await fetchWorkspace(currentWorkspace.value.id);
+      }
+    } catch (e: unknown) {
+      const err = e as Error;
+      error.value = err.message;
+      throw e;
+    }
+  }
+
+  async function addItemToColumn(itemId: string, columnId: string) {
+    try {
+      error.value = null;
+
+      await apolloClient.mutate({
+        mutation: ADD_ITEM_TO_COLUMN_MUTATION,
+        variables: { itemId, columnId },
+      });
+
       if (currentWorkspace.value) {
         await fetchWorkspace(currentWorkspace.value.id);
       }
@@ -392,6 +408,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     deleteCard,
     toggleCardChecked,
     moveCard,
+    addItemToColumn,
     clearCurrentWorkspace,
   };
 });

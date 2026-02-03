@@ -104,6 +104,7 @@ export const CREATE_ITEM_MUTATION = gql`
       url
       content
       done
+      meta
       createdAt
     }
   }
@@ -119,6 +120,7 @@ export const UPDATE_ITEM_MUTATION = gql`
       content
       status
       done
+      meta
       createdAt
       updatedAt
     }
@@ -191,6 +193,30 @@ export const MOVE_CARD_MUTATION = gql`
       order
       column {
         id
+      }
+    }
+  }
+`;
+
+export const ADD_ITEM_TO_COLUMN_MUTATION = gql`
+  mutation AddItemToColumn($itemId: ID!, $columnId: ID!) {
+    addItemToColumn(itemId: $itemId, columnId: $columnId) {
+      id
+      title
+      cardType
+      order
+      column {
+        id
+      }
+      item {
+        id
+      }
+      videoUrl
+      noteContent
+      checklistItems {
+        id
+        text
+        checked
       }
     }
   }

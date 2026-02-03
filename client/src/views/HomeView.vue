@@ -84,8 +84,13 @@ function navigateToWorkspace(id: string) {
           v-for="workspace in workspaceStore.workspaces"
           :key="workspace.id"
           @click="navigateToWorkspace(workspace.id)"
-          class="workspace-card"
+          class="workspace-card group"
         >
+          <div
+            class="w-10 h-10 rounded-xl bg-primary/12 flex-center mb-3 group-hover:bg-primary/20 transition-colors"
+          >
+            <span class="i-lucide-layout-grid text-lg text-primary" />
+          </div>
           <h3 class="font-semibold text-fg mb-1.5 truncate text-base">{{ workspace.title }}</h3>
           <p v-if="workspace.description" class="text-sm text-fg-muted line-clamp-2 mb-3">
             {{ workspace.description }}
@@ -96,9 +101,17 @@ function navigateToWorkspace(id: string) {
         </button>
 
         <!-- Create New -->
-        <button @click="$router.push('/workspace/new')" class="workspace-card-new">
-          <span class="i-lucide-plus text-3xl text-fg-muted" />
-          <span class="text-sm font-medium text-fg-muted">Новый воркспейс</span>
+        <button @click="$router.push('/workspace/new')" class="workspace-card-new group">
+          <span
+            class="w-10 h-10 rounded-xl bg-muted flex-center mb-1 group-hover:bg-primary/15 transition-colors"
+          >
+            <span
+              class="i-lucide-plus text-xl text-fg-muted group-hover:text-primary transition-colors"
+            />
+          </span>
+          <span class="text-sm font-medium text-fg-muted group-hover:text-fg transition-colors"
+            >Новый воркспейс</span
+          >
         </button>
       </div>
 

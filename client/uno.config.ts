@@ -28,9 +28,9 @@ export default defineConfig({
     card: 'bg-bg border border-border rounded-2xl p-4',
     'card-hover': 'card hover:bg-muted/50 transition-colors duration-200',
     'workspace-card':
-      'block w-full text-left rounded-2xl p-5 border border-border bg-bg hover:bg-muted/50 hover:border-border-hover transition-all duration-200',
+      'block w-full text-left rounded-2xl p-5 border border-border bg-muted/60 hover:bg-muted hover:border-border-hover transition-all duration-200 shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)]',
     'workspace-card-new':
-      'flex-shrink-0 rounded-2xl border-2 border-dashed border-border bg-transparent hover:border-primary hover:bg-primary/5 transition-all duration-200 flex-center flex-col gap-3 min-h-[140px]',
+      'flex-shrink-0 rounded-2xl border-2 border-dashed border-border bg-muted/20 hover:border-primary/60 hover:bg-primary/8 transition-all duration-200 flex-center flex-col gap-3 min-h-[140px]',
     btn: 'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none outline-none',
     'btn-primary': 'btn bg-primary text-on-primary hover:opacity-90',
     'btn-secondary': 'btn bg-muted text-fg hover:bg-muted-hover',

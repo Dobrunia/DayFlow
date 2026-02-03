@@ -7,6 +7,7 @@ export interface CreateItemInput {
   url?: string;
   content?: string;
   workspaceId?: string;
+  meta?: string;
 }
 
 export interface UpdateItemInput {
@@ -15,6 +16,7 @@ export interface UpdateItemInput {
   content?: string;
   status?: string;
   done?: boolean;
+  meta?: string;
 }
 
 export interface LibraryFilter {
@@ -106,6 +108,11 @@ export const itemResolvers = {
         }
       }
 
+      const meta =
+        input.meta != null && input.meta !== ''
+          ? (JSON.parse(input.meta) as Record<string, unknown>)
+          : undefined;
+
       return context.prisma.item.create({
         data: {
           title: input.title,
@@ -114,6 +121,7 @@ export const itemResolvers = {
           content: input.content,
           workspaceId: input.workspaceId,
           userId: context.user.id,
+          ...(meta !== undefined && { meta }),
         },
       });
     },
@@ -141,6 +149,12 @@ export const itemResolvers = {
       if (input.content !== undefined) data.content = input.content;
       if (input.status !== undefined) data.status = input.status;
       if (input.done !== undefined) data.done = input.done;
+      if (input.meta !== undefined) {
+        data.meta =
+          input.meta === '' || input.meta == null
+            ? null
+            : (JSON.parse(input.meta) as Record<string, unknown>);
+      }
 
       return context.prisma.item.update({
         where: { id },

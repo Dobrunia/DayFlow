@@ -130,5 +130,17 @@ export const workspaceResolvers = {
     items: async (parent: { id: string }, _: unknown, context: Context) => {
       return context.loaders.itemsByWorkspaceId.load(parent.id);
     },
+
+    backlogItems: async (parent: { id: string }, _: unknown, context: Context) => {
+      if (!context.user) return [];
+      return context.prisma.item.findMany({
+        where: {
+          workspaceId: parent.id,
+          userId: context.user.id,
+          card: null,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   },
 };

@@ -17,6 +17,15 @@ const showCreateDialog = ref(false);
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
 const columns = computed(() => workspace.value?.columns ?? []);
+const backlogItems = computed(() => workspace.value?.backlogItems ?? []);
+
+const backlogColumn = computed(() => ({
+  id: 'backlog',
+  title: 'Беклог',
+  order: -1,
+  cards: [] as never[],
+}));
+
 const loading = computed(() => workspaceStore.loading);
 
 // Check if creating new workspace
@@ -153,9 +162,16 @@ function handleDialogClose() {
         </p>
       </div>
 
-      <!-- Columns -->
+      <!-- Backlog + Columns -->
       <div class="flex-1 overflow-x-auto overflow-y-hidden">
         <div class="h-full flex gap-4 p-6" style="min-width: max-content">
+          <WorkspaceColumn
+            v-if="backlogItems.length > 0"
+            :column="backlogColumn"
+            :workspace-id="workspace.id"
+            :backlog-items="backlogItems"
+          />
+
           <WorkspaceColumn
             v-for="column in columns"
             :key="column.id"

@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { useLibraryStore } from '@/stores/library';
 import { useWorkspaceStore } from '@/stores/workspace';
-import type { ItemType } from '@/graphql/types';
+import type { ItemType, ChecklistItem, CreateItemInput, UpdateItemInput } from '@/graphql/types';
 import { toast } from 'vue-sonner';
 import {
   DialogRoot,
@@ -44,6 +44,7 @@ const title = ref('');
 const type = ref<ItemType>('LINK');
 const url = ref('');
 const content = ref('');
+const checklistItems = ref<ChecklistItem[]>([{ id: '1', text: '', checked: false }]);
 const NO_WORKSPACE = '__none__';
 const workspaceId = ref<string>(NO_WORKSPACE);
 const loading = ref(false);
@@ -60,8 +61,15 @@ const types: { value: ItemType; label: string; icon: string }[] = [
 
 const workspaces = computed(() => workspaceStore.workspaces);
 
+const selectedWorkspaceLabel = computed(() => {
+  if (workspaceId.value === NO_WORKSPACE) return 'Библиотека (без воркспейса)';
+  const ws = workspaces.value.find((w) => w.id === workspaceId.value);
+  return ws?.title ?? workspaceId.value;
+});
+
 const showUrlField = computed(() => ['LINK', 'VIDEO', 'REPO'].includes(type.value));
 const showContentField = computed(() => type.value === 'NOTE');
+const showChecklistField = computed(() => type.value === 'TASK');
 
 watch(
   () => [props.open, props.item] as const,
@@ -73,11 +81,26 @@ watch(
         url.value = item.url ?? '';
         content.value = item.content ?? '';
         workspaceId.value = item.workspace?.id ?? NO_WORKSPACE;
+        if (item.type === 'TASK' && item.meta) {
+          try {
+            const meta = JSON.parse(item.meta) as { checklistItems?: ChecklistItem[] };
+            const list = meta?.checklistItems;
+            checklistItems.value =
+              Array.isArray(list) && list.length > 0
+                ? list.map((i) => ({ id: i.id, text: i.text, checked: i.checked }))
+                : [{ id: '1', text: '', checked: false }];
+          } catch {
+            checklistItems.value = [{ id: '1', text: '', checked: false }];
+          }
+        } else {
+          checklistItems.value = [{ id: '1', text: '', checked: false }];
+        }
       } else {
         title.value = '';
         type.value = 'LINK';
         url.value = '';
         content.value = '';
+        checklistItems.value = [{ id: '1', text: '', checked: false }];
         workspaceId.value = NO_WORKSPACE;
       }
 
@@ -88,6 +111,20 @@ watch(
   }
 );
 
+function addChecklistItem() {
+  checklistItems.value.push({
+    id: String(Date.now()),
+    text: '',
+    checked: false,
+  });
+}
+
+function removeChecklistItem(index: number) {
+  if (checklistItems.value.length > 1) {
+    checklistItems.value = checklistItems.value.filter((_, i) => i !== index);
+  }
+}
+
 async function handleSubmit() {
   if (!title.value.trim()) {
     toast.error('Введите название');
@@ -97,23 +134,37 @@ async function handleSubmit() {
   try {
     loading.value = true;
 
-    const payload = {
+    const payload: CreateItemInput = {
       title: title.value.trim(),
       type: type.value,
       url: showUrlField.value ? url.value.trim() || undefined : undefined,
       content: showContentField.value ? content.value.trim() || undefined : undefined,
       workspaceId: workspaceId.value === NO_WORKSPACE ? undefined : workspaceId.value,
     };
+    if (type.value === 'TASK') {
+      payload.meta = JSON.stringify({
+        checklistItems: checklistItems.value.filter((i) => i.text.trim()),
+      });
+    }
 
     if (props.item) {
-      await libraryStore.updateItem(props.item.id, {
+      const updatePayload: UpdateItemInput = {
         title: payload.title,
         url: payload.url,
         content: payload.content,
-      });
+      };
+      if (type.value === 'TASK') updatePayload.meta = payload.meta;
+      await libraryStore.updateItem(props.item.id, updatePayload);
       toast.success('Сохранено!');
     } else {
-      await libraryStore.createItem(payload);
+      await libraryStore.createItem({
+        title: payload.title,
+        type: payload.type,
+        url: payload.url,
+        content: payload.content,
+        workspaceId: payload.workspaceId,
+        meta: payload.meta,
+      });
       toast.success('Добавлено!');
     }
     emit('close');
@@ -183,7 +234,7 @@ async function handleSubmit() {
             </div>
           </div>
 
-          <!-- URL / Content: фиксированная высота блока — при смене типа вёрстка не дёргается -->
+          <!-- URL / Content / Подзадачи -->
           <div class="min-h-[7.5rem]">
             <div v-if="showUrlField">
               <label for="item-url" class="form-label">URL</label>
@@ -204,14 +255,49 @@ async function handleSubmit() {
                 placeholder="Текст заметки..."
               />
             </div>
+            <div v-else-if="showChecklistField">
+              <label class="form-label mb-2">Подзадачи</label>
+              <div class="space-y-2">
+                <div
+                  v-for="(sub, index) in checklistItems"
+                  :key="sub.id"
+                  class="flex items-center gap-2"
+                >
+                  <input
+                    v-model="sub.text"
+                    type="text"
+                    class="input flex-1"
+                    placeholder="Пункт списка"
+                  />
+                  <button
+                    v-if="checklistItems.length > 1"
+                    type="button"
+                    @click="removeChecklistItem(index)"
+                    class="btn-icon p-1.5 text-fg-muted hover:text-danger"
+                  >
+                    <span class="i-lucide-x" />
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click="addChecklistItem"
+                class="mt-2 text-sm link-primary flex items-center gap-1"
+              >
+                <span class="i-lucide-plus" />
+                Добавить подзадачу
+              </button>
+            </div>
           </div>
 
           <!-- Workspace (optional) -->
           <div>
             <label for="item-workspace" class="form-label"> Воркспейс </label>
             <SelectRoot v-model="workspaceId">
-              <SelectTrigger id="item-workspace" class="input flex-between min-h-[38px]">
-                <SelectValue placeholder="Библиотека (без воркспейса)" />
+              <SelectTrigger id="item-workspace" class="input flex-between min-h-[38px] text-fg">
+                <span class="truncate text-left flex-1 min-w-0">{{ selectedWorkspaceLabel }}</span>
+                <SelectValue placeholder="Библиотека (без воркспейса)" class="sr-only" />
+                <span class="i-lucide-chevron-down text-fg-muted shrink-0 ml-1" />
               </SelectTrigger>
               <SelectPortal>
                 <SelectContent

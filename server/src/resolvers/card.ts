@@ -45,6 +45,17 @@ function cardTypeToItemType(cardType: CardType): ItemType {
   return map[cardType];
 }
 
+function itemTypeToCardType(itemType: ItemType): CardType {
+  const map: Record<ItemType, CardType> = {
+    note: 'note',
+    link: 'note',
+    video: 'video',
+    repo: 'note',
+    task: 'checklist',
+  };
+  return map[itemType] ?? 'note';
+}
+
 export const cardResolvers = {
   Mutation: {
     createCard: async (
@@ -165,6 +176,63 @@ export const cardResolvers = {
       });
 
       return true;
+    },
+
+    addItemToColumn: async (
+      _: unknown,
+      { itemId, columnId }: { itemId: string; columnId: string },
+      context: Context
+    ) => {
+      if (!context.user) {
+        throw new Error('Not authenticated');
+      }
+
+      const item = await context.prisma.item.findUnique({
+        where: { id: itemId },
+        include: { card: true },
+      });
+
+      if (!item || item.userId !== context.user.id || !item.workspaceId || item.card !== null) {
+        throw new Error('Item not found or already in a column');
+      }
+
+      const column = await context.prisma.column.findUnique({
+        where: { id: columnId },
+        include: { workspace: true },
+      });
+
+      if (
+        !column ||
+        column.workspace.ownerId !== context.user.id ||
+        column.workspaceId !== item.workspaceId
+      ) {
+        throw new Error('Column not found');
+      }
+
+      const maxOrder = await context.prisma.card.aggregate({
+        where: { columnId },
+        _max: { order: true },
+      });
+      const newOrder = (maxOrder._max.order ?? -1) + 1;
+
+      const cardType = itemTypeToCardType(item.type);
+      const meta = item.meta as {
+        checklistItems?: { id: string; text: string; checked: boolean }[];
+      } | null;
+      const checklistItems = (item.type === 'task' && meta?.checklistItems) || [];
+
+      return context.prisma.card.create({
+        data: {
+          title: item.title,
+          cardType,
+          order: newOrder,
+          columnId,
+          itemId: item.id,
+          videoUrl: item.type === 'video' ? item.url : null,
+          noteContent: item.type === 'note' ? item.content : null,
+          checklistItems: checklistItems as unknown as Prisma.InputJsonValue,
+        },
+      });
     },
 
     toggleCardChecked: async (_: unknown, { id }: { id: string }, context: Context) => {

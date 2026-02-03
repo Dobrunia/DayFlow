@@ -11,6 +11,7 @@ export interface Workspace {
   createdAt: string;
   updatedAt: string;
   columns?: Column[];
+  backlogItems?: Item[];
 }
 
 export interface Column {
@@ -30,6 +31,7 @@ export interface Item {
   content?: string | null;
   status?: string | null;
   done: boolean;
+  meta?: string | null;
   createdAt: string;
   updatedAt: string;
   workspace?: Workspace | null;
@@ -78,6 +80,7 @@ export interface CreateItemInput {
   url?: string;
   content?: string;
   workspaceId?: string;
+  meta?: string;
 }
 
 export interface UpdateItemInput {
@@ -86,6 +89,7 @@ export interface UpdateItemInput {
   content?: string;
   status?: string;
   done?: boolean;
+  meta?: string;
 }
 
 export interface CreateCardInput {

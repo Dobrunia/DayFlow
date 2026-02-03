@@ -9,6 +9,8 @@
   --muted-hover: #dde1e4;
   --border: #eff3f4;
   --border-hover: #cfd9de;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.08);
   --primary: #1d9bf0;
   --on-primary: #ffffff;
   --success: #00ba7c;
@@ -30,6 +32,8 @@
   --success: #00ba7c;
   --danger: #f4212e;
   --overlay: rgba(0, 0, 0, 0.65);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 body {

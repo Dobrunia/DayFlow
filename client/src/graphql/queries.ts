@@ -55,6 +55,16 @@ export const WORKSPACE_QUERY = gql`
           }
         }
       }
+      backlogItems {
+        id
+        title
+        type
+        url
+        content
+        done
+        meta
+        createdAt
+      }
     }
   }
 `;
@@ -70,6 +80,7 @@ export const LIBRARY_QUERY = gql`
       content
       status
       done
+      meta
       createdAt
       updatedAt
     }

@@ -11,18 +11,10 @@ const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
 const isAuthenticated = computed(() => !!authStore.user);
-const profileTo = computed(() =>
-  authStore.user?.id
-    ? { name: 'profile' as const, params: { id: authStore.user.id } }
-    : { name: 'profile' as const }
-);
 const avatarLoadFailed = ref(false);
-watch(
-  () => authStore.user?.avatarUrl,
-  () => {
-    avatarLoadFailed.value = false;
-  }
-);
+watch(() => authStore.user?.avatarUrl, () => {
+  avatarLoadFailed.value = false;
+});
 
 function handleSignOut() {
   authStore.signOut();
@@ -61,7 +53,7 @@ function handleSignOut() {
 
           <!-- User Menu -->
           <div class="relative group">
-            <RouterLink :to="profileTo" class="btn-ghost p-2 rounded-full flex items-center">
+            <RouterLink to="/profile" class="btn-ghost p-2 rounded-full flex items-center">
               <img
                 v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
                 :src="authStore.user.avatarUrl"
@@ -83,7 +75,7 @@ function handleSignOut() {
               </div>
               <div class="p-1">
                 <RouterLink
-                  :to="profileTo"
+                  to="/profile"
                   class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
                 >
                   <span class="i-lucide-user" />

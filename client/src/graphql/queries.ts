@@ -113,3 +113,21 @@ export const CARD_QUERY = gql`
     }
   }
 `;
+
+export const USER_STATS_QUERY = gql`
+  query UserStats($userId: ID!) {
+    userStats(userId: $userId) {
+      id
+      avatarUrl
+      totalCompletedCards
+      workspaceStats {
+        id
+        title
+        description
+        icon
+        totalCards
+        completedCards
+      }
+    }
+  }
+`;

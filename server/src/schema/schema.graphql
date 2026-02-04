@@ -58,6 +58,26 @@ type AuthPayload {
   user: User!
 }
 
+"""Публичная статистика пользователя (доступна любому авторизованному)."""
+type UserStats {
+  id: ID!
+  avatarUrl: String
+  """Всего выполненных карточек (done = true)."""
+  totalCompletedCards: Int!
+  """Воркспейсы пользователя с прогрессом (без доступа к контенту)."""
+  workspaceStats: [WorkspaceStatsItem!]!
+}
+
+"""Воркспейс с агрегатами: выполнено / всего карточек."""
+type WorkspaceStatsItem {
+  id: ID!
+  title: String!
+  description: String
+  icon: String
+  totalCards: Int!
+  completedCards: Int!
+}
+
 # Inputs
 
 input CreateWorkspaceInput {
@@ -109,6 +129,8 @@ type Query {
   """Число карточек по фильтру (для пагинации)."""
   cardsCount(filter: CardFilter): Int!
   card(id: ID!): Card
+  """Публичная статистика пользователя по id (любой авторизованный может запросить)."""
+  userStats(userId: ID!): UserStats
 }
 
 # Mutations

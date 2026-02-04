@@ -81,6 +81,13 @@ function handleSignOut() {
                   <span class="i-lucide-user" />
                   Профиль
                 </RouterLink>
+                <RouterLink
+                  :to="`/user/${authStore.user?.id}`"
+                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
+                >
+                  <span class="i-lucide-bar-chart-2" />
+                  Моя статистика
+                </RouterLink>
                 <button
                   @click="handleSignOut"
                   class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"

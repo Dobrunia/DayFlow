@@ -45,10 +45,20 @@ async function save() {
           Настройки аккаунта
         </p>
       </div>
-      <RouterLink to="/" class="btn-ghost text-sm text-fg-muted hover:text-fg">
-        <span class="i-lucide-arrow-left mr-1" />
-        На главную
-      </RouterLink>
+      <div class="flex items-center gap-3">
+        <RouterLink to="/" class="btn-ghost text-sm text-fg-muted hover:text-fg">
+          <span class="i-lucide-arrow-left mr-1" />
+          На главную
+        </RouterLink>
+        <RouterLink
+          v-if="user"
+          :to="`/user/${user.id}`"
+          class="btn-ghost text-sm text-fg-muted hover:text-fg"
+        >
+          <span class="i-lucide-bar-chart-2 mr-1" />
+          Моя статистика
+        </RouterLink>
+      </div>
     </div>
 
     <div v-if="user" class="space-y-6">

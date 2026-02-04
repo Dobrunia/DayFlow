@@ -2,6 +2,7 @@ import { authResolvers } from './auth.js';
 import { workspaceResolvers } from './workspace.js';
 import { columnResolvers } from './column.js';
 import { cardResolvers } from './card.js';
+import { userStatsResolvers } from './user-stats.js';
 import { DateTimeResolver } from 'graphql-scalars';
 
 export type { CreateCardInput, UpdateCardInput, CardFilter, CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
@@ -13,6 +14,7 @@ export const resolvers = {
     ...authResolvers.Query,
     ...workspaceResolvers.Query,
     ...cardResolvers.Query,
+    ...userStatsResolvers.Query,
   },
 
   Mutation: {

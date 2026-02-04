@@ -4,8 +4,7 @@ import { columnResolvers } from './column.js';
 import { cardResolvers } from './card.js';
 import { DateTimeResolver } from 'graphql-scalars';
 
-export type { CreateCardInput, UpdateCardInput, CardFilter } from 'dayflow-shared';
-export type { CreateWorkspaceInput, UpdateWorkspaceInput } from './workspace.js';
+export type { CreateCardInput, UpdateCardInput, CardFilter, CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
 
 export const resolvers = {
   DateTime: DateTimeResolver,

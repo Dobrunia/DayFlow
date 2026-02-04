@@ -1,15 +1,6 @@
+import type { CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
 import type { Context } from '../lib/context.js';
 import { UnauthenticatedError, NotFoundError } from '../lib/errors.js';
-
-export interface CreateWorkspaceInput {
-  title: string;
-  description?: string;
-}
-
-export interface UpdateWorkspaceInput {
-  title?: string;
-  description?: string;
-}
 
 export const workspaceResolvers = {
   Query: {

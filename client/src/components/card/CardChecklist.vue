@@ -123,7 +123,7 @@ const hasMore = computed(() => items.value.length > showLimit);
       </span>
     </div>
 
-    <div v-if="editableSummary" class="mt-1.5 flex items-start gap-1">
+    <div v-if="editableSummary" class="mt-1.5 flex items-center gap-1">
       <p
         v-if="payload.summary"
         class="card-summary italic"

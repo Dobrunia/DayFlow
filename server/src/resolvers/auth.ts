@@ -6,7 +6,7 @@ import {
   createBlankSessionCookie,
 } from '../lib/auth.js';
 import type { Context } from '../lib/context.js';
-import { BadRequestError } from '../lib/errors.js';
+import { BadRequestError, UnauthenticatedError } from '../lib/errors.js';
 
 export const authResolvers = {
   Mutation: {
@@ -85,6 +85,19 @@ export const authResolvers = {
       context.setCookie(blankCookie.name, blankCookie.value, blankCookie.attributes);
 
       return true;
+    },
+
+    updateProfile: async (
+      _: unknown,
+      { avatarUrl }: { avatarUrl?: string | null },
+      context: Context
+    ) => {
+      if (!context.user) throw UnauthenticatedError();
+      const url = avatarUrl?.trim() || null;
+      return context.prisma.user.update({
+        where: { id: context.user.id },
+        data: { avatarUrl: url },
+      });
     },
   },
 

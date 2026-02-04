@@ -32,6 +32,17 @@ export const SIGN_OUT_MUTATION = gql`
   }
 `;
 
+export const UPDATE_PROFILE_MUTATION = gql`
+  mutation UpdateProfile($avatarUrl: String) {
+    updateProfile(avatarUrl: $avatarUrl) {
+      id
+      email
+      avatarUrl
+      createdAt
+    }
+  }
+`;
+
 export const CREATE_WORKSPACE_MUTATION = gql`
   mutation CreateWorkspace($input: CreateWorkspaceInput!) {
     createWorkspace(input: $input) {

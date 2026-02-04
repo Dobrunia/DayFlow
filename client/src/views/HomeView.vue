@@ -24,7 +24,7 @@ function navigateToWorkspace(id: string) {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-5 py-14">
+  <div class="page-container">
     <!-- Hero for non-authenticated users -->
     <template v-if="!isAuthenticated">
       <div class="text-center py-24">
@@ -56,9 +56,11 @@ function navigateToWorkspace(id: string) {
 
     <!-- Dashboard for authenticated users -->
     <template v-else>
-      <div class="mb-10">
-        <h1 class="page-title mb-1">Мои воркспейсы</h1>
-        <p class="text-fg-muted text-sm">Доски для тем и проектов</p>
+      <div class="page-header">
+        <div class="page-header-text">
+          <h1 class="page-title">Мои воркспейсы</h1>
+          <p class="page-desc">Доски для тем и проектов</p>
+        </div>
       </div>
 
       <!-- Loading -->
@@ -92,17 +94,11 @@ function navigateToWorkspace(id: string) {
         </button>
 
         <!-- Create New -->
-        <button @click="$router.push('/workspace/new')" class="workspace-card-new group">
-          <span
-            class="w-10 h-10 rounded-xl bg-muted flex-center mb-1 group-hover:bg-primary/15 transition-colors"
-          >
-            <span
-              class="i-lucide-plus text-xl text-fg-muted group-hover:text-primary transition-colors"
-            />
+        <button @click="$router.push('/workspace/new')" class="workspace-card-new">
+          <span class="w-10 h-10 rounded-xl bg-muted flex-center mb-1">
+            <span class="i-lucide-plus text-xl" />
           </span>
-          <span class="text-sm font-medium text-fg-muted group-hover:text-fg transition-colors"
-            >Новый воркспейс</span
-          >
+          <span class="text-sm font-medium">Новый воркспейс</span>
         </button>
       </div>
 

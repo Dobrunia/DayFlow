@@ -158,7 +158,7 @@ function handleDialogClose() {
         </div>
 
         <!-- Description -->
-        <p v-if="workspace.description" class="text-sm text-fg-muted mt-2 ml-12 cursor-default">
+        <p v-if="workspace.description" class="page-desc mt-2 ml-12">
           {{ workspace.description }}
         </p>
       </div>

@@ -69,8 +69,8 @@ export const WORKSPACE_QUERY = gql`
 `;
 
 export const CARDS_QUERY = gql`
-  query Cards($filter: CardFilter, $limit: Int, $offset: Int) {
-    cards(filter: $filter, limit: $limit, offset: $offset) {
+  query Cards($filter: CardFilter, $limit: Int, $offset: Int, $sortOrder: String) {
+    cards(filter: $filter, limit: $limit, offset: $offset, sortOrder: $sortOrder) {
       id
       createdAt
       updatedAt

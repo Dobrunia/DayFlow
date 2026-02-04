@@ -36,12 +36,26 @@ export const cardResolvers = {
   Query: {
     cards: async (
       _: unknown,
-      { filter, limit, offset }: { filter?: CardFilter; limit?: number; offset?: number },
+      {
+        filter,
+        limit,
+        offset,
+        sortOrder,
+      }: {
+        filter?: CardFilter;
+        limit?: number;
+        offset?: number;
+        sortOrder?: string;
+      },
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
       const where = buildCardsWhere(filter, context.user.id);
-      const orderBy = [{ columnId: 'asc' }, { order: 'asc' }, { createdAt: 'desc' }];
+      const createdAtOrder = sortOrder === 'createdAt_ASC' ? 'asc' : 'desc';
+      const orderBy =
+        limit != null
+          ? [{ createdAt: createdAtOrder }]
+          : [{ columnId: 'asc' }, { order: 'asc' }, { createdAt: 'desc' }];
       const take = limit != null ? Math.min(Math.max(0, limit), 100) : undefined;
       const skip = offset != null ? Math.max(0, offset) : undefined;
       return context.prisma.card.findMany({

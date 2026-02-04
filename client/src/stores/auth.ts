@@ -3,7 +3,12 @@ import { ref } from 'vue';
 import { apolloClient } from '@/lib/apollo';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import { ME_QUERY } from '@/graphql/queries';
-import { SIGN_IN_MUTATION, SIGN_UP_MUTATION, SIGN_OUT_MUTATION } from '@/graphql/mutations';
+import {
+  SIGN_IN_MUTATION,
+  SIGN_UP_MUTATION,
+  SIGN_OUT_MUTATION,
+  UPDATE_PROFILE_MUTATION,
+} from '@/graphql/mutations';
 import type { User } from '@/graphql/types';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -92,6 +97,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updateProfile(avatarUrl: string | null) {
+    try {
+      error.value = null;
+      const { data } = await apolloClient.mutate({
+        mutation: UPDATE_PROFILE_MUTATION,
+        variables: { avatarUrl: avatarUrl || null },
+      });
+      const updated = data?.updateProfile;
+      if (updated) user.value = updated;
+      return updated;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      throw e;
+    }
+  }
+
   function clearError() {
     error.value = null;
   }
@@ -105,6 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
     signIn,
     signUp,
     signOut,
+    updateProfile,
     clearError,
   };
 });

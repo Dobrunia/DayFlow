@@ -23,6 +23,14 @@ const page = computed({
 });
 
 const cardIdFromUrl = computed(() => (route.query.card as string) || null);
+const hideDone = computed({
+  get: () => route.query.hideDone === '1',
+  set: (v) => updateUrl({ hideDone: v ? '1' : undefined, page: 1 }),
+});
+const sortOldestFirst = computed({
+  get: () => route.query.sort === 'oldest',
+  set: (v) => updateUrl({ sort: v ? 'oldest' : undefined, page: 1 }),
+});
 
 const cards = computed(() => cardsStore.filteredCards);
 const loading = computed(() => cardsStore.loading);
@@ -30,15 +38,28 @@ const totalCount = computed(() => cardsStore.totalCount);
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / PAGE_SIZE)));
 const hasPagination = computed(() => totalPages.value > 1);
 
-function updateUrl(updates: { page?: number; card?: string }) {
+function updateUrl(updates: {
+  page?: number;
+  card?: string;
+  hideDone?: string;
+  sort?: string;
+}) {
   const current = { ...route.query } as Record<string, string>;
-  if (updates.page !== undefined) {
+  if ('page' in updates) {
     if (updates.page === 1) delete current.page;
-    else current.page = String(updates.page);
+    else current.page = String(updates.page!);
   }
-  if (updates.card !== undefined) {
+  if ('card' in updates) {
     if (!updates.card) delete current.card;
     else current.card = updates.card;
+  }
+  if ('hideDone' in updates) {
+    if (updates.hideDone) current.hideDone = updates.hideDone;
+    else delete current.hideDone;
+  }
+  if ('sort' in updates) {
+    if (updates.sort) current.sort = updates.sort;
+    else delete current.sort;
   }
   const query = Object.fromEntries(Object.entries(current).filter(([, v]) => v != null && v !== ''));
   router.replace({ path: route.path, query });
@@ -50,11 +71,18 @@ function goToList() {
 }
 
 async function loadList() {
-  cardsStore.setFilter({ workspaceId: null }, { skipFetch: true });
+  const hideDoneVal = route.query.hideDone === '1';
+  const sortOrder = route.query.sort === 'oldest' ? 'createdAt_ASC' : 'createdAt_DESC';
+  cardsStore.setFilter(
+    { workspaceId: null, ...(hideDoneVal && { done: false }) },
+    { skipFetch: true }
+  );
   await cardsStore.fetchCards({
     workspaceId: null,
+    ...(hideDoneVal && { done: false }),
     limit: PAGE_SIZE,
     offset: (page.value - 1) * PAGE_SIZE,
+    sortOrder,
   });
 }
 
@@ -90,7 +118,7 @@ watch(
 );
 
 watch(
-  () => route.query.page,
+  () => [route.query.page, route.query.hideDone, route.query.sort],
   () => {
     if (!cardIdFromUrl.value) loadList();
   },
@@ -109,13 +137,13 @@ function goToPage(p: number) {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-5 py-10">
-    <div class="flex-between mb-8 cursor-default">
-      <div>
-        <h1 class="page-title mb-1">
+  <div class="page-container">
+    <div class="page-header-row">
+      <div class="page-header-text">
+        <h1 class="page-title">
           Хаб
         </h1>
-        <p class="text-sm text-fg-muted">
+        <p class="page-desc">
           Карточки без воркспейса
         </p>
       </div>
@@ -148,6 +176,30 @@ function goToPage(p: number) {
 
     <!-- List view -->
     <template v-else>
+      <div class="mb-6 flex flex-wrap items-center gap-4 cursor-default">
+        <label class="flex items-center gap-2 text-sm text-fg-muted hover:text-fg cursor-pointer">
+          <button
+            type="button"
+            role="checkbox"
+            :aria-checked="hideDone"
+            class="checkbox-btn-card"
+            :class="hideDone ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+            @click.prevent="hideDone = !hideDone"
+          >
+            <span v-if="hideDone" class="i-lucide-check text-xs" />
+          </button>
+          Отключить выполненные
+        </label>
+        <button
+          type="button"
+          class="btn-ghost text-sm"
+          @click="sortOldestFirst = !sortOldestFirst"
+        >
+          {{ sortOldestFirst ? 'Сначала старые' : 'Сначала новые' }}
+          <span class="i-lucide-arrow-up-down ml-1 text-fg-muted" />
+        </button>
+      </div>
+
       <div class="min-h-[320px]">
         <div
           v-if="loading"

@@ -139,7 +139,7 @@ async function updateSummary(newSummary: string) {
         <button
           type="button"
           @click="toggleDone"
-          class="checkbox-btn checkbox-btn-sm checkbox-btn-square flex-shrink-0"
+          class="checkbox-btn-card"
           :class="card.done ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
         >
           <span v-if="card.done" class="i-lucide-check text-xs" />

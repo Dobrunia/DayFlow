@@ -31,7 +31,9 @@ export const useCardsStore = defineStore('cards', () => {
 
   const filteredCards = computed(() => cards.value);
 
-  async function fetchCards(opts?: Partial<CardFilter> & { limit?: number; offset?: number }) {
+  async function fetchCards(
+    opts?: Partial<CardFilter> & { limit?: number; offset?: number; sortOrder?: string }
+  ) {
     try {
       loading.value = true;
       error.value = null;
@@ -39,9 +41,11 @@ export const useCardsStore = defineStore('cards', () => {
       const filterVars = toFilterVars(f);
       const limit = opts?.limit;
       const offset = opts?.offset ?? 0;
+      const sortOrder = opts?.sortOrder;
       const variables = {
         filter: Object.keys(filterVars).length ? filterVars : undefined,
         ...(limit != null && { limit, offset }),
+        ...(sortOrder != null && { sortOrder }),
       };
       const cardsRes = await apolloClient.query({
         query: CARDS_QUERY,

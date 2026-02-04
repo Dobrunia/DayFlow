@@ -101,8 +101,8 @@ type Query {
   me: User
   workspace(id: ID!): Workspace
   myWorkspaces: [Workspace!]!
-  """Все карточки пользователя (хаб: workspaceId = null, или по фильтру)."""
-  cards(filter: CardFilter, limit: Int, offset: Int): [Card!]!
+  """Все карточки пользователя (хаб: workspaceId = null, или по фильтру). sortOrder: createdAt_DESC (по умолчанию) | createdAt_ASC"""
+  cards(filter: CardFilter, limit: Int, offset: Int, sortOrder: String): [Card!]!
   """Число карточек по фильтру (для пагинации)."""
   cardsCount(filter: CardFilter): Int!
   card(id: ID!): Card
@@ -115,6 +115,7 @@ type Mutation {
   signUp(email: String!, password: String!): AuthPayload!
   signIn(email: String!, password: String!): AuthPayload!
   signOut: Boolean!
+  updateProfile(avatarUrl: String): User!
 
   # Workspace
   createWorkspace(input: CreateWorkspaceInput!): Workspace!

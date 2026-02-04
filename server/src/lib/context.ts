@@ -1,26 +1,14 @@
 import type { YogaInitialContext } from 'graphql-yoga';
 import { validateSession, parseSessionCookie } from './auth.js';
 import { prisma } from './prisma.js';
-import { createDataLoaders, type DataLoaders } from './dataloaders.js';
+import { createDataLoaders } from './dataloaders.js';
+import type { Context, SessionUser } from 'dayflow-shared/backend';
 
-export interface SessionUser {
-  id: string;
-  email: string;
-}
-
-export interface Context {
-  prisma: typeof prisma;
-  user: SessionUser | null;
-  sessionToken: string | null;
-  loaders: DataLoaders;
-  setCookie: (name: string, value: string, attributes: Record<string, unknown>) => void;
-  deleteCookie: (name: string) => void;
-}
+export type { Context, SessionUser } from 'dayflow-shared/backend';
 
 export async function createContext(initialContext: YogaInitialContext): Promise<Context> {
   const { request } = initialContext;
 
-  // Get session token from cookie
   const cookieHeader = request.headers.get('cookie');
   const sessionToken = parseSessionCookie(cookieHeader);
 

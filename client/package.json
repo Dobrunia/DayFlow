@@ -11,6 +11,7 @@
     "codegen": "graphql-codegen"
   },
   "dependencies": {
+    "dayflow-shared": "file:../shared",
     "@apollo/client": "^3.9.5",
     "@vue/apollo-composable": "^4.0.2",
     "@vueuse/core": "^10.9.0",

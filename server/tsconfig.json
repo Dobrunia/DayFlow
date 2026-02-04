@@ -19,7 +19,9 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "dayflow-shared": ["../shared/dist/index.d.ts"],
+      "dayflow-shared/backend": ["../shared/dist/backend.d.ts"]
     }
   },
   "include": ["src/**/*"],

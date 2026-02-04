@@ -1,13 +1,14 @@
 {
   "name": "dayflow-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc && node scripts/build-deploy.mjs",
+    "build:shared": "cd ../shared && npm run build",
+    "dev": "npm run build:shared && tsx watch src/index.ts",
+    "build": "npm install && npm run build:shared && tsc && node scripts/build-deploy.mjs",
     "start": "node dist/index.js",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run build:shared && tsc --noEmit",
     "db:push": "node scripts/db-push.mjs",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
@@ -17,6 +18,7 @@
     "codegen": "graphql-codegen"
   },
   "dependencies": {
+    "dayflow-shared": "file:../shared",
     "@graphql-tools/schema": "^10.0.3",
     "dotenv": "^16.4.5",
     "@prisma/client": "^5.10.0",

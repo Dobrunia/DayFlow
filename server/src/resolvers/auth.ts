@@ -6,6 +6,7 @@ import {
   createBlankSessionCookie,
 } from '../lib/auth.js';
 import type { Context } from '../lib/context.js';
+import { BadRequestError } from '../lib/errors.js';
 
 export const authResolvers = {
   Mutation: {
@@ -16,12 +17,10 @@ export const authResolvers = {
     ) => {
       // Validate email
       if (!email || !email.includes('@')) {
-        throw new Error('Invalid email address');
+        throw BadRequestError('Invalid email address');
       }
-
-      // Validate password
       if (!password || password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+        throw BadRequestError('Password must be at least 6 characters');
       }
 
       // Check if user exists
@@ -30,7 +29,7 @@ export const authResolvers = {
       });
 
       if (existing) {
-        throw new Error('User with this email already exists');
+        throw BadRequestError('User with this email already exists');
       }
 
       // Create user
@@ -61,13 +60,11 @@ export const authResolvers = {
       });
 
       if (!user) {
-        throw new Error('Invalid email or password');
+        throw BadRequestError('Invalid email or password');
       }
-
       const validPassword = await verify(user.passwordHash, password);
-
       if (!validPassword) {
-        throw new Error('Invalid email or password');
+        throw BadRequestError('Invalid email or password');
       }
 
       // Create session

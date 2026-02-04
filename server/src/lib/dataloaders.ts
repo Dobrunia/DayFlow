@@ -1,19 +1,13 @@
 import DataLoader from 'dataloader';
 import { prisma } from './prisma.js';
-import type { Column, Card, Item, User, Workspace } from '@prisma/client';
+import type { Column, Card } from '@prisma/client';
+import type { DataLoaders } from 'dayflow-shared/backend';
 
-export interface DataLoaders {
-  userById: DataLoader<string, User | null>;
-  workspaceById: DataLoader<string, Workspace | null>;
-  columnsByWorkspaceId: DataLoader<string, Column[]>;
-  cardsByColumnId: DataLoader<string, Card[]>;
-  itemById: DataLoader<string, Item | null>;
-  itemsByWorkspaceId: DataLoader<string, Item[]>;
-}
+export type { DataLoaders } from 'dayflow-shared/backend';
 
 export function createDataLoaders(): DataLoaders {
   return {
-    userById: new DataLoader(async (ids) => {
+    userById: new DataLoader<string, import('@prisma/client').User | null>(async (ids) => {
       const users = await prisma.user.findMany({
         where: { id: { in: [...ids] } },
       });
@@ -21,7 +15,7 @@ export function createDataLoaders(): DataLoaders {
       return ids.map((id) => userMap.get(id) ?? null);
     }),
 
-    workspaceById: new DataLoader(async (ids) => {
+    workspaceById: new DataLoader<string, import('@prisma/client').Workspace | null>(async (ids) => {
       const workspaces = await prisma.workspace.findMany({
         where: { id: { in: [...ids] } },
       });
@@ -29,7 +23,7 @@ export function createDataLoaders(): DataLoaders {
       return ids.map((id) => map.get(id) ?? null);
     }),
 
-    columnsByWorkspaceId: new DataLoader(async (workspaceIds) => {
+    columnsByWorkspaceId: new DataLoader<string, Column[]>(async (workspaceIds) => {
       const columns = await prisma.column.findMany({
         where: { workspaceId: { in: [...workspaceIds] } },
         orderBy: { order: 'asc' },
@@ -43,39 +37,33 @@ export function createDataLoaders(): DataLoaders {
       return workspaceIds.map((id) => map.get(id) ?? []);
     }),
 
-    cardsByColumnId: new DataLoader(async (columnIds) => {
+    cardsByColumnId: new DataLoader<string, Card[]>(async (columnIds) => {
       const cards = await prisma.card.findMany({
         where: { columnId: { in: [...columnIds] } },
-        orderBy: { order: 'asc' },
+        orderBy: [{ columnId: 'asc' }, { order: 'asc' }],
       });
       const map = new Map<string, Card[]>();
       for (const card of cards) {
-        const arr = map.get(card.columnId) ?? [];
-        arr.push(card);
-        map.set(card.columnId, arr);
+        if (card.columnId) {
+          const arr = map.get(card.columnId) ?? [];
+          arr.push(card);
+          map.set(card.columnId, arr);
+        }
       }
       return columnIds.map((id) => map.get(id) ?? []);
     }),
 
-    itemById: new DataLoader(async (ids) => {
-      const items = await prisma.item.findMany({
-        where: { id: { in: [...ids] } },
-      });
-      const map = new Map(items.map((i) => [i.id, i]));
-      return ids.map((id) => map.get(id) ?? null);
-    }),
-
-    itemsByWorkspaceId: new DataLoader(async (workspaceIds) => {
-      const items = await prisma.item.findMany({
+    cardsByWorkspaceId: new DataLoader<string, Card[]>(async (workspaceIds) => {
+      const cards = await prisma.card.findMany({
         where: { workspaceId: { in: [...workspaceIds] } },
         orderBy: { createdAt: 'desc' },
       });
-      const map = new Map<string, Item[]>();
-      for (const item of items) {
-        if (item.workspaceId) {
-          const arr = map.get(item.workspaceId) ?? [];
-          arr.push(item);
-          map.set(item.workspaceId, arr);
+      const map = new Map<string, Card[]>();
+      for (const card of cards) {
+        if (card.workspaceId) {
+          const arr = map.get(card.workspaceId) ?? [];
+          arr.push(card);
+          map.set(card.workspaceId, arr);
         }
       }
       return workspaceIds.map((id) => map.get(id) ?? []);

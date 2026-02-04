@@ -6,6 +6,7 @@
     "build:shared": "cd ../shared && npm run build",
     "dev": "npm run build:shared && tsx watch src/index.ts",
     "build": "npm install && npm run build:shared && tsc && node scripts/build-deploy.mjs",
+    "deploy": "npm run build:shared && tsc && node scripts/build-deploy.mjs",
     "start": "node dist/index.js",
     "lint": "eslint src",
     "typecheck": "npm run build:shared && tsc --noEmit",

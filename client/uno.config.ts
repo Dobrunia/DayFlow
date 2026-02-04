@@ -95,6 +95,11 @@ export default defineConfig({
     'filter-pill-active': 'bg-bg text-fg shadow-sm',
     'filter-pill-inactive': 'text-fg-muted hover:text-fg',
     'card-actions-hover': 'opacity-0 group-hover:opacity-100 transition-opacity',
+    /* Ручка перетаскивания (чеклист, сортируемые списки) */
+    'grip-handle':
+      'i-lucide-grip-vertical text-fg-muted cursor-grab active:cursor-grabbing touch-none',
+    /* Кнопка «добавить пункт» в формах */
+    'link-add': 'text-sm link-primary flex items-center gap-1',
     'header-icon-hover':
       'btn-icon p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-muted-hover text-fg-muted transition-opacity',
   },

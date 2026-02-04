@@ -11,7 +11,6 @@ const config: CodegenConfig = {
           User: '@prisma/client#User',
           Workspace: '@prisma/client#Workspace',
           Column: '@prisma/client#Column',
-          Item: '@prisma/client#Item',
           Card: '@prisma/client#Card',
         },
         enumsAsTypes: true,

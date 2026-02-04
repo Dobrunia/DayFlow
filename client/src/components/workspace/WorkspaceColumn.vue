@@ -2,18 +2,22 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
-import type { Column, Item } from '@/graphql/types';
+import type { Column, CardGql } from '@/graphql/types';
 import { useInlineEdit } from '@/composables/useInlineEdit';
-import CardItem from './CardItem.vue';
-import AddCardDialog from './AddCardDialog.vue';
+import CardItem from '@/components/card/CardItem.vue';
+import CreateCardDialog from '@/components/card/CreateCardDialog.vue';
 import { toast } from 'vue-sonner';
+import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 
-const props = defineProps<{
-  column: Column;
-  workspaceId: string;
-  /** Режим беклога: элементы без колонки. Нельзя удалить/редактировать колонку, нет кнопки «Добавить карточку». */
-  backlogItems?: Item[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    column: Column;
+    workspaceId: string;
+    /** Карточки беклога (без колонки) */
+    backlogCards?: CardGql[];
+  }>(),
+  { backlogCards: () => [] }
+);
 
 const workspaceStore = useWorkspaceStore();
 const showAddCard = ref(false);
@@ -21,7 +25,7 @@ const headerRef = ref<HTMLElement | null>(null);
 const cardsListRef = ref<HTMLElement | null>(null);
 let sortable: Sortable | null = null;
 
-const isBacklog = computed(() => (props.backlogItems?.length ?? 0) > 0);
+const isBacklog = computed(() => (props.backlogCards?.length ?? 0) > 0);
 
 const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
   headerRef,
@@ -36,34 +40,25 @@ function handleDragEnd(evt: Sortable.SortableEvent) {
   const el = evt.item as HTMLElement;
   const to = evt.to as HTMLElement;
   const toBacklog = !!to.dataset.backlog;
-  const toColumnId = to.dataset.columnId;
+  const toColumnId = to.dataset.columnId as string | undefined;
+
+  const cardId = el.dataset.cardId;
+  if (!cardId) return;
+
+  const order = evt.newIndex ?? 0;
 
   if (toBacklog) {
-    const cardId = el.dataset.cardId;
-    if (cardId) {
-      workspaceStore.deleteCard(cardId).catch(() => {
-        toast.error('Ошибка перемещения в беклог');
-      });
-    }
-    return;
-  }
-
-  if (!toColumnId) return;
-
-  const itemId = el.dataset.itemId;
-  if (itemId) {
-    workspaceStore.addItemToColumn(itemId, toColumnId).catch(() => {
-      toast.error('Ошибка добавления в колонку');
+    workspaceStore.moveCard(cardId, null, order).catch((e) => {
+      toast.error(getGraphQLErrorMessage(e));
     });
     return;
   }
 
-  const cardId = el.dataset.cardId;
-  if (!cardId) return;
-  const order = evt.newIndex ?? 0;
-  workspaceStore.moveCard(cardId, toColumnId, order).catch(() => {
-    toast.error('Ошибка перемещения');
-  });
+  if (toColumnId) {
+    workspaceStore.moveCard(cardId, toColumnId, order).catch((e) => {
+      toast.error(getGraphQLErrorMessage(e));
+    });
+  }
 }
 
 onMounted(() => {
@@ -85,18 +80,16 @@ onUnmounted(() => {
 async function deleteColumn() {
   if (isBacklog.value) return;
   if (!confirm('Удалить колонку и все карточки в ней?')) return;
-
   try {
     await workspaceStore.deleteColumn(props.column.id);
-  } catch {
-    toast.error('Ошибка удаления');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
   }
 }
 </script>
 
 <template>
   <div class="flex-shrink-0 w-72 flex flex-col bg-muted rounded-xl">
-    <!-- Header: в беклоге без редактирования и удаления -->
     <div ref="headerRef" class="group p-3 flex-between">
       <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">
         <input
@@ -119,7 +112,7 @@ async function deleteColumn() {
 
       <div class="flex items-center gap-0.5 shrink-0">
         <span class="text-xs text-fg-muted mr-0.5">
-          {{ isBacklog ? backlogItems!.length : cards.length }}
+          {{ isBacklog ? backlogCards!.length : cards.length }}
         </span>
         <button
           v-if="!isBacklog"
@@ -133,7 +126,6 @@ async function deleteColumn() {
       </div>
     </div>
 
-    <!-- Список: карточки колонки или элементы беклога -->
     <div
       ref="cardsListRef"
       class="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[2rem]"
@@ -141,24 +133,32 @@ async function deleteColumn() {
       :data-backlog="isBacklog ? true : undefined"
     >
       <template v-if="isBacklog">
-        <CardItem v-for="item in backlogItems" :key="item.id" :item="item" />
+        <CardItem
+          v-for="c in backlogCards"
+          :key="c.id"
+          :card="c"
+          :is-backlog="true"
+        />
       </template>
       <template v-else>
-        <CardItem v-for="card in cards" :key="card.id" :card="card" :column-id="column.id" />
-
-        <!-- Add Card Button (not draggable) -->
-        <button @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">
+        <CardItem
+          v-for="card in cards"
+          :key="card.id"
+          :card="card"
+          :column-id="column.id"
+        />
+        <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">
           <span class="i-lucide-plus text-sm" />
           Добавить карточку
         </button>
       </template>
     </div>
 
-    <!-- Add Card Dialog (только для обычной колонки) -->
-    <AddCardDialog
+    <CreateCardDialog
       v-if="!isBacklog"
       :open="showAddCard"
       :column-id="column.id"
+      :workspace-id="workspaceId"
       @close="showAddCard = false"
     />
   </div>

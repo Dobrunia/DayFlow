@@ -101,8 +101,8 @@ export type UpdateCardInput = z.infer<typeof UpdateCardInputSchema>;
 export const CardFilterSchema = z.object({
   type: z.string().optional(),
   done: z.boolean().optional(),
-  workspaceId: z.string().optional(),
-  columnId: z.string().optional(),
+  workspaceId: z.string().nullable().optional(),
+  columnId: z.string().nullable().optional(),
   search: z.string().optional(),
 });
 export type CardFilter = z.infer<typeof CardFilterSchema>;

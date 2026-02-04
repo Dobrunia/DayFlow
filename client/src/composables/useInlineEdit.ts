@@ -1,5 +1,6 @@
 import { ref, nextTick, onMounted, onUnmounted, type Ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 
 /**
  * Общая логика inline-редактирования заголовка:
@@ -36,10 +37,10 @@ export function useInlineEdit(
 
     try {
       await onSave(newTitle);
-    } catch {
+    } catch (e) {
       isEditing.value = true;
       editTitle.value = newTitle;
-      toast.error('Ошибка сохранения');
+      toast.error(getGraphQLErrorMessage(e));
     }
   }
 

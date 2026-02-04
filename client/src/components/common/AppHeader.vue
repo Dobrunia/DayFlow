@@ -36,8 +36,8 @@ function handleSignOut() {
       <nav class="flex items-center gap-4">
         <template v-if="isAuthenticated">
           <RouterLink to="/library" class="btn-ghost text-sm text-fg-muted hover:text-fg">
-            <span class="i-lucide-folder mr-1.5" />
-            Библиотека
+            <span class="i-lucide-inbox mr-1.5" />
+            Хаб
           </RouterLink>
 
           <GlobalAddButton />

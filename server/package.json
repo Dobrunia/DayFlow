@@ -32,9 +32,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
-    "@graphql-codegen/cli": "^5.0.2",
-    "@graphql-codegen/typescript": "^4.0.6",
-    "@graphql-codegen/typescript-resolvers": "^4.0.6",
+    "@graphql-codegen/cli": "^6.0.0",
+    "@graphql-codegen/typescript": "^5.0.0",
+    "@graphql-codegen/typescript-resolvers": "^5.0.0",
     "@types/node": "^20.11.19",
     "eslint": "^9.18.0",
     "globals": "^15.14.0",
@@ -42,5 +42,8 @@
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.20.0"
+  },
+  "overrides": {
+    "fetch-blob": "^4.0.0"
   }
 }

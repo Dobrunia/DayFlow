@@ -1,53 +1,50 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue';
-import { useLibraryStore } from '@/stores/library';
-import ItemCard from '@/components/library/ItemCard.vue';
-import LibraryFilters from '@/components/library/LibraryFilters.vue';
+import { useCardsStore } from '@/stores/cards';
+import CardItem from '@/components/card/CardItem.vue';
 
-const libraryStore = useLibraryStore();
+const cardsStore = useCardsStore();
 
 onMounted(() => {
-  libraryStore.fetchLibrary();
+  cardsStore.fetchCards({ workspaceId: null });
 });
 
-const items = computed(() => libraryStore.items);
-const loading = computed(() => libraryStore.loading);
+const cards = computed(() => cardsStore.filteredCards);
+const loading = computed(() => cardsStore.loading);
 </script>
 
 <template>
   <div class="max-w-4xl mx-auto px-5 py-10">
     <div class="flex-between mb-8">
       <div>
-        <h1 class="page-title mb-1">Библиотека</h1>
-        <p class="text-sm text-fg-muted">Сохранённые ссылки и идеи</p>
+        <h1 class="page-title mb-1">Хаб</h1>
+        <p class="text-sm text-fg-muted">Карточки без воркспейса</p>
       </div>
     </div>
 
-    <!-- Filters -->
-    <LibraryFilters class="mb-6" />
-
-    <!-- Контент с фиксированной минимальной высотой — ререндерится только этот блок, вёрстка не дёргается -->
     <div class="min-h-[320px]">
-      <!-- Loading -->
       <div v-if="loading" class="text-center py-12">
         <div class="loading-spinner mx-auto" />
       </div>
 
-      <!-- Items List -->
-      <template v-else-if="items.length > 0">
+      <template v-else-if="cards.length > 0">
         <div class="space-y-3">
-          <ItemCard v-for="item in items" :key="item.id" :item="item" />
+          <CardItem
+            v-for="card in cards"
+            :key="card.id"
+            :card="card"
+            :is-backlog="true"
+          />
         </div>
       </template>
 
-      <!-- Empty State -->
       <div v-else class="text-center py-16">
         <div class="empty-state-icon">
           <span class="i-lucide-inbox text-2xl text-fg-muted" />
         </div>
-        <h2 class="empty-state-title">Библиотека пуста</h2>
+        <h2 class="empty-state-title">Пока пусто</h2>
         <p class="empty-state-desc">
-          Добавьте первую ссылку или заметку с помощью кнопки "Добавить"
+          Добавьте карточку с помощью кнопки «Добавить»
         </p>
       </div>
     </div>

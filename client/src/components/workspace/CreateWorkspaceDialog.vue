@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { toast } from 'vue-sonner';
+import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
   DialogRoot,
   DialogPortal,
@@ -59,8 +60,8 @@ async function handleSubmit() {
 
     toast.success('Воркспейс создан!');
     emit('created', workspace.id);
-  } catch {
-    toast.error('Ошибка создания воркспейса');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
   } finally {
     loading.value = false;
   }

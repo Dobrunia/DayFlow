@@ -5,6 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspace';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
 import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
 import { toast } from 'vue-sonner';
+import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 
 const route = useRoute();
 const router = useRouter();
@@ -17,7 +18,7 @@ const showCreateDialog = ref(false);
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
 const columns = computed(() => workspace.value?.columns ?? []);
-const backlogItems = computed(() => workspace.value?.backlogItems ?? []);
+const backlogCards = computed(() => workspace.value?.backlog ?? []);
 
 const backlogColumn = computed(() => ({
   id: 'backlog',
@@ -58,8 +59,8 @@ async function saveTitle() {
   try {
     await workspaceStore.updateWorkspace(workspace.value.id, { title: editTitle.value.trim() });
     isEditing.value = false;
-  } catch {
-    toast.error('Ошибка сохранения');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
   }
 }
 
@@ -68,8 +69,8 @@ async function addColumn() {
 
   try {
     await workspaceStore.createColumn(workspace.value.id, 'Новая колонка');
-  } catch {
-    toast.error('Ошибка создания колонки');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
   }
 }
 
@@ -80,8 +81,8 @@ async function deleteWorkspace() {
     await workspaceStore.deleteWorkspace(workspace.value.id);
     router.push('/');
     toast.success('Воркспейс удалён');
-  } catch {
-    toast.error('Ошибка удаления');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
   }
 }
 
@@ -166,10 +167,10 @@ function handleDialogClose() {
       <div class="flex-1 overflow-x-auto overflow-y-hidden">
         <div class="h-full flex gap-4 p-6" style="min-width: max-content">
           <WorkspaceColumn
-            v-if="backlogItems.length > 0"
+            v-if="backlogCards.length > 0"
             :column="backlogColumn"
             :workspace-id="workspace.id"
-            :backlog-items="backlogItems"
+            :backlog-cards="backlogCards"
           />
 
           <WorkspaceColumn

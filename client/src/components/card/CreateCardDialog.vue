@@ -32,6 +32,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   close: [];
+  delete: [];
 }>();
 
 const openProxy = computed({
@@ -44,8 +45,13 @@ const openProxy = computed({
 const workspaceStore = useWorkspaceStore();
 const cardsStore = useCardsStore();
 
-const isHubCreate = computed(() => !props.card && !props.columnId && props.workspaceId == null);
+/** Добавление из хедера (кнопка «Добавить»), не из колонки/беклога */
+const isGlobalAdd = computed(() => !props.card && !props.columnId && props.workspaceId == null);
 const isHubEdit = computed(() => !!props.card && props.card.workspaceId == null);
+
+const addDestination = ref<'hub' | 'workspace'>('hub');
+const selectedWorkspaceId = ref<string | null>(null);
+const workspaces = computed(() => workspaceStore.workspaces);
 
 const title = ref('');
 const cardType = ref<'NOTE' | 'LINK' | 'CHECKLIST'>('NOTE');
@@ -125,6 +131,9 @@ watch(
         linkSummary.value = '';
         checklistItems.value = [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
         checklistSummary.value = '';
+        addDestination.value = 'hub';
+        selectedWorkspaceId.value = null;
+        if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
       }
       nextTick(() => initChecklistSortable());
     } else {
@@ -191,6 +200,10 @@ async function handleSubmit() {
     toast.error('Введите URL ссылки');
     return;
   }
+  if (isGlobalAdd.value && addDestination.value === 'workspace' && !selectedWorkspaceId.value) {
+    toast.error('Выберите воркспейс');
+    return;
+  }
 
   try {
     loading.value = true;
@@ -201,13 +214,22 @@ async function handleSubmit() {
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
       toast.success('Сохранено!');
-    } else if (isHubCreate.value) {
+    } else if (isGlobalAdd.value && addDestination.value === 'hub') {
       await cardsStore.createCard({
         type: cardType.value,
         title: title.value.trim() || undefined,
         payload,
       });
-      toast.success('Карточка создана!');
+      toast.success('Карточка создана в хабе!');
+    } else if (isGlobalAdd.value && addDestination.value === 'workspace') {
+      await workspaceStore.createCard({
+        type: cardType.value,
+        title: title.value.trim() || undefined,
+        workspaceId: selectedWorkspaceId.value!,
+        columnId: undefined,
+        payload,
+      });
+      toast.success('Карточка добавлена в беклог воркспейса');
     } else {
       await workspaceStore.createCard({
         type: cardType.value,
@@ -242,6 +264,47 @@ async function handleSubmit() {
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
+          <div v-if="isGlobalAdd" class="pb-2 border-b border-border">
+            <label class="form-label-fg mb-2">Куда добавить</label>
+            <div class="flex gap-2 mb-3">
+              <button
+                type="button"
+                class="flex-1 type-selector-btn flex-center"
+                :class="addDestination === 'hub' ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
+                @click="addDestination = 'hub'; selectedWorkspaceId = null"
+              >
+                <span class="i-lucide-inbox" />
+                Хаб
+              </button>
+              <button
+                type="button"
+                class="flex-1 type-selector-btn flex-center"
+                :class="addDestination === 'workspace' ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
+                @click="addDestination = 'workspace'"
+              >
+                <span class="i-lucide-layout-grid" />
+                Воркспейс
+              </button>
+            </div>
+            <div v-if="addDestination === 'workspace'" class="mt-2">
+              <label for="card-workspace" class="form-label text-fg-muted mb-1">Воркспейс (карточка попадёт в беклог)</label>
+              <select
+                id="card-workspace"
+                v-model="selectedWorkspaceId"
+                class="input py-2"
+              >
+                <option value="" disabled>Выберите воркспейс</option>
+                <option
+                  v-for="w in workspaces"
+                  :key="w.id"
+                  :value="w.id"
+                >
+                  {{ w.title }}
+                </option>
+              </select>
+            </div>
+          </div>
+
           <div>
             <label for="card-title" class="form-label-fg">Название</label>
             <input
@@ -285,7 +348,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-note" class="form-label-fg">Краткое резюме</label>
+              <label for="card-summary-note" class="form-label-fg">Конспект</label>
               <input
                 id="card-summary-note"
                 v-model="noteSummary"
@@ -308,7 +371,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-link" class="form-label-fg">Краткое резюме</label>
+              <label for="card-summary-link" class="form-label-fg">Конспект</label>
               <input
                 id="card-summary-link"
                 v-model="linkSummary"
@@ -339,7 +402,7 @@ async function handleSubmit() {
                     v-if="checklistItems.length > 1"
                     type="button"
                     @click="removeChecklistItem(index)"
-                    class="btn-icon p-1.5 text-fg-muted hover:text-danger"
+                    class="btn-icon-muted-danger"
                   >
                     <span class="i-lucide-x" />
                   </button>
@@ -355,7 +418,7 @@ async function handleSubmit() {
               </button>
             </div>
             <div>
-              <label for="card-summary-checklist" class="form-label-fg">Краткое резюме</label>
+              <label for="card-summary-checklist" class="form-label-fg">Конспект</label>
               <input
                 id="card-summary-checklist"
                 v-model="checklistSummary"
@@ -366,12 +429,23 @@ async function handleSubmit() {
             </div>
           </template>
 
-          <div class="form-actions">
-            <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
-            <button type="submit" class="btn-primary" :disabled="loading">
-              <span v-if="loading" class="loading-spinner mr-1.5" />
-              {{ isEditMode ? 'Сохранить' : 'Создать' }}
+          <div class="flex justify-between items-center gap-3 pt-4">
+            <button
+              v-if="isEditMode"
+              type="button"
+              class="btn-danger"
+              @click="emit('delete')"
+            >
+              <span class="i-lucide-trash-2 text-sm" />
+              Удалить
             </button>
+            <div class="flex gap-3 ml-auto">
+              <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
+              <button type="submit" class="btn-primary" :disabled="loading">
+                <span v-if="loading" class="loading-spinner mr-1.5" />
+                {{ isEditMode ? 'Сохранить' : 'Создать' }}
+              </button>
+            </div>
           </div>
         </form>
       </DialogContent>

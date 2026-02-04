@@ -15,7 +15,10 @@
   --on-primary: #ffffff;
   --success: #00ba7c;
   --danger: #f4212e;
+  --on-danger: #ffffff;
   --overlay: rgba(0, 0, 0, 0.4);
+  /* найденные в тексте ссылки — чуть темнее primary */
+  --link-inline: #0d8bd9;
 }
 
 /* Тёмная тема в духе X */
@@ -31,9 +34,11 @@
   --on-primary: #ffffff;
   --success: #00ba7c;
   --danger: #f4212e;
+  --on-danger: #ffffff;
   --overlay: rgba(0, 0, 0, 0.65);
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --link-inline: #3b9ce8;
 }
 
 body {
@@ -87,4 +92,18 @@ input,
 textarea,
 select {
   transition: all 0.15s ease;
+}
+
+/* Текст и иконки внутри кнопок наследуют цвет — при hover контент остаётся видимым */
+button * {
+  color: inherit;
+}
+
+/* Ссылки, найденные в тексте (content/summary) */
+.link-inline {
+  color: var(--link-inline);
+  text-decoration: none;
+}
+.link-inline:hover {
+  text-decoration: underline;
 }

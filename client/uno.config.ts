@@ -34,8 +34,14 @@ export default defineConfig({
     btn: 'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none outline-none',
     'btn-primary': 'btn bg-primary text-on-primary hover:opacity-90',
     'btn-secondary': 'btn bg-muted text-fg hover:bg-muted-hover',
+    'btn-danger': 'btn bg-muted text-danger hover:bg-danger hover:text-on-danger',
     'btn-ghost': 'btn hover:bg-muted',
     'btn-icon': 'btn p-2 rounded-lg',
+    'btn-icon-muted-primary': 'btn-icon p-1 text-fg-muted hover:text-primary',
+    'btn-icon-muted-danger': 'btn-icon p-1.5 text-fg-muted hover:text-danger',
+    'btn-icon-muted-fg': 'btn-icon p-1 text-fg-muted hover:text-fg',
+    'header-icon-danger': 'header-icon-hover hover:text-danger',
+    'icon-muted-danger': 'text-fg-muted hover:text-danger',
     input:
       'w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:border-primary transition-colors outline-none focus:outline-none focus:ring-0',
     textarea: 'input resize-none',
@@ -49,9 +55,12 @@ export default defineConfig({
     'checkbox-btn-sm': 'min-w-4 min-h-4 w-4 h-4',
     'checkbox-btn-xs': 'min-w-3.5 min-h-3.5 w-3.5 h-3.5',
     'checkbox-btn-square': 'rounded',
-    /* Бейдж типа карточки (Видео / Заметка / Чеклист) — один стиль */
+    /* Бейдж типа карточки (Заметка / Чеклист) — один стиль */
     'card-type-badge':
       'inline-flex items-center gap-1 text-[10px] text-primary bg-muted px-1.5 py-0.5 rounded',
+    /* Ссылка «Перейти» — только текст и иконка, без обводки и фона */
+    'card-type-badge-link':
+      'inline-flex items-center gap-1 text-[10px] text-primary no-underline cursor-pointer hover:underline transition-colors border-0 bg-transparent outline-none',
     /* Модалки */
     'dialog-overlay': 'fixed inset-0 z-[100] bg-overlay backdrop-blur-sm',
     'dialog-content':
@@ -95,6 +104,9 @@ export default defineConfig({
     'filter-pill-active': 'bg-bg text-fg shadow-sm',
     'filter-pill-inactive': 'text-fg-muted hover:text-fg',
     'card-actions-hover': 'opacity-0 group-hover:opacity-100 transition-opacity',
+    /* Кнопка редактирования карточки — не блокирует клики по чекбоксу/заголовку, пока не hover */
+    'card-edit-float':
+      'absolute -top-2 right-2 z-10 w-8 h-8 rounded-full btn-icon bg-bg border border-border shadow-sm text-fg hover:border-primary hover:bg-primary/10 hover:text-fg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all overflow-visible',
     /* Ручка перетаскивания (чеклист, сортируемые списки) */
     'grip-handle':
       'i-lucide-grip-vertical text-fg-muted cursor-grab active:cursor-grabbing touch-none',
@@ -116,6 +128,7 @@ export default defineConfig({
       'on-primary': 'var(--on-primary)',
       success: 'var(--success)',
       danger: 'var(--danger)',
+      'on-danger': 'var(--on-danger)',
       overlay: 'var(--overlay)',
     },
   },
@@ -145,5 +158,6 @@ export default defineConfig({
     'i-lucide-grip-vertical',
     'i-lucide-sun',
     'i-lucide-moon',
+    'i-lucide-maximize-2',
   ],
 });

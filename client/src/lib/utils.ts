@@ -56,3 +56,29 @@ export function debounce<A extends unknown[]>(
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 }
+
+const URL_REGEX = /https?:\/\/[^\s<>"']+/g;
+
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return text.replace(/[&<>"']/g, (ch) => map[ch] ?? ch);
+}
+
+/**
+ * Находит ссылки в тексте и оборачивает в <a class="link-inline">.
+ * HTML в тексте экранируется.
+ */
+export function linkify(text: string): string {
+  if (!text) return '';
+  const escaped = escapeHtml(text);
+  return escaped.replace(URL_REGEX, (url) => {
+    const safe = escapeHtml(url);
+    return `<a class="link-inline" href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+  });
+}

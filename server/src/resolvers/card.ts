@@ -151,14 +151,14 @@ export const cardResolvers = {
 
     moveCard: async (
       _: unknown,
-      { id, columnId, order }: { id: string; columnId: string | null; order: number },
+      { id, columnId, order: newOrder }: { id: string; columnId: string | null; order: number },
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
       const card = await context.prisma.card.findUnique({ where: { id } });
       if (!card || card.ownerId !== context.user.id) throw NotFoundError('Card not found');
 
-      let workspaceId: string | null = null;
+      let workspaceId: string | null;
       if (columnId) {
         const col = await context.prisma.column.findUnique({
           where: { id: columnId },
@@ -166,12 +166,59 @@ export const cardResolvers = {
         });
         if (!col || col.workspace.ownerId !== context.user.id) throw NotFoundError('Column not found');
         workspaceId = col.workspaceId;
+      } else {
+        // Перемещение в беклог: оставляем карточку в том же воркспейсе (workspaceId не трогаем)
+        workspaceId = card.workspaceId;
       }
 
-      return context.prisma.card.update({
+      await context.prisma.card.update({
         where: { id },
-        data: { columnId, workspaceId, order },
+        data: { columnId, workspaceId, order: newOrder },
       });
+
+      if (columnId) {
+        const inColumn = await context.prisma.card.findMany({
+          where: { columnId },
+          orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+        });
+        const fromIdx = inColumn.findIndex((c: { id: string }) => c.id === id);
+        const ordered: typeof inColumn =
+          fromIdx === -1
+            ? inColumn
+            : (() => {
+                const list = inColumn.slice();
+                const [moved] = list.splice(fromIdx, 1);
+                list.splice(Math.min(newOrder, list.length), 0, moved);
+                return list;
+              })();
+        await Promise.all(
+          ordered.map((c: { id: string }, index: number) =>
+            context.prisma.card.update({ where: { id: c.id }, data: { order: index } })
+          )
+        );
+      } else if (workspaceId) {
+        const inBacklog = await context.prisma.card.findMany({
+          where: { workspaceId, columnId: null },
+          orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+        });
+        const fromIdx = inBacklog.findIndex((c: { id: string }) => c.id === id);
+        const ordered: typeof inBacklog =
+          fromIdx === -1
+            ? inBacklog
+            : (() => {
+                const list = inBacklog.slice();
+                const [moved] = list.splice(fromIdx, 1);
+                list.splice(Math.min(newOrder, list.length), 0, moved);
+                return list;
+              })();
+        await Promise.all(
+          ordered.map((c: { id: string }, index: number) =>
+            context.prisma.card.update({ where: { id: c.id }, data: { order: index } })
+          )
+        );
+      }
+
+      return context.prisma.card.findUniqueOrThrow({ where: { id } });
     },
   },
 

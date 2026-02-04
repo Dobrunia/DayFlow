@@ -152,13 +152,13 @@ function handleDialogClose() {
               class="btn-icon btn-ghost p-2"
               title="Удалить воркспейс"
             >
-              <span class="i-lucide-trash-2 text-fg-muted hover:text-danger" />
+              <span class="i-lucide-trash-2 icon-muted-danger" />
             </button>
           </div>
         </div>
 
         <!-- Description -->
-        <p v-if="workspace.description" class="text-sm text-fg-muted mt-2 ml-12">
+        <p v-if="workspace.description" class="text-sm text-fg-muted mt-2 ml-12 cursor-default">
           {{ workspace.description }}
         </p>
       </div>
@@ -167,10 +167,10 @@ function handleDialogClose() {
       <div class="flex-1 overflow-x-auto overflow-y-hidden">
         <div class="h-full flex gap-4 p-6" style="min-width: max-content">
           <WorkspaceColumn
-            v-if="backlogCards.length > 0"
             :column="backlogColumn"
             :workspace-id="workspace.id"
             :backlog-cards="backlogCards"
+            :is-backlog-column="true"
           />
 
           <WorkspaceColumn

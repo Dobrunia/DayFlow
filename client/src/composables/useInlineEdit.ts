@@ -44,6 +44,10 @@ export function useInlineEdit(
     }
   }
 
+  function cancelEdit() {
+    isEditing.value = false;
+  }
+
   function handleClickOutside(e: MouseEvent) {
     if (!isEditing.value || !containerRef.value) return;
     if (containerRef.value.contains(e.target as Node)) return;
@@ -63,5 +67,6 @@ export function useInlineEdit(
     inputRef,
     startEdit,
     saveEdit,
+    cancelEdit,
   };
 }

@@ -40,23 +40,14 @@ function navigateToWorkspace(id: string) {
       <!-- Features -->
       <div class="grid md:grid-cols-3 gap-6 mt-20">
         <div class="text-center p-6 rounded-2xl border border-border bg-muted/30">
-          <div class="w-11 h-11 mx-auto mb-3 bg-primary/10 rounded-xl flex-center">
-            <span class="i-lucide-folder text-xl text-primary" />
-          </div>
           <h3 class="font-semibold text-fg mb-1.5">Воркспейсы</h3>
           <p class="text-sm text-fg-muted">Доски с видео, заметками и чеклистами для тем.</p>
         </div>
         <div class="text-center p-6 rounded-2xl border border-border bg-muted/30">
-          <div class="w-11 h-11 mx-auto mb-3 bg-primary/10 rounded-xl flex-center">
-            <span class="i-lucide-plus text-xl text-primary" />
-          </div>
           <h3 class="font-semibold text-fg mb-1.5">Быстрое добавление</h3>
           <p class="text-sm text-fg-muted">Ссылки и идеи в один клик.</p>
         </div>
         <div class="text-center p-6 rounded-2xl border border-border bg-muted/30">
-          <div class="w-11 h-11 mx-auto mb-3 bg-primary/10 rounded-xl flex-center">
-            <span class="i-lucide-check-square text-xl text-primary" />
-          </div>
           <h3 class="font-semibold text-fg mb-1.5">Трекинг прогресса</h3>
           <p class="text-sm text-fg-muted">Отмечайте выполненное и смотрите прогресс.</p>
         </div>

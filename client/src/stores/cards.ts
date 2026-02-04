@@ -102,6 +102,7 @@ export const useCardsStore = defineStore('cards', () => {
         variables: { id },
       });
       cards.value = cards.value.filter((c) => c.id !== id);
+      await fetchCards();
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;

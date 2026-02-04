@@ -6,7 +6,7 @@ import CardItem from '@/components/card/CardItem.vue';
 const cardsStore = useCardsStore();
 
 onMounted(() => {
-  cardsStore.fetchCards({ workspaceId: null });
+  cardsStore.setFilter({ workspaceId: null });
 });
 
 const cards = computed(() => cardsStore.filteredCards);

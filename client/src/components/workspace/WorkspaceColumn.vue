@@ -15,8 +15,10 @@ const props = withDefaults(
     workspaceId: string;
     /** Карточки беклога (без колонки) */
     backlogCards?: CardGql[];
+    /** Это колонка беклога (показывать всегда, не удалять) */
+    isBacklogColumn?: boolean;
   }>(),
-  { backlogCards: () => [] }
+  { backlogCards: () => [], isBacklogColumn: false }
 );
 
 const workspaceStore = useWorkspaceStore();
@@ -25,7 +27,7 @@ const headerRef = ref<HTMLElement | null>(null);
 const cardsListRef = ref<HTMLElement | null>(null);
 let sortable: Sortable | null = null;
 
-const isBacklog = computed(() => (props.backlogCards?.length ?? 0) > 0);
+const isBacklog = computed(() => props.isBacklogColumn);
 
 const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
   headerRef,
@@ -39,13 +41,12 @@ const cards = computed(() => props.column.cards ?? []);
 function handleDragEnd(evt: Sortable.SortableEvent) {
   const el = evt.item as HTMLElement;
   const to = evt.to as HTMLElement;
-  const toBacklog = !!to.dataset.backlog;
-  const toColumnId = to.dataset.columnId as string | undefined;
-
-  const cardId = el.dataset.cardId;
+  const cardId = el.getAttribute('data-card-id') ?? el.dataset.cardId;
   if (!cardId) return;
 
   const order = evt.newIndex ?? 0;
+  const toBacklog = to.getAttribute('data-backlog') != null;
+  const toColumnId = to.getAttribute('data-column-id') ?? (to.dataset.columnId as string | undefined) ?? undefined;
 
   if (toBacklog) {
     workspaceStore.moveCard(cardId, null, order).catch((e) => {
@@ -118,7 +119,7 @@ async function deleteColumn() {
           v-if="!isBacklog"
           type="button"
           @click="deleteColumn"
-          class="header-icon-hover hover:text-danger"
+          class="header-icon-danger"
           title="Удалить колонку"
         >
           <span class="i-lucide-trash-2 text-xs" />
@@ -139,6 +140,10 @@ async function deleteColumn() {
           :card="c"
           :is-backlog="true"
         />
+        <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">
+          <span class="i-lucide-plus text-sm" />
+          Добавить карточку
+        </button>
       </template>
       <template v-else>
         <CardItem
@@ -155,10 +160,10 @@ async function deleteColumn() {
     </div>
 
     <CreateCardDialog
-      v-if="!isBacklog"
       :open="showAddCard"
-      :column-id="column.id"
+      :column-id="isBacklog ? undefined : column.id"
       :workspace-id="workspaceId"
+      :is-backlog="isBacklog"
       @close="showAddCard = false"
     />
   </div>

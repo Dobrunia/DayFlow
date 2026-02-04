@@ -282,6 +282,46 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function moveCard(id: string, columnId: string | null, order: number) {
+    const ws = currentWorkspace.value;
+    if (!ws) return;
+    let card: CardGql | undefined;
+    let fromColumnId: string | null = null;
+    for (const col of ws.columns ?? []) {
+      const idx = (col.cards ?? []).findIndex((c) => c.id === id);
+      if (idx !== -1) {
+        card = (col.cards ?? [])[idx];
+        fromColumnId = col.id;
+        break;
+      }
+    }
+    if (!card && ws.backlog) {
+      const idx = ws.backlog.findIndex((c) => c.id === id);
+      if (idx !== -1) {
+        card = ws.backlog[idx];
+        fromColumnId = 'backlog';
+      }
+    }
+    if (card) {
+      const payload = { ...card, columnId, workspaceId: columnId ? ws.id : null, order };
+      const newColumns = (ws.columns ?? []).map((col) => {
+        if (fromColumnId === col.id) {
+          return { ...col, cards: (col.cards ?? []).filter((c) => c.id !== id) };
+        }
+        if (columnId && col.id === columnId) {
+          const list = [...(col.cards ?? [])];
+          list.splice(Math.min(order, list.length), 0, payload);
+          return { ...col, cards: list.map((c, i) => ({ ...c, order: i })) };
+        }
+        return col;
+      });
+      let newBacklog = fromColumnId === 'backlog' ? (ws.backlog ?? []).filter((c) => c.id !== id) : (ws.backlog ?? []);
+      if (!columnId) {
+        const list = [...newBacklog];
+        list.splice(Math.min(order, list.length), 0, payload);
+        newBacklog = list.map((c, i) => ({ ...c, order: i }));
+      }
+      currentWorkspace.value = { ...ws, columns: newColumns, backlog: newBacklog };
+    }
     try {
       error.value = null;
       await apolloClient.mutate({
@@ -291,6 +331,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (currentWorkspace.value) await fetchWorkspace(currentWorkspace.value.id);
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      if (currentWorkspace.value) await fetchWorkspace(currentWorkspace.value.id);
       throw e;
     }
   }

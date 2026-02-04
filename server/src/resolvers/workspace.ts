@@ -87,7 +87,7 @@ export const workspaceResolvers = {
           columnId: null,
           ownerId: context.user.id,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       });
     },
   },

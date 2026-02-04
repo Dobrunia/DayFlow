@@ -55,26 +55,26 @@ function closeSummaryModal() {
     <div v-if="editableSummary" class="mt-1.5 flex items-start gap-1">
       <p
         v-if="payload.summary"
-        class="text-xs text-fg-muted min-h-[1.25rem] flex-1 min-w-0 whitespace-pre-wrap"
+        class="card-summary"
         v-html="summaryHtml"
       />
-      <p v-else class="text-xs text-fg-muted min-h-[1.25rem] flex-1 min-w-0 opacity-70">
+      <p v-else class="card-summary-placeholder">
         Конспект...
       </p>
       <button
         type="button"
         @click="openSummaryEditor"
-        class="btn-icon-muted-primary flex-shrink-0"
+        class="btn-icon-muted-primary flex-shrink-0 card-icon-hover"
         title="Редактировать конспект"
       >
         <span class="i-lucide-edit-2 text-xs" />
       </button>
     </div>
     <template v-else-if="payload.summary">
-      <p class="text-xs text-fg-muted mt-1.5 whitespace-pre-wrap" v-html="summaryHtml"></p>
+      <p class="card-summary-readonly" v-html="summaryHtml"></p>
     </template>
     <template v-else>
-      <p class="text-xs text-fg-muted mt-1.5 min-h-[1.25rem] opacity-70">Конспект...</p>
+      <p class="card-summary-placeholder mt-1.5">Конспект...</p>
     </template>
 
     <DialogRoot v-model:open="showSummaryModal">

@@ -71,6 +71,15 @@ html {
   background: var(--fg-muted);
 }
 
+/* Скрыть скроллбар (конспект на карточке и т.п.) */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Убираем обводку фокуса везде (в т.ч. чёрную от браузера) */
 *,
 *::before,

@@ -126,23 +126,23 @@ const hasMore = computed(() => items.value.length > showLimit);
     <div v-if="editableSummary" class="mt-1.5 flex items-start gap-1">
       <p
         v-if="payload.summary"
-        class="text-xs text-fg-muted italic min-h-[1.25rem] flex-1 min-w-0 whitespace-pre-wrap"
+        class="card-summary italic"
         v-html="summaryHtml"
       />
-      <p v-else class="text-xs text-fg-muted italic min-h-[1.25rem] flex-1 min-w-0 opacity-70">
+      <p v-else class="card-summary-placeholder italic">
         Конспект...
       </p>
       <button
         type="button"
         @click="openSummaryEditor"
-        class="btn-icon-muted-primary flex-shrink-0"
+        class="btn-icon-muted-primary flex-shrink-0 card-icon-hover"
         title="Редактировать конспект"
       >
         <span class="i-lucide-edit-2 text-xs" />
       </button>
     </div>
     <template v-else-if="payload.summary">
-      <p class="text-xs text-fg-muted mt-1.5 italic whitespace-pre-wrap" v-html="summaryHtml"></p>
+      <p class="card-summary-readonly italic" v-html="summaryHtml"></p>
     </template>
 
     <DialogRoot v-model:open="showSummaryModal">

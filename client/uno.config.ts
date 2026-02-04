@@ -103,7 +103,13 @@ export default defineConfig({
       'inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors min-w-0 shadow-[0_0_transparent]',
     'filter-pill-active': 'bg-bg text-fg shadow-sm',
     'filter-pill-inactive': 'text-fg-muted hover:text-fg',
-    'card-actions-hover': 'opacity-0 group-hover:opacity-100 transition-opacity',
+    /* Иконки на карточке (раскрыть заметку, редактировать конспект и т.п.) — видны только при наведении на карточку */
+    'card-icon-hover': 'opacity-0 group-hover:opacity-100 transition-opacity',
+    /* Конспект (payload.summary) на карточке */
+    'card-summary':
+      'text-xs text-fg-muted min-h-[1.25rem] max-h-[200px] flex-1 min-w-0 whitespace-pre-wrap overflow-y-auto scrollbar-hide',
+    'card-summary-readonly': 'text-xs text-fg-muted mt-1.5 whitespace-pre-wrap max-h-[400px] overflow-y-auto scrollbar-hide',
+    'card-summary-placeholder': 'text-xs text-fg-muted min-h-[1.25rem] flex-1 min-w-0 opacity-70',
     /* Кнопка редактирования карточки — не блокирует клики по чекбоксу/заголовку, пока не hover */
     'card-edit-float':
       'absolute -top-2 right-2 z-10 w-8 h-8 rounded-full btn-icon bg-bg border border-border shadow-sm text-fg hover:border-primary hover:bg-primary/10 hover:text-fg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all overflow-visible',

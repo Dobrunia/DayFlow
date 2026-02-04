@@ -102,7 +102,9 @@ type Query {
   workspace(id: ID!): Workspace
   myWorkspaces: [Workspace!]!
   """Все карточки пользователя (хаб: workspaceId = null, или по фильтру)."""
-  cards(filter: CardFilter): [Card!]!
+  cards(filter: CardFilter, limit: Int, offset: Int): [Card!]!
+  """Число карточек по фильтру (для пагинации)."""
+  cardsCount(filter: CardFilter): Int!
   card(id: ID!): Card
 }
 

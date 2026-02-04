@@ -22,25 +22,40 @@ function parseTags(tags: unknown): string[] {
   return [];
 }
 
+function buildCardsWhere(filter: CardFilter | undefined, userId: string): Prisma.CardWhereInput {
+  const where: Prisma.CardWhereInput = { ownerId: userId };
+  if (filter?.type) where.type = mapCardType(filter.type);
+  if (filter?.done !== undefined) where.done = filter.done;
+  if (filter?.workspaceId !== undefined) where.workspaceId = filter.workspaceId ?? null;
+  if (filter?.columnId !== undefined) where.columnId = filter.columnId ?? null;
+  if (filter?.search) where.OR = [{ title: { contains: filter.search } }];
+  return where;
+}
+
 export const cardResolvers = {
   Query: {
-    cards: async (_: unknown, { filter }: { filter?: CardFilter }, context: Context) => {
+    cards: async (
+      _: unknown,
+      { filter, limit, offset }: { filter?: CardFilter; limit?: number; offset?: number },
+      context: Context
+    ) => {
       if (!context.user) throw UnauthenticatedError();
-
-      const where: Prisma.CardWhereInput = { ownerId: context.user.id };
-
-      if (filter?.type) where.type = mapCardType(filter.type);
-      if (filter?.done !== undefined) where.done = filter.done;
-      if (filter?.workspaceId !== undefined) where.workspaceId = filter.workspaceId || null;
-      if (filter?.columnId !== undefined) where.columnId = filter.columnId || null;
-      if (filter?.search) {
-        where.OR = [{ title: { contains: filter.search } }];
-      }
-
+      const where = buildCardsWhere(filter, context.user.id);
+      const orderBy = [{ columnId: 'asc' }, { order: 'asc' }, { createdAt: 'desc' }];
+      const take = limit != null ? Math.min(Math.max(0, limit), 100) : undefined;
+      const skip = offset != null ? Math.max(0, offset) : undefined;
       return context.prisma.card.findMany({
         where,
-        orderBy: [{ columnId: 'asc' }, { order: 'asc' }, { createdAt: 'desc' }],
+        orderBy,
+        ...(take != null && { take }),
+        ...(skip != null && { skip }),
       });
+    },
+
+    cardsCount: async (_: unknown, { filter }: { filter?: CardFilter }, context: Context) => {
+      if (!context.user) throw UnauthenticatedError();
+      const where = buildCardsWhere(filter, context.user.id);
+      return context.prisma.card.count({ where });
     },
 
     card: async (_: unknown, { id }: { id: string }, context: Context) => {

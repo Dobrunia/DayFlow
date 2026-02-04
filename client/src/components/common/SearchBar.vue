@@ -37,7 +37,7 @@ function selectResult(card: CardGql) {
   if (card.workspaceId) {
     router.push(`/workspace/${card.workspaceId}`);
   } else {
-    router.push('/library');
+    router.push({ path: '/library', query: { card: card.id } });
   }
   query.value = '';
   isOpen.value = false;

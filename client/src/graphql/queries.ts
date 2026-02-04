@@ -69,8 +69,8 @@ export const WORKSPACE_QUERY = gql`
 `;
 
 export const CARDS_QUERY = gql`
-  query Cards($filter: CardFilter) {
-    cards(filter: $filter) {
+  query Cards($filter: CardFilter, $limit: Int, $offset: Int) {
+    cards(filter: $filter, limit: $limit, offset: $offset) {
       id
       createdAt
       updatedAt
@@ -84,6 +84,12 @@ export const CARDS_QUERY = gql`
       payload
       tags
     }
+  }
+`;
+
+export const CARDS_COUNT_QUERY = gql`
+  query CardsCount($filter: CardFilter) {
+    cardsCount(filter: $filter)
   }
 `;
 

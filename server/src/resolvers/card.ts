@@ -1,5 +1,6 @@
 import type { Context } from '../lib/context.js';
-import type { CardType, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type { CardType } from '@prisma/client';
 import type { CreateCardInput, UpdateCardInput, CardFilter } from 'dayflow-shared';
 import {
   NotePayloadSchema,
@@ -28,8 +29,64 @@ function buildCardsWhere(filter: CardFilter | undefined, userId: string): Prisma
   if (filter?.done !== undefined) where.done = filter.done;
   if (filter?.workspaceId !== undefined) where.workspaceId = filter.workspaceId ?? null;
   if (filter?.columnId !== undefined) where.columnId = filter.columnId ?? null;
-  if (filter?.search) where.OR = [{ title: { contains: filter.search } }];
+  if (filter?.search) {
+    const term = filter.search.trim();
+    where.OR = [{ title: { contains: term } }];
+  }
   return where;
+}
+
+function buildSearchRawConditions(
+  userId: string,
+  term: string,
+  filter: CardFilter | undefined
+): ReturnType<typeof Prisma.sql>[] {
+  const likePattern = '%' + term.replace(/[%_\\]/g, '\\$&') + '%';
+  const conditions: ReturnType<typeof Prisma.sql>[] = [
+    Prisma.sql`c.ownerId = ${userId}`,
+    Prisma.sql`(c.title LIKE ${likePattern} OR JSON_SEARCH(c.tags, 'one', ${likePattern}) IS NOT NULL)`,
+  ];
+  if (filter?.type) conditions.push(Prisma.sql`c.type = ${mapCardType(filter.type)}`);
+  if (filter?.done !== undefined) conditions.push(Prisma.sql`c.done = ${filter.done}`);
+  if (filter?.workspaceId !== undefined)
+    conditions.push(Prisma.sql`c.workspaceId <=> ${filter.workspaceId ?? null}`);
+  if (filter?.columnId !== undefined)
+    conditions.push(Prisma.sql`c.columnId <=> ${filter.columnId ?? null}`);
+  return conditions;
+}
+
+/** Поиск по title ИЛИ по тегам (MySQL JSON_CONTAINS). Используется когда передан filter.search. */
+async function cardsSearchRaw(
+  prisma: Context['prisma'],
+  userId: string,
+  term: string,
+  filter: CardFilter | undefined,
+  orderDir: 'asc' | 'desc',
+  take: number,
+  skip: number
+): Promise<unknown[]> {
+  const conditions = buildSearchRawConditions(userId, term, filter);
+  const order = orderDir === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+  return prisma.$queryRaw`
+    SELECT c.* FROM Card c
+    WHERE ${Prisma.join(conditions, ' AND ')}
+    ORDER BY c.createdAt ${order}
+    LIMIT ${take} OFFSET ${skip}
+  `;
+}
+
+async function cardsCountSearchRaw(
+  prisma: Context['prisma'],
+  userId: string,
+  term: string,
+  filter: CardFilter | undefined
+): Promise<number> {
+  const conditions = buildSearchRawConditions(userId, term, filter);
+  const rows = await prisma.$queryRaw<[{ count: bigint }]>`
+    SELECT COUNT(*) as count FROM Card c
+    WHERE ${Prisma.join(conditions, ' AND ')}
+  `;
+  return Number(rows[0]?.count ?? 0);
 }
 
 export const cardResolvers = {
@@ -50,6 +107,21 @@ export const cardResolvers = {
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
+      const term = filter?.search?.trim();
+      if (term) {
+        const orderDir = sortOrder === 'createdAt_ASC' ? 'asc' : 'desc';
+        const take = Math.min(Math.max(0, limit ?? 10000), 10000);
+        const skip = Math.max(0, offset ?? 0);
+        return cardsSearchRaw(
+          context.prisma,
+          context.user.id,
+          term,
+          filter,
+          orderDir,
+          take,
+          skip
+        ) as Promise<Awaited<ReturnType<Context['prisma']['card']['findMany']>>>;
+      }
       const where = buildCardsWhere(filter, context.user.id);
       const createdAtOrder = sortOrder === 'createdAt_ASC' ? 'asc' : 'desc';
       const orderBy =
@@ -68,6 +140,9 @@ export const cardResolvers = {
 
     cardsCount: async (_: unknown, { filter }: { filter?: CardFilter }, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
+      const term = filter?.search?.trim();
+      if (term)
+        return cardsCountSearchRaw(context.prisma, context.user.id, term, filter);
       const where = buildCardsWhere(filter, context.user.id);
       return context.prisma.card.count({ where });
     },

@@ -61,6 +61,7 @@ const linkUrl = ref('');
 const linkSummary = ref('');
 const checklistItems = ref<ChecklistItem[]>([]);
 const checklistSummary = ref('');
+const tagsInput = ref('');
 const loading = ref(false);
 const checklistListRef = ref<HTMLElement | null>(null);
 let checklistSortable: Sortable | null = null;
@@ -114,6 +115,7 @@ watch(
             checklistItems.value = items.length ? items.map((i) => ({ ...i })) : [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
             checklistSummary.value = (pl as { summary?: string }).summary ?? '';
           }
+        tagsInput.value = Array.isArray(card.tags) ? card.tags.join(', ') : '';
         } catch {
           noteContent.value = '';
           noteSummary.value = '';
@@ -121,6 +123,7 @@ watch(
           linkSummary.value = '';
           checklistItems.value = [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
           checklistSummary.value = '';
+          tagsInput.value = '';
         }
       } else {
         title.value = '';
@@ -133,6 +136,7 @@ watch(
         checklistSummary.value = '';
         addDestination.value = 'hub';
         selectedWorkspaceId.value = null;
+        tagsInput.value = '';
         if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
       }
       nextTick(() => initChecklistSortable());
@@ -173,6 +177,13 @@ function removeChecklistItem(index: number) {
   }
 }
 
+function buildTags(): string[] {
+  return tagsInput.value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function buildPayload(): string {
   if (cardType.value === 'NOTE') {
     return JSON.stringify({
@@ -208,9 +219,10 @@ async function handleSubmit() {
   try {
     loading.value = true;
     const payload = buildPayload();
+    const tags = buildTags();
 
     if (props.card) {
-      const updatePayload = { title: title.value.trim() || undefined, payload };
+      const updatePayload = { title: title.value.trim() || undefined, payload, tags };
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
       toast.success('Сохранено!');
@@ -219,6 +231,7 @@ async function handleSubmit() {
         type: cardType.value,
         title: title.value.trim() || undefined,
         payload,
+        tags,
       });
       toast.success('Карточка создана в хабе!');
     } else if (isGlobalAdd.value && addDestination.value === 'workspace') {
@@ -228,6 +241,7 @@ async function handleSubmit() {
         workspaceId: selectedWorkspaceId.value!,
         columnId: undefined,
         payload,
+        tags,
       });
       toast.success('Карточка добавлена в беклог воркспейса');
     } else {
@@ -237,6 +251,7 @@ async function handleSubmit() {
         workspaceId: props.workspaceId,
         columnId: props.columnId,
         payload,
+        tags,
       });
       toast.success('Карточка создана!');
     }
@@ -313,6 +328,17 @@ async function handleSubmit() {
               type="text"
               class="input"
               placeholder="Опционально"
+            />
+          </div>
+
+          <div>
+            <label for="card-tags" class="form-label-fg">Теги</label>
+            <input
+              id="card-tags"
+              v-model="tagsInput"
+              type="text"
+              class="input"
+              placeholder="Через запятую, например: работа, идеи"
             />
           </div>
 

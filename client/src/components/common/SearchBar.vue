@@ -87,7 +87,12 @@ function getCardIcon(type: string) {
           <span :class="getCardIcon(card.type)" class="text-fg-muted" />
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-fg truncate">{{ card.title || '(без названия)' }}</p>
-            <p class="text-xs text-fg-muted truncate">{{ card.type }}</p>
+            <p class="text-xs text-fg-muted truncate">
+              {{ card.type }}
+              <template v-if="(card.tags ?? []).length">
+                · {{ (card.tags as string[]).join(', ') }}
+              </template>
+            </p>
           </div>
           <span v-if="card.done" class="i-lucide-check text-success" />
         </button>

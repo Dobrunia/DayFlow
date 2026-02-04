@@ -25,3 +25,12 @@ export type {
   UpdateCardInput,
   CardFilter,
 } from "./card.js";
+
+export type {
+  CardGql,
+  User,
+  Workspace,
+  Column,
+  CreateWorkspaceInput,
+  UpdateWorkspaceInput,
+} from "./api-types.js";

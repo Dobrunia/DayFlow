@@ -12,6 +12,7 @@ type Workspace {
   id: ID!
   title: String!
   description: String
+  icon: String
   createdAt: DateTime!
   updatedAt: DateTime!
   owner: User!
@@ -62,11 +63,13 @@ type AuthPayload {
 input CreateWorkspaceInput {
   title: String!
   description: String
+  icon: String
 }
 
 input UpdateWorkspaceInput {
   title: String
   description: String
+  icon: String
 }
 
 input CreateCardInput {

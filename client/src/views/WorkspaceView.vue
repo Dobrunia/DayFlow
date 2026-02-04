@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
+import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
 import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
 import { toast } from 'vue-sonner';
@@ -14,6 +15,7 @@ const workspaceStore = useWorkspaceStore();
 const isEditing = ref(false);
 const editTitle = ref('');
 const showCreateDialog = ref(false);
+const showIconPicker = ref(false);
 
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
@@ -74,6 +76,16 @@ async function addColumn() {
   }
 }
 
+async function setIcon(emoji: string) {
+  if (!workspace.value) return;
+  try {
+    await workspaceStore.updateWorkspace(workspace.value.id, { icon: emoji });
+    showIconPicker.value = false;
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
 async function deleteWorkspace() {
   if (!workspace.value || !confirm('Удалить воркспейс? Это действие нельзя отменить.')) return;
 
@@ -117,12 +129,39 @@ function handleDialogClose() {
     <template v-else-if="workspace">
       <!-- Header -->
       <div class="flex-shrink-0 px-6 py-4 border-b border-border bg-bg">
-        <div class="flex-between">
+          <div class="flex-between">
           <div class="flex items-center gap-4">
             <!-- Back button -->
             <RouterLink to="/" class="btn-icon btn-ghost p-1.5">
               <span class="i-lucide-arrow-left text-fg-muted" />
             </RouterLink>
+
+            <!-- Workspace icon (click to change) -->
+            <div class="relative shrink-0 z-[60]">
+              <button
+                type="button"
+                class="w-9 h-9 rounded-lg flex-center text-xl bg-muted/50 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                title="Сменить иконку"
+                @click="showIconPicker = !showIconPicker"
+              >
+                <span v-if="workspace.icon">{{ workspace.icon }}</span>
+                <span v-else class="i-lucide-layout-grid text-base text-fg-muted" />
+              </button>
+              <div
+                v-if="showIconPicker"
+                class="absolute top-full left-0 mt-1 p-2.5 rounded-xl border border-border bg-bg shadow-xl w-[min(352px,90vw)] grid grid-cols-8 gap-1.5 max-h-[260px] overflow-y-auto overflow-x-hidden scrollbar-hide"
+              >
+                <button
+                  v-for="emoji in WORKSPACE_EMOJIS"
+                  :key="emoji"
+                  type="button"
+                  class="w-9 h-9 rounded-lg flex-center text-xl hover:bg-muted transition-colors shrink-0"
+                  @click="setIcon(emoji)"
+                >
+                  {{ emoji }}
+                </button>
+              </div>
+            </div>
 
             <!-- Title (editable) -->
             <div v-if="isEditing" class="flex items-center gap-2">

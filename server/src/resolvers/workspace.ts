@@ -40,6 +40,7 @@ export const workspaceResolvers = {
         data: {
           title: input.title,
           description: input.description,
+          icon: input.icon ?? null,
           ownerId: context.user.id,
           columns: {
             create: { title: 'To Do', order: 0 },
@@ -57,9 +58,10 @@ export const workspaceResolvers = {
       if (!context.user) throw UnauthenticatedError();
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
       if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
-      const data: { title?: string; description?: string | null } = {};
+      const data: { title?: string; description?: string | null; icon?: string | null } = {};
       if (input.title !== undefined) data.title = input.title;
       if (input.description !== undefined) data.description = input.description;
+      if (input.icon !== undefined) data.icon = input.icon;
       return context.prisma.workspace.update({ where: { id }, data });
     },
 

@@ -1,14 +1,28 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useWorkspaceStore } from '@/stores/workspace';
+import type { Workspace } from '@/graphql/types';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const workspaceStore = useWorkspaceStore();
 
 const isAuthenticated = computed(() => !!authStore.user);
+
+const workspaceSearch = ref('');
+
+const filteredWorkspaces = computed(() => {
+  const list = workspaceStore.workspaces;
+  const q = workspaceSearch.value.trim().toLowerCase();
+  if (!q) return list;
+  return list.filter(
+    (w: Workspace) =>
+      w.title?.toLowerCase().includes(q) ||
+      w.description?.toLowerCase().includes(q)
+  );
+});
 
 watch(
   () => authStore.user,
@@ -56,10 +70,19 @@ function navigateToWorkspace(id: string) {
 
     <!-- Dashboard for authenticated users -->
     <template v-else>
-      <div class="page-header">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-8 cursor-default">
         <div class="page-header-text">
           <h1 class="page-title">Мои воркспейсы</h1>
           <p class="page-desc">Доски для тем и проектов</p>
+        </div>
+        <div v-if="workspaceStore.workspaces.length > 0" class="relative w-full min-w-0 sm:w-64 shrink-0">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-fg-muted pointer-events-none" />
+          <input
+            v-model="workspaceSearch"
+            type="search"
+            class="input w-full py-2 pl-9"
+            placeholder="Поиск воркспейсов..."
+          />
         </div>
       </div>
 
@@ -74,15 +97,16 @@ function navigateToWorkspace(id: string) {
         class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"
       >
         <button
-          v-for="workspace in workspaceStore.workspaces"
+          v-for="workspace in filteredWorkspaces"
           :key="workspace.id"
           @click="navigateToWorkspace(workspace.id)"
           class="workspace-card group"
         >
           <div
-            class="w-10 h-10 rounded-xl bg-primary/12 flex-center mb-3 group-hover:bg-primary/20 transition-colors"
+            class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-muted/50 group-hover:bg-muted"
           >
-            <span class="i-lucide-layout-grid text-lg text-primary" />
+            <span v-if="workspace.icon">{{ workspace.icon }}</span>
+            <span v-else class="i-lucide-layout-grid text-lg text-fg-muted" />
           </div>
           <h3 class="font-semibold text-fg mb-1.5 truncate text-base">{{ workspace.title }}</h3>
           <p v-if="workspace.description" class="text-sm text-fg-muted line-clamp-2 mb-3">
@@ -92,6 +116,10 @@ function navigateToWorkspace(id: string) {
             {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
           </p>
         </button>
+
+        <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
+          <p class="col-span-full text-sm text-fg-muted py-4">По запросу ничего не найдено</p>
+        </template>
 
         <!-- Create New -->
         <button @click="$router.push('/workspace/new')" class="workspace-card-new">

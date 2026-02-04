@@ -21,24 +21,24 @@
   --link-inline: #0d8bd9;
 }
 
-/* Тёмная тема в духе X */
+/* Тёмная тема в духе Obsidian (тёплый тёмный фон, мягкие границы) */
 .dark {
-  --fg: #e7e9ea;
-  --fg-muted: #71767b;
-  --bg: #000000;
-  --muted: #16181c;
-  --muted-hover: #1d1f23;
-  --border: #2f3336;
-  --border-hover: #3e4144;
-  --primary: #1d9bf0;
+  --fg: #dadada;
+  --fg-muted: #999999;
+  --bg: #1e1e1e;
+  --muted: #262626;
+  --muted-hover: #363636;
+  --border: #363636;
+  --border-hover: #3f3f3f;
+  --primary: #7b6bff;
   --on-primary: #ffffff;
-  --success: #00ba7c;
-  --danger: #f4212e;
+  --success: #44cf6e;
+  --danger: #fb464c;
   --on-danger: #ffffff;
   --overlay: rgba(0, 0, 0, 0.65);
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --link-inline: #3b9ce8;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --link-inline: #9b8aff;
 }
 
 body {

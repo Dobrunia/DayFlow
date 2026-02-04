@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
+import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
 import {
   DialogRoot,
   DialogPortal,
@@ -32,6 +33,7 @@ const workspaceStore = useWorkspaceStore();
 
 const title = ref('');
 const description = ref('');
+const icon = ref<string | null>(WORKSPACE_EMOJIS[0]);
 const loading = ref(false);
 
 watch(
@@ -40,6 +42,7 @@ watch(
     if (isOpen) {
       title.value = '';
       description.value = '';
+      icon.value = WORKSPACE_EMOJIS[0];
     }
   }
 );
@@ -56,6 +59,7 @@ async function handleSubmit() {
     const workspace = await workspaceStore.createWorkspace({
       title: title.value.trim(),
       description: description.value.trim() || undefined,
+      icon: icon.value ?? undefined,
     });
 
     toast.success('Воркспейс создан!');
@@ -82,6 +86,23 @@ async function handleSubmit() {
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
+          <!-- Icon -->
+          <div>
+            <label class="form-label-fg">Иконка</label>
+            <div class="flex flex-wrap gap-1.5 mt-1 max-h-[200px] overflow-y-auto overflow-x-hidden p-0.5">
+              <button
+                v-for="emoji in WORKSPACE_EMOJIS"
+                :key="emoji"
+                type="button"
+                class="w-9 h-9 rounded-lg flex-center text-xl transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
+                :class="icon === emoji ? 'bg-primary/20 ring-2 ring-primary' : 'bg-muted/50'"
+                @click="icon = emoji"
+              >
+                {{ emoji }}
+              </button>
+            </div>
+          </div>
+
           <!-- Title -->
           <div>
             <label for="ws-title" class="form-label-fg"> Название * </label>

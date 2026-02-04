@@ -17,6 +17,7 @@ export const MY_WORKSPACES_QUERY = gql`
       id
       title
       description
+      icon
       createdAt
       updatedAt
     }
@@ -29,6 +30,7 @@ export const WORKSPACE_QUERY = gql`
       id
       title
       description
+      icon
       createdAt
       updatedAt
       columns {

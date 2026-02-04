@@ -49,6 +49,7 @@ export const CREATE_WORKSPACE_MUTATION = gql`
       id
       title
       description
+      icon
       createdAt
     }
   }
@@ -60,6 +61,7 @@ export const UPDATE_WORKSPACE_MUTATION = gql`
       id
       title
       description
+      icon
     }
   }
 `;

@@ -129,10 +129,14 @@ async function deleteColumn() {
 
     <div
       ref="cardsListRef"
-      class="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[2rem]"
+      class="flex-1 overflow-y-auto px-2 pb-2 flex flex-col gap-2 min-h-[2rem]"
       :data-column-id="isBacklog ? undefined : column.id"
       :data-backlog="isBacklog ? true : undefined"
     >
+      <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag flex-shrink-0 order-first">
+        <span class="i-lucide-plus text-sm" />
+        Добавить карточку
+      </button>
       <template v-if="isBacklog">
         <CardItem
           v-for="c in backlogCards"
@@ -140,10 +144,6 @@ async function deleteColumn() {
           :card="c"
           :is-backlog="true"
         />
-        <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">
-          <span class="i-lucide-plus text-sm" />
-          Добавить карточку
-        </button>
       </template>
       <template v-else>
         <CardItem
@@ -152,10 +152,6 @@ async function deleteColumn() {
           :card="card"
           :column-id="column.id"
         />
-        <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag">
-          <span class="i-lucide-plus text-sm" />
-          Добавить карточку
-        </button>
       </template>
     </div>
 

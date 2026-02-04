@@ -90,7 +90,7 @@ function closeSummaryModal() {
         </button>
       </div>
     </div>
-    <div v-if="editableSummary" class="mt-1.5 flex items-start gap-1">
+    <div v-if="editableSummary" class="mt-1.5 flex items-center gap-1">
       <div class="flex-1 min-w-0">
         <p
           v-if="payload.summary"

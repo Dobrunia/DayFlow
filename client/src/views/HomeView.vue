@@ -131,7 +131,7 @@ function navigateToWorkspace(id: string) {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="text-center py-16">
+      <div v-else class="text-center py-16 flex flex-col items-center gap-4">
         <div class="empty-state-icon">
           <span class="i-lucide-folder text-2xl text-fg-muted" />
         </div>

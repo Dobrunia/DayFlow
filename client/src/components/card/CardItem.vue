@@ -147,7 +147,8 @@ async function updateSummary(newSummary: string) {
 
         <div
           ref="titleContainerRef"
-          class="flex-1 min-w-0 flex items-center cursor-text"
+          class="flex-1 min-w-0 flex items-center cursor-text overflow-hidden"
+          :title="card.title || '(без названия)'"
           @dblclick.prevent="startEditTitle()"
         >
           <template v-if="isEditingTitle">
@@ -162,7 +163,7 @@ async function updateSummary(newSummary: string) {
           </template>
           <p
             v-else
-            class="text-sm font-medium text-fg min-w-0 truncate leading-none pointer-events-none"
+            class="text-sm font-medium text-fg min-w-0 break-words line-clamp-2 leading-snug pointer-events-none"
             :class="{ 'line-through': card.done }"
           >
             {{ card.title || '(без названия)' }}

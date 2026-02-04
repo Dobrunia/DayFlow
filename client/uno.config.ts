@@ -174,5 +174,8 @@ export default defineConfig({
     'i-lucide-moon',
     'i-lucide-maximize-2',
     'i-lucide-arrow-up-down',
+    'i-lucide-bar-chart-2',
+    'i-lucide-user-x',
+    'i-lucide-share-2',
   ],
 });

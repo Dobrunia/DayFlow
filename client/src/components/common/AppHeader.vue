@@ -27,7 +27,9 @@ function handleSignOut() {
     <div class="h-full max-w-7xl mx-auto px-4 flex-between">
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
-        <div class="w-8 h-8 bg-primary rounded-lg flex-center text-on-primary text-sm font-bold">D</div>
+        <span class="w-8 h-8 rounded-lg flex-center bg-success text-on-primary pointer-events-none" aria-hidden="true">
+          <span class="i-lucide-square-check text-lg" />
+        </span>
         DayFlow
       </RouterLink>
 

@@ -45,4 +45,4 @@ jobs:
           password: ${{ secrets.BACKEND_FTP_PASSWORD }}
           local-dir: _deploy/
           server-dir: ./
-          dangerous-clean-slate: true
+          dangerous-clean-slate: false

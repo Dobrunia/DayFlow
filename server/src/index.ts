@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { resolvers } from './resolvers/index.js';
 import { createContext } from './lib/context.js';
+import { wrapExecuteWithErrorHandler } from './lib/errors.js';
+import { prisma } from './lib/prisma.js';
 
 // Absolute dir of *current file* (src in dev, dist in prod)
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -62,8 +64,12 @@ const yoga = createYoga({
   plugins: [
     {
       onExecute: ({
+        executeFn,
+        setExecuteFn,
         args,
       }: {
+        executeFn: (args: unknown) => Promise<unknown>;
+        setExecuteFn: (fn: (args: unknown) => Promise<unknown>) => void;
         args: { operationName?: string; contextValue?: unknown; variableValues?: unknown };
       }) => {
         const op = args.operationName ?? undefined;
@@ -77,6 +83,7 @@ const yoga = createYoga({
                 .join(',')
             : '';
         logPayload(op, userId, safeVars ? `vars=${safeVars}` : undefined);
+        setExecuteFn((execArgs: unknown) => wrapExecuteWithErrorHandler(executeFn)(execArgs));
       },
     },
   ],
@@ -196,6 +203,16 @@ const server = createServer(async (req, res) => {
 
 const PORT = Number(process.env.PORT ?? 4000);
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} (GraphQL at /graphql)`);
-});
+async function start() {
+  try {
+    await prisma.$connect();
+    console.log('✅ Database connected');
+  } catch (e) {
+    console.error('❌ Database connection failed:', e instanceof Error ? e.message : e);
+  }
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT} (GraphQL at /graphql)`);
+  });
+}
+
+start();

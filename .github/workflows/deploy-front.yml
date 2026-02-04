@@ -16,12 +16,20 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: client/package-lock.json
+          cache-dependency-path: |
+            client/package-lock.json
+            shared/package-lock.json
 
-      - name: Install dependencies
+      - name: Install shared dependencies
+        run: npm ci --prefix shared
+
+      - name: Build shared
+        run: npm run build --prefix shared
+
+      - name: Install client dependencies
         run: npm ci --prefix client
 
-      - name: Build
+      - name: Build client
         run: npm run build --prefix client
         env:
           VITE_GRAPHQL_URL: ${{ secrets.VITE_GRAPHQL_URL || 'https://api.example.com/graphql' }}

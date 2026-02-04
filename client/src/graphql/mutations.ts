@@ -1,12 +1,12 @@
 import { gql } from '@apollo/client/core';
 
-// Auth
 export const SIGN_UP_MUTATION = gql`
   mutation SignUp($email: String!, $password: String!) {
     signUp(email: $email, password: $password) {
       user {
         id
         email
+        avatarUrl
         createdAt
       }
     }
@@ -19,6 +19,7 @@ export const SIGN_IN_MUTATION = gql`
       user {
         id
         email
+        avatarUrl
         createdAt
       }
     }
@@ -31,13 +32,24 @@ export const SIGN_OUT_MUTATION = gql`
   }
 `;
 
-// Workspace
+export const UPDATE_PROFILE_MUTATION = gql`
+  mutation UpdateProfile($avatarUrl: String) {
+    updateProfile(avatarUrl: $avatarUrl) {
+      id
+      email
+      avatarUrl
+      createdAt
+    }
+  }
+`;
+
 export const CREATE_WORKSPACE_MUTATION = gql`
   mutation CreateWorkspace($input: CreateWorkspaceInput!) {
     createWorkspace(input: $input) {
       id
       title
       description
+      icon
       createdAt
     }
   }
@@ -49,6 +61,7 @@ export const UPDATE_WORKSPACE_MUTATION = gql`
       id
       title
       description
+      icon
     }
   }
 `;
@@ -59,7 +72,6 @@ export const DELETE_WORKSPACE_MUTATION = gql`
   }
 `;
 
-// Column
 export const CREATE_COLUMN_MUTATION = gql`
   mutation CreateColumn($workspaceId: ID!, $title: String!) {
     createColumn(workspaceId: $workspaceId, title: $title) {
@@ -94,61 +106,21 @@ export const REORDER_COLUMNS_MUTATION = gql`
   }
 `;
 
-// Item
-export const CREATE_ITEM_MUTATION = gql`
-  mutation CreateItem($input: CreateItemInput!) {
-    createItem(input: $input) {
+export const CREATE_CARD_MUTATION = gql`
+  mutation CreateCard($input: CreateCardInput!) {
+    createCard(input: $input) {
       id
-      title
-      type
-      url
-      content
-      done
-      meta
-      createdAt
-    }
-  }
-`;
-
-export const UPDATE_ITEM_MUTATION = gql`
-  mutation UpdateItem($id: ID!, $input: UpdateItemInput!) {
-    updateItem(id: $id, input: $input) {
-      id
-      title
-      type
-      url
-      content
-      status
-      done
-      meta
       createdAt
       updatedAt
-    }
-  }
-`;
-
-export const DELETE_ITEM_MUTATION = gql`
-  mutation DeleteItem($id: ID!) {
-    deleteItem(id: $id)
-  }
-`;
-
-// Card
-export const CREATE_CARD_MUTATION = gql`
-  mutation CreateCard($columnId: ID!, $input: CreateCardInput!) {
-    createCard(columnId: $columnId, input: $input) {
-      id
-      title
-      cardType
-      checked
+      ownerId
+      workspaceId
+      columnId
       order
-      videoUrl
-      noteContent
-      checklistItems {
-        id
-        text
-        checked
-      }
+      type
+      title
+      done
+      payload
+      tags
     }
   }
 `;
@@ -157,16 +129,11 @@ export const UPDATE_CARD_MUTATION = gql`
   mutation UpdateCard($id: ID!, $input: UpdateCardInput!) {
     updateCard(id: $id, input: $input) {
       id
+      type
       title
-      checked
-      videoUrl
-      videoPreview
-      noteContent
-      checklistItems {
-        id
-        text
-        checked
-      }
+      done
+      payload
+      tags
     }
   }
 `;
@@ -177,47 +144,12 @@ export const DELETE_CARD_MUTATION = gql`
   }
 `;
 
-export const TOGGLE_CARD_CHECKED_MUTATION = gql`
-  mutation ToggleCardChecked($id: ID!) {
-    toggleCardChecked(id: $id) {
-      id
-      checked
-    }
-  }
-`;
-
 export const MOVE_CARD_MUTATION = gql`
-  mutation MoveCard($id: ID!, $columnId: ID!, $order: Int!) {
+  mutation MoveCard($id: ID!, $columnId: ID, $order: Int!) {
     moveCard(id: $id, columnId: $columnId, order: $order) {
       id
+      columnId
       order
-      column {
-        id
-      }
-    }
-  }
-`;
-
-export const ADD_ITEM_TO_COLUMN_MUTATION = gql`
-  mutation AddItemToColumn($itemId: ID!, $columnId: ID!) {
-    addItemToColumn(itemId: $itemId, columnId: $columnId) {
-      id
-      title
-      cardType
-      order
-      column {
-        id
-      }
-      item {
-        id
-      }
-      videoUrl
-      noteContent
-      checklistItems {
-        id
-        text
-        checked
-      }
     }
   }
 `;

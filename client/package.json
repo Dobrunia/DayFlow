@@ -1,16 +1,18 @@
 {
   "name": "dayflow-client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build:shared": "cd ../shared && npm run build",
+    "dev": "npm run build:shared && vite",
+    "build": "npm run build:shared && vue-tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "npm run build:shared && vue-tsc --noEmit",
     "codegen": "graphql-codegen"
   },
   "dependencies": {
+    "dayflow-shared": "file:../shared",
     "@apollo/client": "^3.9.5",
     "@vue/apollo-composable": "^4.0.2",
     "@vueuse/core": "^10.9.0",
@@ -31,9 +33,9 @@
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.8",
     "@eslint/js": "^9.18.0",
-    "@graphql-codegen/cli": "^5.0.2",
-    "@graphql-codegen/typescript": "^4.0.6",
-    "@graphql-codegen/typescript-operations": "^4.2.0",
+    "@graphql-codegen/cli": "^6.0.0",
+    "@graphql-codegen/typescript": "^5.0.0",
+    "@graphql-codegen/typescript-operations": "^5.0.0",
     "@types/node": "^20.11.19",
     "@types/sortablejs": "^1.15.8",
     "@unocss/reset": "^0.58.5",
@@ -46,5 +48,8 @@
     "unocss": "^0.58.5",
     "vite": "^5.1.4",
     "vue-tsc": "^2.0.4"
+  },
+  "overrides": {
+    "fetch-blob": "^4.0.0"
   }
 }

@@ -1,4 +1,5 @@
 import type { Context } from '../lib/context.js';
+import { UnauthenticatedError, NotFoundError } from '../lib/errors.js';
 
 export const columnResolvers = {
   Mutation: {
@@ -8,7 +9,7 @@ export const columnResolvers = {
       context: Context
     ) => {
       if (!context.user) {
-        throw new Error('Not authenticated');
+        throw UnauthenticatedError();
       }
 
       // Verify workspace ownership
@@ -17,7 +18,7 @@ export const columnResolvers = {
       });
 
       if (!workspace || workspace.ownerId !== context.user.id) {
-        throw new Error('Workspace not found');
+        throw NotFoundError('Workspace not found');
       }
 
       // Get max order
@@ -43,7 +44,7 @@ export const columnResolvers = {
       context: Context
     ) => {
       if (!context.user) {
-        throw new Error('Not authenticated');
+        throw UnauthenticatedError();
       }
 
       const column = await context.prisma.column.findUnique({
@@ -52,7 +53,7 @@ export const columnResolvers = {
       });
 
       if (!column || column.workspace.ownerId !== context.user.id) {
-        throw new Error('Column not found');
+        throw NotFoundError('Column not found');
       }
 
       return context.prisma.column.update({
@@ -63,7 +64,7 @@ export const columnResolvers = {
 
     deleteColumn: async (_: unknown, { id }: { id: string }, context: Context) => {
       if (!context.user) {
-        throw new Error('Not authenticated');
+        throw UnauthenticatedError();
       }
 
       const column = await context.prisma.column.findUnique({
@@ -72,7 +73,7 @@ export const columnResolvers = {
       });
 
       if (!column || column.workspace.ownerId !== context.user.id) {
-        throw new Error('Column not found');
+        throw NotFoundError('Column not found');
       }
 
       await context.prisma.column.delete({
@@ -88,7 +89,7 @@ export const columnResolvers = {
       context: Context
     ) => {
       if (!context.user) {
-        throw new Error('Not authenticated');
+        throw UnauthenticatedError();
       }
 
       // Verify workspace ownership
@@ -97,7 +98,7 @@ export const columnResolvers = {
       });
 
       if (!workspace || workspace.ownerId !== context.user.id) {
-        throw new Error('Workspace not found');
+        throw NotFoundError('Workspace not found');
       }
 
       // Update order for each column

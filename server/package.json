@@ -1,13 +1,14 @@
 {
   "name": "dayflow-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc && node scripts/build-deploy.mjs",
+    "build:shared": "cd ../shared && npm run build",
+    "dev": "npm run build:shared && tsx watch src/index.ts",
+    "build": "npm install && npm run build:shared && tsc && node scripts/build-deploy.mjs",
     "start": "node dist/index.js",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run build:shared && tsc --noEmit",
     "db:push": "node scripts/db-push.mjs",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
@@ -17,6 +18,7 @@
     "codegen": "graphql-codegen"
   },
   "dependencies": {
+    "dayflow-shared": "file:../shared",
     "@graphql-tools/schema": "^10.0.3",
     "dotenv": "^16.4.5",
     "@prisma/client": "^5.10.0",
@@ -30,9 +32,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
-    "@graphql-codegen/cli": "^5.0.2",
-    "@graphql-codegen/typescript": "^4.0.6",
-    "@graphql-codegen/typescript-resolvers": "^4.0.6",
+    "@graphql-codegen/cli": "^6.0.0",
+    "@graphql-codegen/typescript": "^5.0.0",
+    "@graphql-codegen/typescript-resolvers": "^5.0.0",
     "@types/node": "^20.11.19",
     "eslint": "^9.18.0",
     "globals": "^15.14.0",
@@ -40,5 +42,8 @@
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.20.0"
+  },
+  "overrides": {
+    "fetch-blob": "^4.0.0"
   }
 }

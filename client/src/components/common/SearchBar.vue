@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useLibraryStore } from '@/stores/library';
+import { useCardsStore } from '@/stores/cards';
 import { debounce } from '@/lib/utils';
-import type { Item } from '@/graphql/types';
+import type { CardGql } from '@/graphql/types';
 
 const router = useRouter();
-const libraryStore = useLibraryStore();
+const cardsStore = useCardsStore();
 
 const query = ref('');
-const results = ref<Item[]>([]);
+const results = ref<CardGql[]>([]);
 const isOpen = ref(false);
 const loading = ref(false);
 
@@ -18,9 +18,8 @@ const debouncedSearch = debounce(async (searchQuery: string) => {
     results.value = [];
     return;
   }
-
   loading.value = true;
-  results.value = await libraryStore.searchItems(searchQuery);
+  results.value = await cardsStore.searchCards(searchQuery);
   loading.value = false;
 }, 300);
 
@@ -34,32 +33,29 @@ watch(query, (newQuery) => {
   }
 });
 
-function selectResult(item: Item) {
-  if (item.workspace) {
-    router.push(`/workspace/${item.workspace.id}`);
+function selectResult(card: CardGql) {
+  if (card.workspaceId) {
+    router.push(`/workspace/${card.workspaceId}`);
   } else {
-    router.push('/library');
+    router.push({ path: '/library', query: { card: card.id } });
   }
   query.value = '';
   isOpen.value = false;
 }
 
 function handleBlur() {
-  // Delay to allow click on result
   setTimeout(() => {
     isOpen.value = false;
   }, 200);
 }
 
-function getItemIcon(type: string) {
+function getCardIcon(type: string) {
   const icons: Record<string, string> = {
     NOTE: 'i-lucide-file-text',
     LINK: 'i-lucide-link',
-    VIDEO: 'i-lucide-video',
-    REPO: 'i-lucide-github',
-    TASK: 'i-lucide-check-square',
+    CHECKLIST: 'i-lucide-check-square',
   };
-  return icons[type] || 'i-lucide-file';
+  return icons[type] || 'i-lucide-circle';
 }
 </script>
 
@@ -77,25 +73,28 @@ function getItemIcon(type: string) {
       />
     </div>
 
-    <!-- Results Dropdown -->
     <div v-if="isOpen && (results.length > 0 || loading)" class="dropdown-panel">
       <div v-if="loading" class="p-4 text-center text-sm text-fg-muted">Поиск...</div>
 
       <template v-else>
         <button
-          v-for="item in results"
-          :key="item.id"
-          @click="selectResult(item)"
+          v-for="card in results"
+          :key="card.id"
+          type="button"
+          @click="selectResult(card)"
           class="dropdown-item"
         >
-          <span :class="getItemIcon(item.type)" class="text-fg-muted" />
+          <span :class="getCardIcon(card.type)" class="text-fg-muted" />
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-fg truncate">{{ item.title }}</p>
-            <p v-if="item.workspace" class="text-xs text-fg-muted truncate">
-              {{ item.workspace.title }}
+            <p class="text-sm font-medium text-fg truncate">{{ card.title || '(без названия)' }}</p>
+            <p class="text-xs text-fg-muted truncate">
+              {{ card.type }}
+              <template v-if="(card.tags ?? []).length">
+                · {{ (card.tags as string[]).join(', ') }}
+              </template>
             </p>
           </div>
-          <span v-if="item.done" class="i-lucide-check text-success" />
+          <span v-if="card.done" class="i-lucide-check text-success" />
         </button>
 
         <div v-if="results.length === 0" class="p-4 text-center text-sm text-fg-muted">

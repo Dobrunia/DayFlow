@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
@@ -11,6 +11,10 @@ const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
 const isAuthenticated = computed(() => !!authStore.user);
+const avatarLoadFailed = ref(false);
+watch(() => authStore.user?.avatarUrl, () => {
+  avatarLoadFailed.value = false;
+});
 
 function handleSignOut() {
   authStore.signOut();
@@ -23,7 +27,9 @@ function handleSignOut() {
     <div class="h-full max-w-7xl mx-auto px-4 flex-between">
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
-        <div class="w-8 h-8 bg-primary rounded-lg flex-center text-on-primary text-sm font-bold">D</div>
+        <span class="w-8 h-8 rounded-lg flex-center bg-success text-on-primary pointer-events-none" aria-hidden="true">
+          <span class="i-lucide-square-check text-lg" />
+        </span>
         DayFlow
       </RouterLink>
 
@@ -36,17 +42,24 @@ function handleSignOut() {
       <nav class="flex items-center gap-4">
         <template v-if="isAuthenticated">
           <RouterLink to="/library" class="btn-ghost text-sm text-fg-muted hover:text-fg">
-            <span class="i-lucide-folder mr-1.5" />
-            Библиотека
+            <span class="i-lucide-inbox mr-1.5" />
+            Хаб
           </RouterLink>
 
           <GlobalAddButton />
 
           <!-- User Menu -->
           <div class="relative group">
-            <button class="btn-ghost p-2 rounded-full">
-              <span class="i-lucide-user text-lg" />
-            </button>
+            <RouterLink to="/profile" class="btn-ghost p-2 rounded-full flex items-center">
+              <img
+                v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
+                :src="authStore.user.avatarUrl"
+                alt=""
+                class="w-8 h-8 rounded-full object-cover"
+                @error="avatarLoadFailed = true"
+              >
+              <span v-else class="i-lucide-user text-lg" />
+            </RouterLink>
 
             <!-- Dropdown -->
             <div
@@ -58,6 +71,13 @@ function handleSignOut() {
                 </p>
               </div>
               <div class="p-1">
+                <RouterLink
+                  to="/profile"
+                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
+                >
+                  <span class="i-lucide-user" />
+                  Профиль
+                </RouterLink>
                 <button
                   @click="handleSignOut"
                   class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"

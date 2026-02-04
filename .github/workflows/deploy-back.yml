@@ -28,21 +28,12 @@ jobs:
           npx tsc
           node scripts/build-deploy.mjs
 
-      - name: Prepare deploy bundle
-        run: |
-          mkdir -p _deploy
-          cp -r server/dist _deploy/dist
-          cp -r shared _deploy/shared
-          cp server/package.json _deploy/package.json
-          cp server/package-lock.json _deploy/package-lock.json
-          if [ -d "server/prisma" ]; then cp -r server/prisma _deploy/prisma; fi
-
       - name: Upload via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.BACKEND_FTP_SERVER }}
           username: ${{ secrets.BACKEND_FTP_USERNAME }}
           password: ${{ secrets.BACKEND_FTP_PASSWORD }}
-          local-dir: _deploy/
+          local-dir: server/dist/
           server-dir: ./
           dangerous-clean-slate: false

@@ -50,6 +50,11 @@ export const apolloClient = new ApolloClient({
               return incoming;
             },
           },
+          backlog: {
+            merge(_existing, incoming) {
+              return incoming;
+            },
+          },
         },
       },
       Column: {

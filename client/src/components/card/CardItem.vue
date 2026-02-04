@@ -148,6 +148,7 @@ async function updateSummary(newSummary: string) {
         <div
           ref="titleContainerRef"
           class="flex-1 min-w-0 flex items-center cursor-text overflow-hidden"
+          :title="card.title || '(без названия)'"
           @dblclick.prevent="startEditTitle()"
         >
           <template v-if="isEditingTitle">

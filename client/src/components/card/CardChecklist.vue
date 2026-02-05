@@ -95,8 +95,9 @@ const hasMore = computed(() => items.value.length > showLimit);
         <span v-if="item.done" class="i-lucide-check text-[10px]" />
       </div>
       <span
-        class="text-xs text-muted"
+        class="text-xs text-muted cursor-pointer select-none"
         :class="{ 'line-through opacity-70': item.done }"
+        @click="!disabled && emit('toggleItem', index)"
       >
         {{ item.text }}
       </span>

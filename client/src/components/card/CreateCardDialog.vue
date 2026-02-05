@@ -64,6 +64,7 @@ const checklistSummary = ref('');
 const tagsInput = ref('');
 const loading = ref(false);
 const checklistListRef = ref<HTMLElement | null>(null);
+const titleInputRef = ref<HTMLInputElement | null>(null);
 let checklistSortable: Sortable | null = null;
 
 const isEditMode = computed(() => !!props.card);
@@ -139,7 +140,10 @@ watch(
         tagsInput.value = '';
         if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
       }
-      nextTick(() => initChecklistSortable());
+      nextTick(() => {
+        initChecklistSortable();
+        titleInputRef.value?.focus();
+      });
     } else {
       checklistSortable?.destroy();
       checklistSortable = null;
@@ -323,6 +327,7 @@ async function handleSubmit() {
           <div>
             <label for="card-title" class="block text-sm font-medium mb-1">Название</label>
             <input
+              ref="titleInputRef"
               id="card-title"
               v-model="title"
               type="text"

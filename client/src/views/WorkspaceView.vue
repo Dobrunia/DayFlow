@@ -225,7 +225,7 @@ function downloadSummaries() {
 </script>
 
 <template>
-  <div class="h-[calc(100vh-4rem)] flex flex-col">
+  <div class="h-[calc(100vh-120px)] flex flex-col">
     <!-- Create Dialog -->
     <CreateWorkspaceDialog
       :open="showCreateDialog"
@@ -250,7 +250,7 @@ function downloadSummaries() {
             </RouterLink>
 
             <!-- Workspace icon (click to change) -->
-            <div class="relative shrink-0 z-[60]">
+            <div class="relative shrink-0">
               <button
                 type="button"
                 class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
@@ -262,7 +262,7 @@ function downloadSummaries() {
               </button>
               <div
                 v-if="showIconPicker"
-                class="absolute top-full left-0 mt-1 p-2.5 card w-[min(352px,90vw)] grid grid-cols-8 gap-1.5 max-h-[260px] overflow-y-auto scrollbar-hide"
+                class="absolute top-full left-0 mt-1 p-2.5 card w-[min(352px,90vw)] grid grid-cols-8 gap-1.5 max-h-[260px] overflow-y-auto scrollbar-hide z-20"
               >
                 <button
                   v-for="emoji in WORKSPACE_EMOJIS"

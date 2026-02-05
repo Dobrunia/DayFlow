@@ -169,7 +169,7 @@ export default defineConfig({
     /* ─────────────────────────────
        Page layout (минимум)
        ───────────────────────────── */
-    'page-container': 'max-w-4xl mx-auto px-5 py-10',
+    'page-container': 'max-w-4xl mx-auto px-5 pt-6 pb-10',
     'page-title': 'text-2xl font-bold tracking-tight',
     'page-desc': 'text-sm text-muted',
     'link-inline': 'text-link hover:underline underline-offset-3',

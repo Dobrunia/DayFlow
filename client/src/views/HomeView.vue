@@ -105,7 +105,9 @@ function togglePinned(e: Event, id: string) {
         <!-- Pinned -->
         <template v-if="pinnedWorkspaces.length > 0">
           <h2 class="text-sm font-medium text-muted mb-3 flex items-center gap-1.5">
-            <span class="i-lucide-star text-yellow-500" />
+            <svg class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
             <span>Закреплённые</span>
           </h2>
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
@@ -117,11 +119,14 @@ function togglePinned(e: Event, id: string) {
             >
               <button
                 type="button"
-                class="absolute top-3 right-3 icon-btn-ghost text-yellow-500"
+                class="absolute top-3 right-3 icon-btn-ghost text-yellow-500 group/star"
                 title="Открепить"
                 @click="togglePinned($event, workspace.id)"
               >
-                <span class="i-lucide-star-off" />
+                <svg class="w-[18px] h-[18px] group-hover/star:opacity-0 absolute" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span class="i-lucide-star-off opacity-0 group-hover/star:opacity-100" />
               </button>
               <div
                 class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
@@ -156,7 +161,9 @@ function togglePinned(e: Event, id: string) {
               title="Закрепить"
               @click="togglePinned($event, workspace.id)"
             >
-              <span class="i-lucide-star" />
+              <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
             </button>
             <div
               class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"

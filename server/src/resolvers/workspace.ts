@@ -71,6 +71,16 @@ export const workspaceResolvers = {
       await context.prisma.workspace.delete({ where: { id } });
       return true;
     },
+
+    toggleWorkspacePinned: async (_: unknown, { id }: { id: string }, context: Context) => {
+      if (!context.user) throw UnauthenticatedError();
+      const workspace = await context.prisma.workspace.findUnique({ where: { id } });
+      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
+      return context.prisma.workspace.update({
+        where: { id },
+        data: { pinned: !workspace.pinned },
+      });
+    },
   },
 
   Workspace: {

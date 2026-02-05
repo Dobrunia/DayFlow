@@ -7,6 +7,7 @@ import {
   CREATE_WORKSPACE_MUTATION,
   UPDATE_WORKSPACE_MUTATION,
   DELETE_WORKSPACE_MUTATION,
+  TOGGLE_WORKSPACE_PINNED_MUTATION,
   CREATE_COLUMN_MUTATION,
   UPDATE_COLUMN_MUTATION,
   DELETE_COLUMN_MUTATION,
@@ -170,6 +171,26 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       lastDeletedWorkspace.value = null;
+      throw e;
+    }
+  }
+
+  async function toggleWorkspacePinned(id: string) {
+    try {
+      error.value = null;
+      const { data } = await apolloClient.mutate({
+        mutation: TOGGLE_WORKSPACE_PINNED_MUTATION,
+        variables: { id },
+      });
+      const index = workspaces.value.findIndex((w) => w.id === id);
+      if (index !== -1) {
+        const next = [...workspaces.value];
+        next[index] = { ...next[index], pinned: data.toggleWorkspacePinned.pinned };
+        workspaces.value = next;
+      }
+      return data.toggleWorkspacePinned;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
       throw e;
     }
   }
@@ -687,6 +708,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     updateWorkspace,
     deleteWorkspace,
     undoDeleteWorkspace,
+    toggleWorkspacePinned,
     createColumn,
     updateColumn,
     deleteColumn,

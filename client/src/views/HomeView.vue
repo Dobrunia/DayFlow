@@ -22,6 +22,9 @@ const filteredWorkspaces = computed(() => {
   );
 });
 
+const pinnedWorkspaces = computed(() => filteredWorkspaces.value.filter((w) => w.pinned));
+const unpinnedWorkspaces = computed(() => filteredWorkspaces.value.filter((w) => !w.pinned));
+
 watch(
   () => authStore.user,
   (u) => {
@@ -32,6 +35,11 @@ watch(
 
 function navigateToWorkspace(id: string) {
   router.push(`/workspace/${id}`);
+}
+
+function togglePinned(e: Event, id: string) {
+  e.stopPropagation();
+  workspaceStore.toggleWorkspacePinned(id);
 }
 </script>
 
@@ -93,48 +101,96 @@ function navigateToWorkspace(id: string) {
       </div>
 
       <!-- Workspaces Grid -->
-      <div
-        v-else-if="workspaceStore.workspaces.length > 0"
-        class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"
-      >
-        <button
-          v-for="workspace in filteredWorkspaces"
-          :key="workspace.id"
-          @click="navigateToWorkspace(workspace.id)"
-          class="card-hover text-left p-5 group"
-        >
-          <div
-            class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
-          >
-            <span v-if="workspace.icon">{{ workspace.icon }}</span>
-            <span v-else class="i-lucide-layout-grid text-lg text-muted" />
+      <template v-else-if="workspaceStore.workspaces.length > 0">
+        <!-- Pinned -->
+        <template v-if="pinnedWorkspaces.length > 0">
+          <h2 class="text-sm font-medium text-muted mb-3 flex items-center gap-1.5">
+            <span class="i-lucide-star text-yellow-500" />
+            <span>Закреплённые</span>
+          </h2>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+            <button
+              v-for="workspace in pinnedWorkspaces"
+              :key="workspace.id"
+              @click="navigateToWorkspace(workspace.id)"
+              class="card-hover text-left p-5 group relative"
+            >
+              <button
+                type="button"
+                class="absolute top-3 right-3 icon-btn-ghost text-yellow-500"
+                title="Открепить"
+                @click="togglePinned($event, workspace.id)"
+              >
+                <span class="i-lucide-star-off" />
+              </button>
+              <div
+                class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
+              >
+                <span v-if="workspace.icon">{{ workspace.icon }}</span>
+                <span v-else class="i-lucide-layout-grid text-lg text-muted" />
+              </div>
+              <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">
+                {{ workspace.title }}
+              </h3>
+              <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
+                {{ workspace.description }}
+              </p>
+              <p class="text-xs text-muted">
+                {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
+              </p>
+            </button>
           </div>
-          <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">
-            {{ workspace.title }}
-          </h3>
-          <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
-            {{ workspace.description }}
-          </p>
-          <p class="text-xs text-muted">
-            {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
-          </p>
-        </button>
-
-        <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
-          <p class="col-span-full text-sm text-muted py-4">По запросу ничего не найдено</p>
         </template>
 
-        <!-- Create New -->
-        <button
-          @click="$router.push('/workspace/new')"
-          class="p-5 border-2 border-dashed border-border rounded-[var(--r)] flex flex-col items-center justify-center text-muted hover:text-fg hover:border-fg/30 transition-colors"
-        >
-          <span class="w-10 h-10 rounded-xl bg-fg/5 flex-center mb-1">
-            <span class="i-lucide-plus text-xl" />
-          </span>
-          <span class="text-sm font-medium">Новый воркспейс</span>
-        </button>
-      </div>
+        <!-- Unpinned -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <button
+            v-for="workspace in unpinnedWorkspaces"
+            :key="workspace.id"
+            @click="navigateToWorkspace(workspace.id)"
+            class="card-hover text-left p-5 group relative"
+          >
+            <button
+              type="button"
+              class="absolute top-3 right-3 icon-btn-ghost opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-yellow-500"
+              title="Закрепить"
+              @click="togglePinned($event, workspace.id)"
+            >
+              <span class="i-lucide-star" />
+            </button>
+            <div
+              class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
+            >
+              <span v-if="workspace.icon">{{ workspace.icon }}</span>
+              <span v-else class="i-lucide-layout-grid text-lg text-muted" />
+            </div>
+            <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">
+              {{ workspace.title }}
+            </h3>
+            <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
+              {{ workspace.description }}
+            </p>
+            <p class="text-xs text-muted">
+              {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
+            </p>
+          </button>
+
+          <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
+            <p class="col-span-full text-sm text-muted py-4">По запросу ничего не найдено</p>
+          </template>
+
+          <!-- Create New -->
+          <button
+            @click="$router.push('/workspace/new')"
+            class="p-5 border-2 border-dashed border-border rounded-[var(--r)] flex flex-col items-center justify-center text-muted hover:text-fg hover:border-fg/30 transition-colors"
+          >
+            <span class="w-10 h-10 rounded-xl bg-fg/5 flex-center mb-1">
+              <span class="i-lucide-plus text-xl" />
+            </span>
+            <span class="text-sm font-medium">Новый воркспейс</span>
+          </button>
+        </div>
+      </template>
 
       <!-- Empty State -->
       <div v-else class="text-center py-16 flex flex-col items-center gap-4">

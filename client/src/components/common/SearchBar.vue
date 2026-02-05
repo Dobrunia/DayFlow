@@ -66,7 +66,7 @@ function getCardIcon(type: string) {
       <input
         v-model="query"
         type="text"
-        placeholder="Поиск..."
+        placeholder="Поиск карточек..."
         class="input pl-10"
         @focus="isOpen = query.trim().length > 0"
         @blur="handleBlur"

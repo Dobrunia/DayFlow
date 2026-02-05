@@ -30,14 +30,14 @@ function shareStats() {
 <template>
   <div class="page-container">
     <div class="page-header-row">
-      <RouterLink to="/" class="btn-ghost text-sm text-fg-muted hover:text-fg">
+      <RouterLink to="/" class="btn-link">
         <span class="i-lucide-arrow-left mr-1" />
         На главную
       </RouterLink>
       <button
         v-if="isOwnStats && stats"
         type="button"
-        class="btn-ghost text-sm text-fg-muted hover:text-fg"
+        class="btn-link"
         @click="shareStats"
       >
         <span class="i-lucide-share-2 mr-1" />
@@ -100,7 +100,7 @@ function shareStats() {
               <span class="text-xl shrink-0 w-8 h-8 flex-center rounded-lg bg-bg/80">
                 {{ ws.icon || '📁' }}
               </span>
-              <span class="font-medium text-fg truncate">{{ ws.title }}</span>
+              <span :title="ws.title" class="font-medium text-fg truncate">{{ ws.title }}</span>
             </div>
             <p v-if="ws.description" class="text-sm text-fg-muted line-clamp-2">
               {{ ws.description }}

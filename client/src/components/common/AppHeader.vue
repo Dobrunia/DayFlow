@@ -44,7 +44,7 @@ function handleSignOut() {
       <!-- Right: Navigation & User -->
       <nav class="flex items-center gap-4">
         <template v-if="isAuthenticated">
-          <RouterLink to="/library" class="btn-ghost text-sm text-fg-muted hover:text-fg">
+          <RouterLink to="/library" class="btn-link">
             <span class="i-lucide-inbox mr-1.5" />
             Хаб
           </RouterLink>
@@ -53,7 +53,7 @@ function handleSignOut() {
 
           <!-- User Menu -->
           <div class="relative group">
-            <RouterLink to="/profile" class="btn-ghost p-2 rounded-full flex items-center">
+            <RouterLink to="/profile" class="btn-avatar">
               <img
                 v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
                 :src="authStore.user.avatarUrl"
@@ -69,29 +69,18 @@ function handleSignOut() {
               class="absolute right-0 mt-1 w-48 bg-bg border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
             >
               <div class="p-3 border-b border-border">
-                <p class="text-sm font-medium text-fg truncate">
-                  {{ authStore.user?.email }}
-                </p>
+                <p class="text-sm font-medium text-fg truncate">{{ authStore.user?.email }}</p>
               </div>
               <div class="p-1">
-                <RouterLink
-                  to="/profile"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
-                >
+                <RouterLink to="/profile" class="dropdown-menu-item">
                   <span class="i-lucide-user" />
                   Профиль
                 </RouterLink>
-                <RouterLink
-                  :to="`/user/${authStore.user?.id}`"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
-                >
+                <RouterLink :to="`/user/${authStore.user?.id}`" class="dropdown-menu-item">
                   <span class="i-lucide-bar-chart-2" />
                   Моя статистика
                 </RouterLink>
-                <button
-                  @click="handleSignOut"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
-                >
+                <button @click="handleSignOut" class="dropdown-menu-item">
                   <span class="i-lucide-log-out" />
                   Выйти
                 </button>
@@ -107,7 +96,7 @@ function handleSignOut() {
         <!-- Смена темы -->
         <button
           type="button"
-          class="btn-icon btn-ghost p-2"
+          class="icon-btn-ghost-md"
           :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
           @click="themeStore.toggle()"
         >

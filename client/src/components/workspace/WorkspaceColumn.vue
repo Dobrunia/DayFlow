@@ -17,8 +17,10 @@ const props = withDefaults(
     backlogCards?: CardGql[];
     /** Это колонка беклога (показывать всегда, не удалять) */
     isBacklogColumn?: boolean;
+    /** Поисковый запрос для фильтрации карточек */
+    searchQuery?: string;
   }>(),
-  { backlogCards: () => [], isBacklogColumn: false }
+  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '' }
 );
 
 const workspaceStore = useWorkspaceStore();
@@ -38,27 +40,61 @@ const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
 
 const cards = computed(() => props.column.cards ?? []);
 
+/** Фильтрация карточек по title/tags */
+function matchesSearch(card: CardGql, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  if (card.title?.toLowerCase().includes(q)) return true;
+  if (card.tags?.some((tag) => tag.toLowerCase().includes(q))) return true;
+  return false;
+}
+
+const filteredCards = computed(() =>
+  cards.value.filter((c) => matchesSearch(c, props.searchQuery ?? ''))
+);
+
+const filteredBacklogCards = computed(() =>
+  (props.backlogCards ?? []).filter((c) => matchesSearch(c, props.searchQuery ?? ''))
+);
+
 function handleDragEnd(evt: Sortable.SortableEvent) {
   const el = evt.item as HTMLElement;
   const to = evt.to as HTMLElement;
-  const cardId = el.getAttribute('data-card-id') ?? el.dataset.cardId;
+  const cardId = el.dataset.cardId;
   if (!cardId) return;
 
-  const order = evt.newIndex ?? 0;
-  const toBacklog = to.getAttribute('data-backlog') != null;
-  const toColumnId = to.getAttribute('data-column-id') ?? (to.dataset.columnId as string | undefined) ?? undefined;
+  // -1 потому что первый элемент в контейнере — кнопка "Добавить карточку"
+  const order = Math.max(0, (evt.newIndex ?? 1) - 1);
+  const toBacklog = to.dataset.backlog != null;
+  const toColumnId = to.dataset.columnId;
+
+  const doMove = (targetColumnId: string | null) => {
+    workspaceStore.moveCard(cardId, targetColumnId, order)
+      .then(() => {
+        toast('Карточка перемещена', {
+          action: {
+            label: 'Отменить',
+            onClick: () => {
+              workspaceStore.undoLastMove().catch((e) => {
+                toast.error(getGraphQLErrorMessage(e));
+              });
+            },
+          },
+          duration: 5000,
+        });
+      })
+      .catch((e) => {
+        toast.error(getGraphQLErrorMessage(e));
+      });
+  };
 
   if (toBacklog) {
-    workspaceStore.moveCard(cardId, null, order).catch((e) => {
-      toast.error(getGraphQLErrorMessage(e));
-    });
+    doMove(null);
     return;
   }
 
   if (toColumnId) {
-    workspaceStore.moveCard(cardId, toColumnId, order).catch((e) => {
-      toast.error(getGraphQLErrorMessage(e));
-    });
+    doMove(toColumnId);
   }
 }
 
@@ -104,6 +140,7 @@ async function deleteColumn() {
       </div>
       <h3
         v-else
+        :title="column.title"
         class="font-medium text-fg truncate flex-1 min-w-0"
         :class="{ 'cursor-text': !isBacklog }"
         @dblclick="!isBacklog && startEdit()"
@@ -113,7 +150,7 @@ async function deleteColumn() {
 
       <div class="flex items-center gap-0.5 shrink-0">
         <span class="text-xs text-fg-muted mr-0.5">
-          {{ isBacklog ? backlogCards!.length : cards.length }}
+          {{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}
         </span>
         <button
           v-if="!isBacklog"
@@ -139,7 +176,7 @@ async function deleteColumn() {
       </button>
       <template v-if="isBacklog">
         <CardItem
-          v-for="c in backlogCards"
+          v-for="c in filteredBacklogCards"
           :key="c.id"
           :card="c"
           :is-backlog="true"
@@ -147,7 +184,7 @@ async function deleteColumn() {
       </template>
       <template v-else>
         <CardItem
-          v-for="card in cards"
+          v-for="card in filteredCards"
           :key="card.id"
           :card="card"
           :column-id="column.id"

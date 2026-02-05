@@ -1,5 +1,7 @@
 import type { Context } from '../lib/context.js';
-import { UnauthenticatedError, NotFoundError } from '../lib/errors.js';
+import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
+
+const MAX_TITLE_LENGTH = 191;
 
 export const columnResolvers = {
   Mutation: {
@@ -10,6 +12,9 @@ export const columnResolvers = {
     ) => {
       if (!context.user) {
         throw UnauthenticatedError();
+      }
+      if (title && title.length > MAX_TITLE_LENGTH) {
+        throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
       }
 
       // Verify workspace ownership
@@ -45,6 +50,9 @@ export const columnResolvers = {
     ) => {
       if (!context.user) {
         throw UnauthenticatedError();
+      }
+      if (title && title.length > MAX_TITLE_LENGTH) {
+        throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
       }
 
       const column = await context.prisma.column.findUnique({

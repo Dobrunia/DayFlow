@@ -21,6 +21,7 @@ export const useCardsStore = defineStore('cards', () => {
   const totalCount = ref(0);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const lastDeletedCard = ref<CardGql | null>(null);
 
   const filter = ref<CardFilter>({
     type: undefined,
@@ -139,6 +140,12 @@ export const useCardsStore = defineStore('cards', () => {
   }
 
   async function deleteCard(id: string) {
+    // Сохраняем карточку для undo
+    const card = cards.value.find((c) => c.id === id);
+    if (card) {
+      lastDeletedCard.value = { ...card };
+    }
+
     try {
       error.value = null;
       await apolloClient.mutate({
@@ -146,6 +153,34 @@ export const useCardsStore = defineStore('cards', () => {
         variables: { id },
       });
       cards.value = cards.value.filter((c) => c.id !== id);
+      await fetchCards();
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      lastDeletedCard.value = null;
+      throw e;
+    }
+  }
+
+  async function undoDeleteCard() {
+    const card = lastDeletedCard.value;
+    if (!card) return;
+    lastDeletedCard.value = null;
+
+    const input: CreateCardInput = {
+      type: card.type,
+      title: card.title ?? undefined,
+      workspaceId: card.workspaceId ?? undefined,
+      columnId: card.columnId ?? undefined,
+      payload: card.payload,
+      tags: card.tags,
+    };
+
+    try {
+      error.value = null;
+      await apolloClient.mutate({
+        mutation: CREATE_CARD_MUTATION,
+        variables: { input },
+      });
       await fetchCards();
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
@@ -170,12 +205,14 @@ export const useCardsStore = defineStore('cards', () => {
     loading,
     error,
     filter,
+    lastDeletedCard,
     fetchCards,
     fetchCardById,
     searchCards,
     createCard,
     updateCard,
     deleteCard,
+    undoDeleteCard,
     setFilter,
     clearFilter,
   };

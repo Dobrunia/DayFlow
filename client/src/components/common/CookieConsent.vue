@@ -28,11 +28,7 @@ function accept() {
         Мы используем cookie для входа в аккаунт и работы сервиса. Продолжая, вы соглашаетесь
         с использованием cookie в соответствии с нашей политикой. Без согласия доступ к сайту невозможен.
       </p>
-      <button
-        type="button"
-        class="btn-primary px-6 py-2.5 rounded-full text-base"
-        @click="accept"
-      >
+      <button type="button" class="btn-primary-hero" @click="accept">
         Принять и продолжить
       </button>
     </div>

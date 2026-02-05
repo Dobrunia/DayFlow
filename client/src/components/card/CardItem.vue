@@ -92,8 +92,33 @@ async function toggleChecklistItem(index: number) {
 
 async function doDelete() {
   try {
-    if (isHubCard.value) await cardsStore.deleteCard(props.card.id);
-    else await workspaceStore.deleteCard(props.card.id);
+    if (isHubCard.value) {
+      await cardsStore.deleteCard(props.card.id);
+      toast('Карточка удалена', {
+        action: {
+          label: 'Отменить',
+          onClick: () => {
+            cardsStore.undoDeleteCard().catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
+          },
+        },
+        duration: 5000,
+      });
+    } else {
+      await workspaceStore.deleteCard(props.card.id);
+      toast('Карточка удалена', {
+        action: {
+          label: 'Отменить',
+          onClick: () => {
+            workspaceStore.undoDeleteCard().catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
+          },
+        },
+        duration: 5000,
+      });
+    }
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }

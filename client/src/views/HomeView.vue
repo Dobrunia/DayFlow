@@ -46,7 +46,7 @@ function navigateToWorkspace(id: string) {
         <p class="text-lg text-fg-muted mb-10 max-w-xl mx-auto leading-relaxed">
           Воркспейсы для тем и быстрый сбор идей в одном месте.
         </p>
-        <RouterLink to="/auth" class="btn-primary text-base px-6 py-2.5 rounded-full">
+        <RouterLink to="/auth" class="btn-primary-hero">
           Начать бесплатно
         </RouterLink>
       </div>
@@ -108,7 +108,7 @@ function navigateToWorkspace(id: string) {
             <span v-if="workspace.icon">{{ workspace.icon }}</span>
             <span v-else class="i-lucide-layout-grid text-lg text-fg-muted" />
           </div>
-          <h3 class="font-semibold text-fg mb-1.5 truncate text-base">{{ workspace.title }}</h3>
+          <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">{{ workspace.title }}</h3>
           <p v-if="workspace.description" class="text-sm text-fg-muted line-clamp-2 mb-3">
             {{ workspace.description }}
           </p>

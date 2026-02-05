@@ -161,7 +161,7 @@ function goToPage(p: number) {
         <div class="mb-4">
           <RouterLink
             :to="{ path: '/library', query: { ...($route.query as Record<string, string>), card: undefined } }"
-            class="btn-ghost text-sm text-fg-muted hover:text-fg"
+            class="btn-link"
           >
             <span class="i-lucide-arrow-left mr-1" />
             Назад к хабу
@@ -190,13 +190,9 @@ function goToPage(p: number) {
           </button>
           Отключить выполненные
         </label>
-        <button
-          type="button"
-          class="btn-ghost text-sm"
-          @click="sortOldestFirst = !sortOldestFirst"
-        >
+        <button type="button" class="btn-link" @click="sortOldestFirst = !sortOldestFirst">
           {{ sortOldestFirst ? 'Сначала старые' : 'Сначала новые' }}
-          <span class="i-lucide-arrow-up-down ml-1 text-fg-muted" />
+          <span class="i-lucide-arrow-up-down ml-1" />
         </button>
       </div>
 
@@ -222,23 +218,11 @@ function goToPage(p: number) {
             v-if="hasPagination"
             class="mt-8 flex items-center justify-center gap-2"
           >
-            <button
-              type="button"
-              class="btn-ghost btn-sm"
-              :disabled="page <= 1"
-              @click="goToPage(page - 1)"
-            >
+            <button type="button" class="btn-ghost-sm" :disabled="page <= 1" @click="goToPage(page - 1)">
               Назад
             </button>
-            <span class="text-sm text-fg-muted px-2">
-              {{ page }} / {{ totalPages }}
-            </span>
-            <button
-              type="button"
-              class="btn-ghost btn-sm"
-              :disabled="page >= totalPages"
-              @click="goToPage(page + 1)"
-            >
+            <span class="text-sm text-fg-muted px-2">{{ page }} / {{ totalPages }}</span>
+            <button type="button" class="btn-ghost-sm" :disabled="page >= totalPages" @click="goToPage(page + 1)">
               Вперёд
             </button>
           </div>

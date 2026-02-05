@@ -1,6 +1,8 @@
 import type { CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
 import type { Context } from '../lib/context.js';
-import { UnauthenticatedError, NotFoundError } from '../lib/errors.js';
+import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
+
+const MAX_TITLE_LENGTH = 191; // MySQL VARCHAR limit
 
 export const workspaceResolvers = {
   Query: {
@@ -27,6 +29,9 @@ export const workspaceResolvers = {
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
+      if (input.title && input.title.length > MAX_TITLE_LENGTH) {
+        throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
+      }
       return context.prisma.workspace.create({
         data: {
           title: input.title,
@@ -47,6 +52,9 @@ export const workspaceResolvers = {
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
+      if (input.title && input.title.length > MAX_TITLE_LENGTH) {
+        throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
+      }
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
       if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
       const data: { title?: string; description?: string | null; icon?: string | null } = {};

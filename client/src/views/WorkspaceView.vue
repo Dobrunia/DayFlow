@@ -16,6 +16,7 @@ const isEditing = ref(false);
 const editTitle = ref('');
 const showCreateDialog = ref(false);
 const showIconPicker = ref(false);
+const cardSearch = ref('');
 
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
@@ -129,11 +130,11 @@ function handleDialogClose() {
     <template v-else-if="workspace">
       <!-- Header -->
       <div class="flex-shrink-0 px-6 py-4 border-b border-border bg-bg">
-          <div class="flex-between">
-          <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-4 shrink-0">
             <!-- Back button -->
-            <RouterLink to="/" class="btn-icon btn-ghost p-1.5">
-              <span class="i-lucide-arrow-left text-fg-muted" />
+            <RouterLink to="/" class="icon-btn-ghost">
+              <span class="i-lucide-arrow-left" />
             </RouterLink>
 
             <!-- Workspace icon (click to change) -->
@@ -162,36 +163,57 @@ function handleDialogClose() {
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- Title (editable) -->
-            <div v-if="isEditing" class="flex items-center gap-2">
-              <input
-                v-model="editTitle"
-                @keyup.enter="saveTitle"
-                @keyup.escape="isEditing = false"
-                @blur="saveTitle"
-                class="input text-xl font-bold py-1 px-2"
-                autofocus
-              />
-            </div>
-            <h1 v-else @dblclick="startEditTitle" class="text-xl font-bold text-fg cursor-text">
+          <!-- Title (editable) -->
+          <div class="flex-1 min-w-0">
+            <input
+              v-if="isEditing"
+              v-model="editTitle"
+              @keyup.enter="saveTitle"
+              @keyup.escape="isEditing = false"
+              @blur="saveTitle"
+              class="input w-full text-xl font-bold py-1 px-2"
+              autofocus
+            />
+            <h1
+              v-else
+              :title="workspace.title"
+              class="text-xl font-bold text-fg cursor-text truncate"
+              @dblclick="startEditTitle"
+            >
               {{ workspace.title }}
             </h1>
           </div>
 
-          <!-- Actions -->
-          <div class="flex items-center gap-2">
+          <!-- Search + Actions -->
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <span
+                class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-fg-muted text-sm pointer-events-none"
+              />
+              <input
+                v-model="cardSearch"
+                type="text"
+                placeholder="Поиск карточек..."
+                class="input pl-8 pr-8 py-1.5 w-48 text-sm"
+              />
+              <button
+                v-if="cardSearch"
+                type="button"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg"
+                @click="cardSearch = ''"
+              >
+                <span class="i-lucide-x text-sm" />
+              </button>
+            </div>
             <button @click="addColumn" class="btn-secondary gap-1.5">
               <span class="i-lucide-plus" />
               Колонка
             </button>
 
-            <button
-              @click="deleteWorkspace"
-              class="btn-icon btn-ghost p-2"
-              title="Удалить воркспейс"
-            >
-              <span class="i-lucide-trash-2 icon-muted-danger" />
+            <button @click="deleteWorkspace" class="icon-btn-danger" title="Удалить воркспейс">
+              <span class="i-lucide-trash-2 text-xs" />
             </button>
           </div>
         </div>
@@ -210,6 +232,7 @@ function handleDialogClose() {
             :workspace-id="workspace.id"
             :backlog-cards="backlogCards"
             :is-backlog-column="true"
+            :search-query="cardSearch"
           />
 
           <WorkspaceColumn
@@ -217,6 +240,7 @@ function handleDialogClose() {
             :key="column.id"
             :column="column"
             :workspace-id="workspace.id"
+            :search-query="cardSearch"
           />
 
           <!-- Add Column Button (placeholder) -->

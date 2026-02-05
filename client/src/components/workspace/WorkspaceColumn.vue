@@ -29,6 +29,7 @@ const props = withDefaults(
 
 const workspaceStore = useWorkspaceStore();
 const showAddCard = ref(false);
+const hideCompleted = ref(false);
 const headerRef = ref<HTMLElement | null>(null);
 const cardsListRef = ref<HTMLElement | null>(null);
 let sortable: Sortable | null = null;
@@ -54,12 +55,23 @@ function matchesSearch(card: CardGql, query: string): boolean {
 }
 
 const filteredCards = computed(() =>
-  cards.value.filter((c) => matchesSearch(c, props.searchQuery ?? ''))
+  cards.value.filter((c) => {
+    if (hideCompleted.value && c.done) return false;
+    return matchesSearch(c, props.searchQuery ?? '');
+  })
 );
 
 const filteredBacklogCards = computed(() =>
-  (props.backlogCards ?? []).filter((c) => matchesSearch(c, props.searchQuery ?? ''))
+  (props.backlogCards ?? []).filter((c) => {
+    if (hideCompleted.value && c.done) return false;
+    return matchesSearch(c, props.searchQuery ?? '');
+  })
 );
+
+const completedCount = computed(() => {
+  const list = isBacklog.value ? (props.backlogCards ?? []) : cards.value;
+  return list.filter((c) => c.done).length;
+});
 
 function handleDragEnd(evt: Sortable.SortableEvent) {
   const el = evt.item as HTMLElement;
@@ -106,20 +118,23 @@ onUnmounted(() => {
 
 async function deleteColumn() {
   if (isBacklog.value) return;
-  
+
   const colTitle = props.column.title;
-  
+
   try {
     await workspaceStore.deleteColumn(props.column.id);
     toast(`«${colTitle}» удалена`, {
       action: {
         label: 'Отменить',
         onClick: () => {
-          workspaceStore.undoDeleteColumn().then(() => {
-            toast.success('Колонка восстановлена');
-          }).catch((e) => {
-            toast.error(getGraphQLErrorMessage(e));
-          });
+          workspaceStore
+            .undoDeleteColumn()
+            .then(() => {
+              toast.success('Колонка восстановлена');
+            })
+            .catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
         },
       },
     });
@@ -172,6 +187,16 @@ async function moveRight() {
         <span class="text-xs text-muted mr-1">
           {{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}
         </span>
+        <button
+          v-if="completedCount > 0"
+          type="button"
+          @click="hideCompleted = !hideCompleted"
+          class="icon-btn-ghost"
+          :class="{ 'text-primary': hideCompleted }"
+          :title="hideCompleted ? `Показать выполненные (${completedCount})` : 'Скрыть выполненные'"
+        >
+          <span :class="hideCompleted ? 'i-lucide-eye-off' : 'i-lucide-eye'" />
+        </button>
         <template v-if="!isBacklog">
           <button
             type="button"
@@ -218,12 +243,7 @@ async function moveRight() {
         <span>Добавить карточку</span>
       </button>
       <template v-if="isBacklog">
-        <CardItem
-          v-for="c in filteredBacklogCards"
-          :key="c.id"
-          :card="c"
-          :is-backlog="true"
-        />
+        <CardItem v-for="c in filteredBacklogCards" :key="c.id" :card="c" :is-backlog="true" />
       </template>
       <template v-else>
         <CardItem

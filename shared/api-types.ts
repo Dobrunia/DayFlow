@@ -17,6 +17,7 @@ export interface CardGql {
   done: boolean;
   payload: string;
   tags: string[];
+  workspace?: { id: string; title: string; icon?: string | null } | null;
 }
 
 export interface User {

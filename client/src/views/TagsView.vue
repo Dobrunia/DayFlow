@@ -139,7 +139,7 @@ function selectTag(tag: string | null) {
         <div class="mb-6">
           <button
             type="button"
-            class="link-inline inline-flex items-center gap-1"
+            class="inline-flex items-center gap-1 text-link hover:underline underline-offset-3"
             @click="selectTag(null)"
           >
             <span class="i-lucide-arrow-left" />

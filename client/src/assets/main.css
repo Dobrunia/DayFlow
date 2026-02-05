@@ -156,12 +156,10 @@ button span {
   line-height: 1;
 }
 
-/* Иконки как flex-item: без baseline/line-box */
+/* Иконки: line-height для вертикального выравнивания (display: block задан в UnoCSS) */
 [class^="i-"],
 [class*=" i-"] {
-  display: block;
   line-height: 1;
-  flex-shrink: 0;
 }
 
 /* Текст в кнопках — выравнивание по центру */

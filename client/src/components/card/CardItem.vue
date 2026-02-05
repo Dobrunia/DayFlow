@@ -143,7 +143,7 @@ async function updateSummary(newSummary: string) {
 </script>
 
 <template>
-  <div class="relative group" :data-card-id="card.id">
+  <div class="card-item relative group" :data-card-id="card.id">
     <button
       type="button"
       class="card-edit-float"

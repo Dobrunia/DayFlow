@@ -129,7 +129,6 @@ async function handleSubmit() {
 
           <!-- Submit -->
           <div class="form-actions">
-            <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5" />
               Создать

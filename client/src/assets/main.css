@@ -76,6 +76,7 @@ html {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -103,8 +104,10 @@ select {
   transition: all 0.15s ease;
 }
 
-/* Текст и иконки внутри кнопок наследуют цвет — при hover контент остаётся видимым */
-button * {
+/* Иконки в кнопках: вертикально по центру, наследуют цвет кнопки */
+button [class*="i-lucide"] {
+  vertical-align: middle;
+  line-height: 1;
   color: inherit;
 }
 
@@ -113,6 +116,12 @@ button * {
   color: var(--link-inline);
   text-decoration: none;
 }
+
 .link-inline:hover {
   text-decoration: underline;
+}
+
+/* Select: обрезаем текст в поле, ширина фиксирована */
+select.input {
+  text-overflow: ellipsis;
 }

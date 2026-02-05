@@ -112,7 +112,6 @@ function closeSummaryModal() {
             </div>
           </div>
           <div class="form-actions mt-4">
-            <button type="button" class="btn-secondary" @click="closeSummaryModal">Отмена</button>
             <button type="button" class="btn-primary" @click="saveSummary">Сохранить</button>
           </div>
         </DialogContent>

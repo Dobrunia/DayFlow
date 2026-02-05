@@ -50,7 +50,7 @@ const isGlobalAdd = computed(() => !props.card && !props.columnId && props.works
 const isHubEdit = computed(() => !!props.card && props.card.workspaceId == null);
 
 const addDestination = ref<'hub' | 'workspace'>('hub');
-const selectedWorkspaceId = ref<string | null>(null);
+const selectedWorkspaceId = ref('');
 const workspaces = computed(() => workspaceStore.workspaces);
 
 const title = ref('');
@@ -135,7 +135,7 @@ watch(
         checklistItems.value = [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
         checklistSummary.value = '';
         addDestination.value = 'hub';
-        selectedWorkspaceId.value = null;
+        selectedWorkspaceId.value = '';
         tagsInput.value = '';
         if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
       }
@@ -286,7 +286,7 @@ async function handleSubmit() {
                 type="button"
                 class="flex-1 type-selector-btn flex-center"
                 :class="addDestination === 'hub' ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
-                @click="addDestination = 'hub'; selectedWorkspaceId = null"
+                @click="addDestination = 'hub'; selectedWorkspaceId = ''"
               >
                 <span class="i-lucide-inbox" />
                 Хаб
@@ -306,15 +306,15 @@ async function handleSubmit() {
               <select
                 id="card-workspace"
                 v-model="selectedWorkspaceId"
-                class="input py-2"
+                class="input py-2 max-w-full truncate"
               >
-                <option value="" disabled>Выберите воркспейс</option>
+                <option value="" disabled hidden>Выберите воркспейс</option>
                 <option
                   v-for="w in workspaces"
                   :key="w.id"
                   :value="w.id"
                 >
-                  {{ w.title }}
+                  {{ w.title.length > 40 ? w.title.slice(0, 40) + '…' : w.title }}
                 </option>
               </select>
             </div>
@@ -433,10 +433,10 @@ async function handleSubmit() {
               <button
                 type="button"
                 @click="addChecklistItem"
-                class="link-add mt-2"
+                class="btn-add-dashed mt-2"
               >
-                <span class="i-lucide-plus" />
-                Добавить пункт
+                <span class="i-lucide-plus text-sm flex-shrink-0" />
+                <span>Добавить пункт</span>
               </button>
             </div>
             <div>
@@ -461,13 +461,10 @@ async function handleSubmit() {
               <span class="i-lucide-trash-2 text-sm" />
               Удалить
             </button>
-            <div class="flex gap-3 ml-auto">
-              <button type="button" @click="emit('close')" class="btn-secondary">Отмена</button>
-              <button type="submit" class="btn-primary" :disabled="loading">
-                <span v-if="loading" class="loading-spinner mr-1.5" />
-                {{ isEditMode ? 'Сохранить' : 'Создать' }}
-              </button>
-            </div>
+            <button type="submit" class="btn-primary ml-auto" :disabled="loading">
+              <span v-if="loading" class="loading-spinner mr-1.5" />
+              {{ isEditMode ? 'Сохранить' : 'Создать' }}
+            </button>
           </div>
         </form>
       </DialogContent>

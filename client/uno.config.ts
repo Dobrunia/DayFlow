@@ -42,23 +42,19 @@ export default defineConfig({
     /* Текстовая ссылка с иконкой (назад, поделиться и т.п.) */
     'btn-link': 'btn text-sm text-fg-muted hover:text-fg hover:bg-transparent',
     'btn-icon': 'btn p-2 rounded-lg',
-    /* Единый icon-button: квадратный, без лишнего padding */
-    'icon-btn': 'inline-flex items-center justify-center w-6 h-6 rounded-lg transition-colors outline-none focus:outline-none disabled:opacity-50',
-    'icon-btn-md': 'icon-btn w-8 h-8',
+    /* Иконка-кнопка: небольшой квадрат, смена фона при hover */
+    'icon-btn': 'inline-flex items-center justify-center w-6 h-6 rounded outline-none focus:outline-none disabled:opacity-50 cursor-pointer transition-colors',
     'icon-btn-ghost': 'icon-btn text-fg-muted hover:text-fg hover:bg-muted',
-    'icon-btn-ghost-md': 'icon-btn-md text-fg-muted hover:text-fg hover:bg-muted',
     'icon-btn-danger': 'icon-btn text-fg-muted hover:text-danger hover:bg-danger/10',
-    'icon-btn-danger-md': 'icon-btn-md text-fg-muted hover:text-danger hover:bg-danger/10',
     'icon-btn-primary': 'icon-btn text-fg-muted hover:text-primary hover:bg-primary/10',
     /* Header variant — показывается при наведении на group */
     'icon-btn-header': 'icon-btn opacity-0 group-hover:opacity-100',
-    'icon-btn-header-danger': 'icon-btn-header text-fg-muted hover:text-danger hover:bg-muted-hover',
+    'icon-btn-header-danger': 'icon-btn-header text-fg-muted hover:text-danger hover:bg-danger/10',
     /* Deprecated — для обратной совместимости */
     'btn-icon-muted-primary': 'icon-btn-primary',
     'btn-icon-muted-danger': 'icon-btn-danger',
     'btn-icon-muted-fg': 'icon-btn-ghost',
     'header-icon-danger': 'icon-btn-header-danger',
-    'icon-muted-danger': 'text-fg-muted hover:text-danger',
     input:
       'w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:border-primary transition-colors outline-none focus:outline-none focus:ring-0',
     textarea: 'input resize-none',
@@ -116,7 +112,7 @@ export default defineConfig({
     'dropdown-menu-item':
       'w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md',
     /* Кнопка-аватар (профиль в хедере) */
-    'btn-avatar': 'btn p-2 rounded-full flex items-center hover:bg-muted',
+    'btn-avatar': 'rounded-full flex items-center justify-center outline-none',
     'select-option':
       'relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none hover:bg-muted data-[highlighted]:bg-muted',
     /* Контейнер контента страницы: одинаковые отступы везде */
@@ -141,7 +137,7 @@ export default defineConfig({
     'card-summary-placeholder': 'text-xs text-fg-muted min-h-[1.25rem] flex-1 min-w-0 opacity-70',
     /* Кнопка редактирования карточки — не блокирует клики по чекбоксу/заголовку, пока не hover */
     'card-edit-float':
-      'absolute -top-2 right-2 z-10 w-8 h-8 rounded-full inline-flex items-center justify-center bg-bg border border-border shadow-sm text-fg hover:border-primary hover:bg-primary/10 hover:text-fg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all overflow-visible outline-none',
+      'absolute -top-2 right-1 z-10 w-8 h-8 rounded-full inline-flex items-center justify-center bg-bg border border-border shadow-sm text-fg hover:border-primary hover:bg-primary/10 hover:text-fg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all overflow-visible outline-none',
     /* Ручка перетаскивания (чеклист, сортируемые списки) */
     'grip-handle':
       'i-lucide-grip-vertical text-fg-muted cursor-grab active:cursor-grabbing touch-none',

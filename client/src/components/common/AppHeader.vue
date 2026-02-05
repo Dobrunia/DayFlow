@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
 import SearchBar from './SearchBar.vue';
 import GlobalAddButton from './GlobalAddButton.vue';
 
 const router = useRouter();
+const route = useRoute();
+
+const isLibraryActive = computed(() => route.path === '/library');
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
@@ -44,7 +47,11 @@ function handleSignOut() {
       <!-- Right: Navigation & User -->
       <nav class="flex items-center gap-4">
         <template v-if="isAuthenticated">
-          <RouterLink to="/library" class="btn-link">
+          <RouterLink
+            to="/library"
+            class="btn-link"
+            :class="isLibraryActive && 'text-fg bg-muted'"
+          >
             <span class="i-lucide-inbox mr-1.5" />
             Хаб
           </RouterLink>
@@ -96,7 +103,7 @@ function handleSignOut() {
         <!-- Смена темы -->
         <button
           type="button"
-          class="icon-btn-ghost-md"
+          class="icon-btn-ghost"
           :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
           @click="themeStore.toggle()"
         >

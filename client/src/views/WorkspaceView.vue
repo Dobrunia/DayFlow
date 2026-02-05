@@ -12,6 +12,19 @@ const route = useRoute();
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
 
+const columnsContainer = ref<HTMLElement | null>(null);
+
+function handleWheel(e: WheelEvent) {
+  const target = e.target as HTMLElement;
+  // Если курсор внутри вертикально скроллящегося контейнера — не перехватываем
+  const scrollableParent = target.closest('.overflow-y-auto, .overflow-auto');
+  if (scrollableParent && scrollableParent !== columnsContainer.value) return;
+
+  if (!columnsContainer.value || e.deltaY === 0) return;
+  e.preventDefault();
+  columnsContainer.value.scrollLeft += e.deltaY;
+}
+
 const isEditing = ref(false);
 const editTitle = ref('');
 const showCreateDialog = ref(false);
@@ -225,7 +238,11 @@ function handleDialogClose() {
       </div>
 
       <!-- Backlog + Columns -->
-      <div class="flex-1 overflow-x-auto overflow-y-hidden">
+      <div
+        ref="columnsContainer"
+        class="flex-1 overflow-x-hidden overflow-y-hidden"
+        @wheel="handleWheel"
+      >
         <div class="h-full flex gap-4 p-6" style="min-width: max-content">
           <WorkspaceColumn
             :column="backlogColumn"

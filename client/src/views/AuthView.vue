@@ -115,8 +115,8 @@ function toggleMode() {
         </div>
 
         <button type="submit" class="btn-primary w-full py-2.5" :disabled="authStore.loading">
-          <span v-if="authStore.loading" class="i-lucide-loader-2 animate-spin mr-2" />
-          {{ submitButtonText }}
+          <span v-if="authStore.loading" class="i-lucide-loader-2 animate-spin" />
+          <span>{{ submitButtonText }}</span>
         </button>
       </form>
 

@@ -38,12 +38,7 @@ const totalCount = computed(() => cardsStore.totalCount);
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / PAGE_SIZE)));
 const hasPagination = computed(() => totalPages.value > 1);
 
-function updateUrl(updates: {
-  page?: number;
-  card?: string;
-  hideDone?: string;
-  sort?: string;
-}) {
+function updateUrl(updates: { page?: number; card?: string; hideDone?: string; sort?: string }) {
   const current = { ...route.query } as Record<string, string>;
   if ('page' in updates) {
     if (updates.page === 1) delete current.page;
@@ -61,7 +56,9 @@ function updateUrl(updates: {
     if (updates.sort) current.sort = updates.sort;
     else delete current.sort;
   }
-  const query = Object.fromEntries(Object.entries(current).filter(([, v]) => v != null && v !== ''));
+  const query = Object.fromEntries(
+    Object.entries(current).filter(([, v]) => v != null && v !== '')
+  );
   router.replace({ path: route.path, query });
 }
 
@@ -145,26 +142,23 @@ function goToPage(p: number) {
 
     <!-- Single card view (from URL ?card=id) -->
     <template v-if="cardIdFromUrl">
-      <div
-        v-if="singleCardLoading"
-        class="flex justify-center py-12"
-      >
+      <div v-if="singleCardLoading" class="flex-center py-12">
         <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
       </div>
       <template v-else-if="singleCard">
         <div class="mb-4">
           <RouterLink
-            :to="{ path: '/library', query: { ...($route.query as Record<string, string>), card: undefined } }"
-            class="link-inline inline-flex items-center"
+            :to="{
+              path: '/library',
+              query: { ...($route.query as Record<string, string>), card: undefined },
+            }"
+            class="link-inline inline-flex items-center gap-1"
           >
-            <span class="i-lucide-arrow-left mr-1" />
-            Назад к хабу
+            <span class="i-lucide-arrow-left" />
+            <span>Назад к хабу</span>
           </RouterLink>
         </div>
-        <CardItem
-          :card="singleCard"
-          :is-backlog="true"
-        />
+        <CardItem :card="singleCard" :is-backlog="true" />
       </template>
     </template>
 
@@ -177,55 +171,59 @@ function goToPage(p: number) {
             role="checkbox"
             :aria-checked="hideDone"
             class="w-4 h-4 rounded flex-center border transition-colors"
-            :class="hideDone ? 'bg-primary border-primary text-on-primary' : 'border-border hover:border-primary'"
+            :class="
+              hideDone
+                ? 'bg-primary border-primary text-on-primary'
+                : 'border-border hover:border-primary'
+            "
             @click.prevent="hideDone = !hideDone"
           >
             <span v-if="hideDone" class="i-lucide-check text-xs" />
           </button>
           Отключить выполненные
         </label>
-        <button type="button" class="link-inline inline-flex items-center" @click="sortOldestFirst = !sortOldestFirst">
-          {{ sortOldestFirst ? 'Сначала старые' : 'Сначала новые' }}
-          <span class="i-lucide-arrow-up-down ml-1" />
+        <button
+          type="button"
+          class="link-inline inline-flex items-center gap-1"
+          @click="sortOldestFirst = !sortOldestFirst"
+        >
+          <span>{{ sortOldestFirst ? 'Сначала старые' : 'Сначала новые' }}</span>
+          <span class="i-lucide-arrow-up-down" />
         </button>
       </div>
 
       <div class="min-h-[320px]">
-        <div
-          v-if="loading"
-          class="text-center py-12"
-        >
+        <div v-if="loading" class="flex-center py-12">
           <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
         </div>
 
         <template v-else-if="cards.length > 0">
           <div class="space-y-3">
-            <CardItem
-              v-for="card in cards"
-              :key="card.id"
-              :card="card"
-              :is-backlog="true"
-            />
+            <CardItem v-for="card in cards" :key="card.id" :card="card" :is-backlog="true" />
           </div>
 
-          <div
-            v-if="hasPagination"
-            class="mt-8 flex items-center justify-center gap-2"
-          >
-            <button type="button" class="btn-ghost btn-sm" :disabled="page <= 1" @click="goToPage(page - 1)">
+          <div v-if="hasPagination" class="mt-8 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              class="btn-ghost btn-sm"
+              :disabled="page <= 1"
+              @click="goToPage(page - 1)"
+            >
               Назад
             </button>
             <span class="text-sm text-muted px-2">{{ page }} / {{ totalPages }}</span>
-            <button type="button" class="btn-ghost btn-sm" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+            <button
+              type="button"
+              class="btn-ghost btn-sm"
+              :disabled="page >= totalPages"
+              @click="goToPage(page + 1)"
+            >
               Вперёд
             </button>
           </div>
         </template>
 
-        <div
-          v-else
-          class="text-center py-16 flex flex-col items-center gap-4"
-        >
+        <div v-else class="text-center py-16 flex flex-col items-center gap-4">
           <div class="w-16 h-16 rounded-full bg-fg/5 flex-center">
             <span class="i-lucide-inbox text-2xl text-muted" />
           </div>

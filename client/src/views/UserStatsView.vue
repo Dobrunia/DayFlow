@@ -25,23 +25,25 @@ function shareStats() {
     () => toast.error('Не удалось скопировать')
   );
 }
+
+function getProgressColor(percent: number) {
+  // 0% = red (hue 0), 50% = yellow (hue 60), 100% = green (hue 120)
+  const hue = (percent / 100) * 120;
+  return `hsl(${hue}, 70%, 45%)`;
+}
 </script>
 
 <template>
   <div class="page-container">
-    <div class="flex-between mb-8">
-      <RouterLink to="/" class="link-inline inline-flex items-center">
-        <span class="i-lucide-arrow-left mr-1" />
-        На главную
-      </RouterLink>
+    <div class="">
       <button
         v-if="isOwnStats && stats"
         type="button"
-        class="link-inline inline-flex items-center"
+        class="link-inline inline-flex items-center gap-1"
         @click="shareStats"
       >
-        <span class="i-lucide-share-2 mr-1" />
-        Поделиться статистикой
+        <span class="i-lucide-share-2" />
+        <span>Поделиться статистикой</span>
       </button>
     </div>
 
@@ -65,16 +67,14 @@ function shareStats() {
             :src="stats.avatarUrl"
             alt="Аватар"
             class="w-full h-full object-cover"
-          >
+          />
           <span v-else class="i-lucide-user text-4xl text-muted" />
         </div>
       </div>
 
       <!-- Block 1: total completed -->
       <div class="rounded-2xl border border-border bg-fg/4 p-6 mb-8">
-        <p class="text-sm text-muted mb-1">
-          Выполнено карточек
-        </p>
+        <p class="text-sm text-muted mb-1">Выполнено карточек</p>
         <p class="text-4xl font-bold text-fg tabular-nums">
           {{ stats.totalCompletedCards }}
         </p>
@@ -82,11 +82,12 @@ function shareStats() {
 
       <!-- Block 2: workspaces with glass progress -->
       <div class="mb-4">
-        <h2 class="text-lg font-semibold text-fg mb-3">
-          Воркспейсы
-        </h2>
+        <h2 class="text-lg font-semibold text-fg mb-3">Воркспейсы</h2>
       </div>
-      <div v-if="stats.workspaceStats.length === 0" class="rounded-2xl border border-border bg-fg/3 p-8 text-center text-muted">
+      <div
+        v-if="stats.workspaceStats.length === 0"
+        class="rounded-2xl border border-border bg-fg/3 p-8 text-center text-muted"
+      >
         Нет воркспейсов
       </div>
       <div v-else class="grid gap-4 sm:grid-cols-2">
@@ -106,8 +107,15 @@ function shareStats() {
               {{ ws.description }}
             </p>
           </div>
-          <div class="flex flex-col items-end shrink-0">
-            <span class="text-sm font-semibold text-primary tabular-nums mb-2">
+          <div class="flex flex-col items-center shrink-0">
+            <span
+              class="text-sm font-semibold tabular-nums mb-2"
+              :style="{
+                color: getProgressColor(
+                  ws.totalCards ? (ws.completedCards / ws.totalCards) * 100 : 0
+                ),
+              }"
+            >
               {{ ws.totalCards ? Math.round((ws.completedCards / ws.totalCards) * 100) : 0 }}%
             </span>
             <div class="water-glass">
@@ -130,8 +138,8 @@ function shareStats() {
   width: 28px;
   height: 64px;
   border-radius: 6px 6px 12px 12px;
-  border: 2px solid var(--border);
-  background: var(--bg);
+  border: 2px solid #d1d5db;
+  background: #f9fafb;
   position: relative;
   overflow: hidden;
 }
@@ -141,7 +149,7 @@ function shareStats() {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 80%, transparent) 100%);
+  background: linear-gradient(180deg, #3b82f6 0%, rgba(59, 130, 246, 0.7) 100%);
   transition: height 0.8s ease-out;
   min-height: 0;
 }
@@ -152,12 +160,17 @@ function shareStats() {
   left: -50%;
   width: 200%;
   height: 12px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   animation: wave 2s ease-in-out infinite;
 }
 
 @keyframes wave {
-  0%, 100% { transform: translateX(0) scaleY(1); }
-  50% { transform: translateX(10%) scaleY(1.2); }
+  0%,
+  100% {
+    transform: translateX(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(10%) scaleY(1.2);
+  }
 }
 </style>

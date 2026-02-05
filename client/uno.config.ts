@@ -16,10 +16,10 @@ export default defineConfig({
       scale: 1,
       warn: true,
       extraProperties: {
-        'display': 'inline-block',
-        'vertical-align': 'middle',
+        'display': 'block',
         'width': '1.2em',
         'height': '1.2em',
+        'flex-shrink': '0',
       },
       collections: {
         lucide: () => import('@iconify-json/lucide/icons.json').then((m) => m.default),
@@ -75,7 +75,8 @@ export default defineConfig({
     btn: [
       'inline-flex items-center justify-center gap-2',
       'h-10 px-4 rounded-[var(--r)]',
-      'text-sm font-medium select-none',
+      'text-sm font-medium leading-none select-none',
+      '[&>span:not([class*="i-"])]:-translate-y-px',
       'transition-colors duration-150',
       'disabled:(opacity-50 pointer-events-none)',
       'ui-focus',
@@ -110,6 +111,7 @@ export default defineConfig({
     'icon-btn': [
       'inline-flex items-center justify-center',
       'w-9 h-9 rounded-[calc(var(--r)-2px)]',
+      'leading-none',
       'transition-all duration-150',
       'disabled:(opacity-50 pointer-events-none)',
       'ui-focus',

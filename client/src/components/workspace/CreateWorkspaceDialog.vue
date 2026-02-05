@@ -89,7 +89,9 @@ async function handleSubmit() {
           <!-- Icon -->
           <div>
             <label class="block text-sm font-medium mb-1">Иконка</label>
-            <div class="flex flex-wrap gap-1.5 mt-1 max-h-[200px] overflow-y-auto overflow-x-hidden p-0.5">
+            <div
+              class="flex flex-wrap gap-1.5 mt-1 max-h-[200px] overflow-y-auto overflow-x-hidden p-0.5"
+            >
               <button
                 v-for="emoji in WORKSPACE_EMOJIS"
                 :key="emoji"
@@ -130,8 +132,8 @@ async function handleSubmit() {
           <!-- Submit -->
           <div class="flex justify-end pt-4">
             <button type="submit" class="btn-primary" :disabled="loading">
-              <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5" />
-              Создать
+              <span v-if="loading" class="i-lucide-loader-2 animate-spin" />
+              <span>Создать</span>
             </button>
           </div>
         </form>

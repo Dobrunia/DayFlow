@@ -162,7 +162,7 @@ async function moveRight() {
 
 <template>
   <div class="flex-shrink-0 w-72 flex flex-col bg-fg/5 rounded-xl">
-    <div ref="headerRef" class="group p-3 flex-between">
+    <div ref="headerRef" class="group h-12 px-3 flex-between">
       <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">
         <input
           ref="inputRef"
@@ -176,17 +176,15 @@ async function moveRight() {
       <h3
         v-else
         :title="column.title"
-        class="font-medium text-fg truncate flex-1 min-w-0"
+        class="font-medium text-fg truncate flex-1 min-w-0 leading-none"
         :class="{ 'cursor-text': !isBacklog }"
         @dblclick="!isBacklog && startEdit()"
       >
         {{ column.title }}
+        <span class="text-xs text-muted font-normal ml-1 tabular-nums">{{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}</span>
       </h3>
 
-      <div class="flex items-center gap-0.5 shrink-0">
-        <span class="text-xs text-muted mr-1">
-          {{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}
-        </span>
+      <div class="flex items-center gap-0.5 shrink-0 leading-none">
         <button
           v-if="completedCount > 0"
           type="button"
@@ -202,7 +200,7 @@ async function moveRight() {
             type="button"
             :disabled="isFirst"
             @click="moveLeft"
-            class="icon-btn-ghost disabled:opacity-30 disabled:pointer-events-none"
+            class="icon-btn-ghost w-6 h-6 disabled:opacity-30 disabled:pointer-events-none"
             title="Переместить влево"
           >
             <span class="i-lucide-chevron-left" />
@@ -211,7 +209,7 @@ async function moveRight() {
             type="button"
             :disabled="isLast"
             @click="moveRight"
-            class="icon-btn-ghost disabled:opacity-30 disabled:pointer-events-none"
+            class="icon-btn-ghost w-6 h-6 disabled:opacity-30 disabled:pointer-events-none"
             title="Переместить вправо"
           >
             <span class="i-lucide-chevron-right" />
@@ -237,7 +235,7 @@ async function moveRight() {
       <button
         type="button"
         @click="showAddCard = true"
-        class="w-full py-2 border border-dashed border-border rounded-[var(--r)] text-sm text-muted hover:text-fg hover:border-fg/30 flex-center gap-1.5 transition-colors sortable-no-drag flex-shrink-0 order-first"
+        class="w-full h-10 border border-dashed border-border rounded-[var(--r)] text-sm text-muted hover:text-fg hover:border-fg/30 flex-center gap-1.5 leading-none transition-colors sortable-no-drag flex-shrink-0 order-first"
       >
         <span class="i-lucide-plus" />
         <span>Добавить карточку</span>

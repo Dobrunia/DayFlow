@@ -18,9 +18,7 @@ const filteredWorkspaces = computed(() => {
   const q = workspaceSearch.value.trim().toLowerCase();
   if (!q) return list;
   return list.filter(
-    (w: Workspace) =>
-      w.title?.toLowerCase().includes(q) ||
-      w.description?.toLowerCase().includes(q)
+    (w: Workspace) => w.title?.toLowerCase().includes(q) || w.description?.toLowerCase().includes(q)
   );
 });
 
@@ -46,9 +44,7 @@ function navigateToWorkspace(id: string) {
         <p class="text-lg text-muted mb-10 max-w-xl mx-auto leading-relaxed">
           Воркспейсы для тем и быстрый сбор идей в одном месте.
         </p>
-        <RouterLink to="/auth" class="btn-primary">
-          Начать бесплатно
-        </RouterLink>
+        <RouterLink to="/auth" class="btn-primary"> Начать бесплатно </RouterLink>
       </div>
 
       <!-- Features -->
@@ -75,8 +71,13 @@ function navigateToWorkspace(id: string) {
           <h1 class="page-title">Мои воркспейсы</h1>
           <p class="page-desc">Доски для тем и проектов</p>
         </div>
-        <div v-if="workspaceStore.workspaces.length > 0" class="relative w-full min-w-0 sm:w-64 shrink-0">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted pointer-events-none" />
+        <div
+          v-if="workspaceStore.workspaces.length > 0"
+          class="relative w-full min-w-0 sm:w-64 shrink-0"
+        >
+          <span
+            class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted pointer-events-none"
+          />
           <input
             v-model="workspaceSearch"
             type="search"
@@ -87,7 +88,7 @@ function navigateToWorkspace(id: string) {
       </div>
 
       <!-- Loading -->
-      <div v-if="workspaceStore.loading" class="text-center py-16">
+      <div v-if="workspaceStore.loading" class="flex-center py-16">
         <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
       </div>
 
@@ -108,7 +109,9 @@ function navigateToWorkspace(id: string) {
             <span v-if="workspace.icon">{{ workspace.icon }}</span>
             <span v-else class="i-lucide-layout-grid text-lg text-muted" />
           </div>
-          <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">{{ workspace.title }}</h3>
+          <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">
+            {{ workspace.title }}
+          </h3>
           <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
             {{ workspace.description }}
           </p>
@@ -141,8 +144,8 @@ function navigateToWorkspace(id: string) {
         <h2 class="text-lg font-semibold text-fg">Нет воркспейсов</h2>
         <p class="text-sm text-muted">Создайте первый воркспейс для изучения новой темы</p>
         <button class="btn-primary" @click="router.push('/workspace/new')">
-          <span class="i-lucide-plus mr-1.5" />
-          Создать воркспейс
+          <span class="i-lucide-plus" />
+          <span>Создать воркспейс</span>
         </button>
       </div>
     </template>

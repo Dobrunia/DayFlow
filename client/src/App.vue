@@ -35,7 +35,7 @@ watch(
   <template v-else>
     <div class="min-h-screen bg-bg">
       <AppHeader />
-      <main class="pt-16">
+      <main :class="authStore.user ? 'pt-25' : 'pt-14'">
         <RouterView />
       </main>
       <Toaster position="bottom-right" />

@@ -121,13 +121,27 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function updateWorkspace(id: string, input: UpdateWorkspaceInput) {
+    const index = workspaces.value.findIndex((w) => w.id === id);
+    const oldWorkspace = index !== -1 ? { ...workspaces.value[index] } : null;
+    const oldCurrentWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Optimistic update
+    if (index !== -1) {
+      const next = [...workspaces.value];
+      next[index] = { ...next[index], ...input };
+      workspaces.value = next;
+    }
+    if (currentWorkspace.value?.id === id) {
+      currentWorkspace.value = { ...currentWorkspace.value, ...input };
+    }
+
     try {
       error.value = null;
       const { data } = await apolloClient.mutate({
         mutation: UPDATE_WORKSPACE_MUTATION,
         variables: { id, input },
       });
-      const index = workspaces.value.findIndex((w) => w.id === id);
+      // Sync with server
       if (index !== -1) {
         const next = [...workspaces.value];
         next[index] = { ...next[index], ...data.updateWorkspace };
@@ -139,6 +153,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       return data.updateWorkspace;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldWorkspace && index !== -1) {
+        const next = [...workspaces.value];
+        next[index] = oldWorkspace;
+        workspaces.value = next;
+      }
+      if (oldCurrentWorkspace && currentWorkspace.value?.id === id) {
+        currentWorkspace.value = oldCurrentWorkspace;
+      }
       throw e;
     }
   }
@@ -146,6 +169,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function deleteWorkspace(id: string) {
     // Сохраняем воркспейс для undo
     const ws = currentWorkspace.value?.id === id ? currentWorkspace.value : workspaces.value.find((w) => w.id === id);
+    const oldWorkspaces = [...workspaces.value];
+    const oldCurrentWorkspace = currentWorkspace.value;
+    
     if (ws) {
       const allCards: CardGql[] = [];
       for (const col of ws.columns ?? []) {
@@ -160,29 +186,44 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       };
     }
 
+    // Optimistic delete
+    workspaces.value = workspaces.value.filter((w) => w.id !== id);
+    if (currentWorkspace.value?.id === id) currentWorkspace.value = null;
+
     try {
       error.value = null;
       await apolloClient.mutate({
         mutation: DELETE_WORKSPACE_MUTATION,
         variables: { id },
       });
-      workspaces.value = workspaces.value.filter((w) => w.id !== id);
-      if (currentWorkspace.value?.id === id) currentWorkspace.value = null;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      workspaces.value = oldWorkspaces;
+      currentWorkspace.value = oldCurrentWorkspace;
       lastDeletedWorkspace.value = null;
       throw e;
     }
   }
 
   async function toggleWorkspacePinned(id: string) {
+    const index = workspaces.value.findIndex((w) => w.id === id);
+    const oldPinned = index !== -1 ? workspaces.value[index].pinned : undefined;
+    
+    // Optimistic toggle
+    if (index !== -1) {
+      const next = [...workspaces.value];
+      next[index] = { ...next[index], pinned: !next[index].pinned };
+      workspaces.value = next;
+    }
+
     try {
       error.value = null;
       const { data } = await apolloClient.mutate({
         mutation: TOGGLE_WORKSPACE_PINNED_MUTATION,
         variables: { id },
       });
-      const index = workspaces.value.findIndex((w) => w.id === id);
+      // Sync with server
       if (index !== -1) {
         const next = [...workspaces.value];
         next[index] = { ...next[index], pinned: data.toggleWorkspacePinned.pinned };
@@ -191,6 +232,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       return data.toggleWorkspacePinned;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (index !== -1 && oldPinned !== undefined) {
+        const next = [...workspaces.value];
+        next[index] = { ...next[index], pinned: oldPinned };
+        workspaces.value = next;
+      }
       throw e;
     }
   }
@@ -275,12 +322,25 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function updateColumn(id: string, title: string) {
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+    
+    // Optimistic update
+    if (currentWorkspace.value?.columns) {
+      const index = currentWorkspace.value.columns.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        const next = [...currentWorkspace.value.columns];
+        next[index] = { ...next[index], title };
+        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
+      }
+    }
+
     try {
       error.value = null;
       const { data } = await apolloClient.mutate({
         mutation: UPDATE_COLUMN_MUTATION,
         variables: { id, title },
       });
+      // Sync with server
       if (currentWorkspace.value?.columns) {
         const index = currentWorkspace.value.columns.findIndex((c) => c.id === id);
         if (index !== -1) {
@@ -292,6 +352,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       return data.updateColumn;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldWorkspace) {
+        currentWorkspace.value = oldWorkspace;
+      }
       throw e;
     }
   }
@@ -299,6 +363,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function deleteColumn(id: string) {
     // Сохраняем колонку для undo
     const ws = currentWorkspace.value;
+    const oldWorkspace = ws ? { ...ws } : null;
+    
     if (ws) {
       const colIndex = ws.columns?.findIndex((c) => c.id === id) ?? -1;
       const col = ws.columns?.[colIndex];
@@ -312,20 +378,26 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       }
     }
 
+    // Optimistic delete
+    if (currentWorkspace.value?.columns) {
+      currentWorkspace.value = {
+        ...currentWorkspace.value,
+        columns: currentWorkspace.value.columns.filter((c) => c.id !== id),
+      };
+    }
+
     try {
       error.value = null;
       await apolloClient.mutate({
         mutation: DELETE_COLUMN_MUTATION,
         variables: { id },
       });
-      if (currentWorkspace.value?.columns) {
-        currentWorkspace.value = {
-          ...currentWorkspace.value,
-          columns: currentWorkspace.value.columns.filter((c) => c.id !== id),
-        };
-      }
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldWorkspace) {
+        currentWorkspace.value = oldWorkspace;
+      }
       lastDeletedColumn.value = null;
       throw e;
     }
@@ -388,19 +460,27 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function reorderColumns(workspaceId: string, columnIds: string[]) {
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Optimistic reorder
+    if (currentWorkspace.value?.columns) {
+      const columnMap = new Map(currentWorkspace.value.columns.map((c) => [c.id, c]));
+      const next = columnIds.map((id) => columnMap.get(id)).filter(Boolean) as Column[];
+      currentWorkspace.value = { ...currentWorkspace.value, columns: next };
+    }
+
     try {
       error.value = null;
       await apolloClient.mutate({
         mutation: REORDER_COLUMNS_MUTATION,
         variables: { workspaceId, columnIds },
       });
-      if (currentWorkspace.value?.columns) {
-        const columnMap = new Map(currentWorkspace.value.columns.map((c) => [c.id, c]));
-        const next = columnIds.map((id) => columnMap.get(id)).filter(Boolean) as Column[];
-        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
-      }
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldWorkspace) {
+        currentWorkspace.value = oldWorkspace;
+      }
       throw e;
     }
   }
@@ -459,6 +539,36 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function updateCard(id: string, input: UpdateCardInput) {
+    // Save old state for rollback
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Optimistic update helper
+    const updateInList = (list: CardGql[] | undefined, changes: Partial<CardGql>) => {
+      if (!list) return list;
+      const index = list.findIndex((c) => c.id === id);
+      if (index === -1) return list;
+      const next = [...list];
+      next[index] = { ...next[index], ...changes };
+      return next;
+    };
+
+    // Optimistic update
+    if (currentWorkspace.value?.columns) {
+      currentWorkspace.value = {
+        ...currentWorkspace.value,
+        columns: currentWorkspace.value.columns.map((col) => ({
+          ...col,
+          cards: updateInList(col.cards, input) ?? col.cards,
+        })),
+      };
+    }
+    if (currentWorkspace.value?.backlog) {
+      currentWorkspace.value = {
+        ...currentWorkspace.value,
+        backlog: updateInList(currentWorkspace.value.backlog, input) ?? currentWorkspace.value.backlog,
+      };
+    }
+
     try {
       error.value = null;
       const { data } = await apolloClient.mutate({
@@ -466,38 +576,37 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { id, input },
       });
       const updated = data.updateCard as Partial<CardGql>;
-      const updateInList = (list: CardGql[] | undefined) => {
-        if (!list) return list;
-        const index = list.findIndex((c) => c.id === id);
-        if (index === -1) return list;
-        const next = [...list];
-        next[index] = { ...next[index], ...updated };
-        return next;
-      };
+      // Sync with server response
       if (currentWorkspace.value?.columns) {
         currentWorkspace.value = {
           ...currentWorkspace.value,
           columns: currentWorkspace.value.columns.map((col) => ({
             ...col,
-            cards: updateInList(col.cards) ?? col.cards,
+            cards: updateInList(col.cards, updated) ?? col.cards,
           })),
         };
       }
       if (currentWorkspace.value?.backlog) {
         currentWorkspace.value = {
           ...currentWorkspace.value,
-          backlog: updateInList(currentWorkspace.value.backlog) ?? currentWorkspace.value.backlog,
+          backlog: updateInList(currentWorkspace.value.backlog, updated) ?? currentWorkspace.value.backlog,
         };
       }
       return data.updateCard;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldWorkspace) {
+        currentWorkspace.value = oldWorkspace;
+      }
       throw e;
     }
   }
 
   async function deleteCard(id: string) {
     const ws = currentWorkspace.value;
+    const oldWorkspace = ws ? { ...ws } : null;
+    
     // Сохраняем карточку для undo
     if (ws) {
       let card: CardGql | undefined;
@@ -511,30 +620,33 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       }
     }
 
+    // Optimistic delete
+    if (currentWorkspace.value) {
+      const ws = currentWorkspace.value;
+      const updatedColumns = ws.columns?.map((col) => ({
+        ...col,
+        cards: (col.cards ?? []).filter((c) => c.id !== id),
+      }));
+      const updatedBacklog = (ws.backlog ?? []).filter((c) => c.id !== id);
+      currentWorkspace.value = {
+        ...ws,
+        columns: updatedColumns,
+        backlog: updatedBacklog,
+      };
+    }
+
     try {
       error.value = null;
       await apolloClient.mutate({
         mutation: DELETE_CARD_MUTATION,
         variables: { id },
       });
-      // Обновляем локально без перезагрузки
-      if (currentWorkspace.value) {
-        const ws = currentWorkspace.value;
-        // Удаляем из колонок
-        const updatedColumns = ws.columns?.map((col) => ({
-          ...col,
-          cards: (col.cards ?? []).filter((c) => c.id !== id),
-        }));
-        // Удаляем из беклога
-        const updatedBacklog = (ws.backlog ?? []).filter((c) => c.id !== id);
-        currentWorkspace.value = {
-          ...ws,
-          columns: updatedColumns,
-          backlog: updatedBacklog,
-        };
-      }
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldWorkspace) {
+        currentWorkspace.value = oldWorkspace;
+      }
       lastDeletedCard.value = null;
       throw e;
     }

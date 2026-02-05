@@ -9,7 +9,9 @@ import GlobalAddButton from './GlobalAddButton.vue';
 const router = useRouter();
 const route = useRoute();
 
+const isHomeActive = computed(() => route.path === '/');
 const isLibraryActive = computed(() => route.path === '/library');
+const isTagsActive = computed(() => route.path === '/tags');
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
@@ -26,90 +28,117 @@ function handleSignOut() {
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 h-16 bg-bg border-b border-border">
-    <div class="h-full max-w-7xl mx-auto px-4 flex-between">
-      <!-- Logo -->
-      <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
-        <span
-          class="w-8 h-8 rounded-lg flex-center bg-success text-on-primary pointer-events-none"
-          aria-hidden="true"
-        >
-          <span class="i-lucide-square-check text-lg" />
-        </span>
-        DayFlow
-      </RouterLink>
-
-      <!-- Center: Search (only when authenticated) -->
-      <div v-if="isAuthenticated" class="flex-1 max-w-md mx-8">
-        <SearchBar />
-      </div>
-
-      <!-- Right: Navigation & User -->
-      <nav class="flex items-center gap-4">
-        <template v-if="isAuthenticated">
-          <RouterLink
-            to="/library"
-            class="btn-ghost"
-            :class="isLibraryActive ? 'text-fg bg-fg/8 border-fg/20' : ''"
+  <header class="fixed top-0 left-0 right-0 z-50 bg-bg">
+    <!-- Main header -->
+    <div class="h-14 border-b border-border">
+      <div class="h-full max-w-7xl mx-auto px-4 flex-between">
+        <!-- Logo -->
+        <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
+          <span
+            class="w-8 h-8 rounded-lg flex-center bg-success text-on-primary pointer-events-none"
+            aria-hidden="true"
           >
-            <span class="i-lucide-inbox" />
-            Хаб
-          </RouterLink>
+            <span class="i-lucide-square-check text-lg" />
+          </span>
+          <span>DayFlow</span>
+        </RouterLink>
 
-          <GlobalAddButton />
+        <!-- Center: Search (only when authenticated) -->
+        <div v-if="isAuthenticated" class="flex-1 max-w-md mx-8">
+          <SearchBar />
+        </div>
 
-          <!-- User Menu -->
-          <div class="relative group">
-            <RouterLink to="/profile" class="block rounded-full">
-              <img
-                v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
-                :src="authStore.user.avatarUrl"
-                alt=""
-                class="w-9 h-9 rounded-full object-cover"
-                @error="avatarLoadFailed = true"
-              />
-              <span v-else class="w-9 h-9 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-lg" />
-            </RouterLink>
+        <!-- Right: User & Theme -->
+        <nav class="flex items-center gap-3">
+          <template v-if="isAuthenticated">
+            <!-- User Menu -->
+            <div class="relative group">
+              <RouterLink to="/profile" class="block rounded-full">
+                <img
+                  v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
+                  :src="authStore.user.avatarUrl"
+                  alt=""
+                  class="w-9 h-9 rounded-full object-cover"
+                  @error="avatarLoadFailed = true"
+                />
+                <span v-else class="w-9 h-9 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-lg" />
+              </RouterLink>
 
-            <!-- Dropdown -->
-            <div
-              class="absolute right-0 mt-1 w-48 dropdown-panel opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
-            >
-              <div class="p-3 border-b border-border">
-                <p class="text-sm font-medium text-fg truncate">{{ authStore.user?.email }}</p>
-              </div>
-              <div class="p-1">
-                <RouterLink to="/profile" class="dropdown-menu-item">
-                  <span class="i-lucide-user" />
-                  Профиль
-                </RouterLink>
-                <RouterLink :to="`/user/${authStore.user?.id}`" class="dropdown-menu-item">
-                  <span class="i-lucide-bar-chart-2" />
-                  Моя статистика
-                </RouterLink>
-                <button @click="handleSignOut" class="dropdown-menu-item">
-                  <span class="i-lucide-log-out" />
-                  Выйти
-                </button>
+              <!-- Dropdown -->
+              <div
+                class="absolute right-0 mt-1 w-48 dropdown-panel opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+              >
+                <div class="p-3 border-b border-border">
+                  <p class="text-sm font-medium text-fg truncate">{{ authStore.user?.email }}</p>
+                </div>
+                <div class="p-1">
+                  <RouterLink to="/profile" class="dropdown-menu-item">
+                    <span class="i-lucide-user" />
+                    <span>Профиль</span>
+                  </RouterLink>
+                  <RouterLink :to="`/user/${authStore.user?.id}`" class="dropdown-menu-item">
+                    <span class="i-lucide-bar-chart-2" />
+                    <span>Моя статистика</span>
+                  </RouterLink>
+                  <button @click="handleSignOut" class="dropdown-menu-item">
+                    <span class="i-lucide-log-out" />
+                    <span>Выйти</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </template>
+          </template>
 
-        <template v-else>
-          <RouterLink to="/auth" class="btn-primary">Войти</RouterLink>
-        </template>
+          <template v-else>
+            <RouterLink to="/auth" class="btn-primary"><span>Войти</span></RouterLink>
+          </template>
 
-        <!-- Смена темы -->
-        <button
-          type="button"
-          class="icon-btn-ghost"
-          :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
-          @click="themeStore.toggle()"
-        >
-          <span v-if="themeStore.dark" class="i-lucide-sun text-lg" />
-          <span v-else class="i-lucide-moon text-lg" />
-        </button>
+          <!-- Смена темы -->
+          <button
+            type="button"
+            class="icon-btn-ghost"
+            :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
+            @click="themeStore.toggle()"
+          >
+            <span v-if="themeStore.dark" class="i-lucide-sun text-lg" />
+            <span v-else class="i-lucide-moon text-lg" />
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Secondary nav (only for authenticated) -->
+    <div v-if="isAuthenticated" class="h-11 border-b border-border">
+      <nav class="h-full max-w-7xl mx-auto px-4 flex items-center">
+        <div class="flex items-center gap-1">
+          <RouterLink
+            to="/"
+            class="h-9 px-4 rounded-[var(--r)] text-sm font-medium flex-center gap-2 transition-colors"
+            :class="isHomeActive ? 'bg-fg/10 text-fg' : 'text-muted hover:text-fg hover:bg-fg/5'"
+          >
+            <span class="i-lucide-layout-grid" />
+            <span>Воркспейсы</span>
+          </RouterLink>
+          <RouterLink
+            to="/library"
+            class="h-9 px-4 rounded-[var(--r)] text-sm font-medium flex-center gap-2 transition-colors"
+            :class="isLibraryActive ? 'bg-fg/10 text-fg' : 'text-muted hover:text-fg hover:bg-fg/5'"
+          >
+            <span class="i-lucide-inbox" />
+            <span>Хаб</span>
+          </RouterLink>
+          <RouterLink
+            to="/tags"
+            class="h-9 px-4 rounded-[var(--r)] text-sm font-medium flex-center gap-2 transition-colors"
+            :class="isTagsActive ? 'bg-fg/10 text-fg' : 'text-muted hover:text-fg hover:bg-fg/5'"
+          >
+            <span class="i-lucide-hash" />
+            <span>Теги</span>
+          </RouterLink>
+        </div>
+        <div class="ml-auto">
+          <GlobalAddButton />
+        </div>
       </nav>
     </div>
   </header>

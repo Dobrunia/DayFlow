@@ -82,21 +82,22 @@ const hasMore = computed(() => items.value.length > showLimit);
         v-if="!disabled"
         type="button"
         @click="emit('toggleItem', index)"
-        class="checkbox-btn checkbox-btn-xs checkbox-btn-square flex-shrink-0"
-        :class="item.done ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+        class="w-3.5 h-3.5 rounded flex-center border transition-colors shrink-0"
+        :class="item.done ? 'bg-success border-success text-on-primary' : 'border-border hover:border-success'"
       >
         <span v-if="item.done" class="i-lucide-check text-[10px]" />
       </button>
       <div
         v-else
-        class="checkbox-btn checkbox-btn-xs checkbox-btn-square flex-shrink-0"
-        :class="item.done ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+        class="w-3.5 h-3.5 rounded flex-center border shrink-0"
+        :class="item.done ? 'bg-success border-success text-on-primary' : 'border-border'"
       >
         <span v-if="item.done" class="i-lucide-check text-[10px]" />
       </div>
       <span
-        class="text-xs text-fg-muted"
+        class="text-xs text-muted cursor-pointer select-none"
         :class="{ 'line-through opacity-70': item.done }"
+        @click="!disabled && emit('toggleItem', index)"
       >
         {{ item.text }}
       </span>
@@ -106,81 +107,78 @@ const hasMore = computed(() => items.value.length > showLimit);
       v-if="hasMore"
       type="button"
       @click="expanded = !expanded"
-      class="btn-add-dashed mt-2"
+      class="w-full py-2 border border-dashed border-border rounded-[var(--r)] text-xs text-muted hover:text-fg hover:border-fg/30 transition-colors"
     >
       {{ expanded ? 'Свернуть' : `Ещё ${items.length - showLimit}` }}
     </button>
 
     <div v-if="progress.total > 0" class="flex items-center gap-2 mt-2">
-      <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden min-w-0">
+      <div class="flex-1 h-1.5 bg-fg/10 rounded-full overflow-hidden min-w-0">
         <div
           class="h-full bg-success transition-all rounded-full"
           :style="{ width: `${progressPercent}%` }"
         />
       </div>
-      <span class="text-[10px] text-fg-muted shrink-0">
+      <span class="text-[10px] text-muted shrink-0">
         {{ progress.done }}/{{ progress.total }}
       </span>
     </div>
 
-    <div v-if="editableSummary" class="mt-1.5 flex items-center gap-1">
-      <p
-        v-if="payload.summary"
-        class="card-summary italic"
-        v-html="summaryHtml"
-      />
-      <p v-else class="card-summary-placeholder italic">
-        Конспект...
-      </p>
+    <div v-if="editableSummary" class="mt-3 pt-2 border-t border-border/50 flex items-center gap-1">
+      <div class="flex-1 min-w-0 pl-2 border-l-2 border-primary/40">
+        <p
+          v-if="payload.summary"
+          class="text-xs text-muted/90 italic max-h-[200px] overflow-y-auto scrollbar-hide whitespace-pre-wrap"
+          v-html="summaryHtml"
+        />
+        <p v-else class="text-xs text-muted/50 italic">
+          Конспект...
+        </p>
+      </div>
       <button
         type="button"
         @click="openSummaryEditor"
-        class="btn-icon-muted-primary flex-shrink-0 card-icon-hover"
+        class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
         title="Редактировать конспект"
       >
-        <span class="i-lucide-edit-2 text-xs" />
+        <span class="i-lucide-edit-2" />
       </button>
     </div>
     <template v-else-if="payload.summary">
-      <p class="card-summary-readonly italic" v-html="summaryHtml"></p>
+      <div class="mt-3 pt-2 border-t border-border/50">
+        <p class="text-xs text-muted/90 italic pl-2 border-l-2 border-primary/40 whitespace-pre-wrap max-h-[400px] overflow-y-auto scrollbar-hide" v-html="summaryHtml"></p>
+      </div>
     </template>
 
     <DialogRoot v-model:open="showSummaryModal">
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="closeSummaryModal" />
         <DialogContent
-          class="dialog-content-scroll max-h-[85vh] max-w-lg"
+          class="dialog-content max-h-[85vh] max-w-lg overflow-y-auto"
           @escape-key-down="closeSummaryModal"
         >
           <div class="dialog-header">
             <DialogTitle class="dialog-title">Редактировать конспект</DialogTitle>
-            <DialogClose class="dialog-close">
-              <span class="i-lucide-x text-fg-muted" />
+            <DialogClose class="icon-btn-close">
+              <span class="i-lucide-x" />
             </DialogClose>
           </div>
-          <div class="summary-editor mt-4 max-h-[50vh] overflow-auto rounded-lg border border-border bg-muted/30">
+          <div class="mt-4 max-h-[50vh] overflow-auto rounded-[var(--r)] border border-border bg-fg/3">
             <div class="flex">
-              <div
-                class="summary-line-numbers flex flex-col flex-shrink-0 w-9 min-w-9 py-2.5 pr-2 text-right text-fg-muted text-sm font-mono leading-7 select-none"
-              >
-                <span
-                  v-for="n in summaryLineNumbers"
-                  :key="n"
-                  class="summary-line-num block h-7 flex items-center justify-end"
-                >{{ n }}</span>
+              <div class="flex flex-col shrink-0 w-9 py-2.5 pr-2 text-right text-muted text-sm font-mono leading-7 select-none">
+                <span v-for="n in summaryLineNumbers" :key="n" class="h-7 flex items-center justify-end">{{ n }}</span>
               </div>
               <textarea
-              ref="summaryInputRef"
-              v-model="summaryEdit"
-              class="flex-1 min-w-0 py-2.5 pl-2 pr-3 text-sm text-fg bg-bg border-0 resize-none font-mono leading-7 focus:outline-none focus:ring-0"
-              spellcheck="false"
-              :rows="summaryLineCount"
-              @keydown.ctrl.enter="saveSummary"
+                ref="summaryInputRef"
+                v-model="summaryEdit"
+                class="flex-1 min-w-0 py-2.5 pl-2 pr-3 text-sm bg-transparent border-0 resize-none font-mono leading-7 focus:outline-none"
+                spellcheck="false"
+                :rows="summaryLineCount"
+                @keydown.ctrl.enter="saveSummary"
               />
             </div>
           </div>
-          <div class="form-actions mt-4">
-            <button type="button" class="btn-secondary" @click="closeSummaryModal">Отмена</button>
+          <div class="flex justify-end pt-4">
             <button type="button" class="btn-primary" @click="saveSummary">Сохранить</button>
           </div>
         </DialogContent>

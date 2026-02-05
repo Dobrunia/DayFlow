@@ -69,12 +69,12 @@ function closeSummaryModal() {
       <div class="flex items-start gap-1">
         <div class="flex-1 min-w-0">
           <p
-            class="text-xs text-fg-muted whitespace-pre-wrap line-clamp-3"
+            class="text-xs text-muted whitespace-pre-wrap line-clamp-3"
             v-html="contentHtml"
           />
           <p
             v-if="hasLongContent"
-            class="text-xs text-fg-muted mt-0.5"
+            class="text-xs text-muted mt-0.5"
           >
             <span class="opacity-80">… </span><span class="font-medium">ещё</span>
           </p>
@@ -83,52 +83,54 @@ function closeSummaryModal() {
           v-if="hasLongContent"
           type="button"
           @click="showContentModal = true"
-          class="btn-icon-muted-fg flex-shrink-0 mt-0.5 card-icon-hover"
+          class="icon-btn-ghost shrink-0 opacity-0 group-hover:opacity-100"
           title="Открыть полностью"
         >
-          <span class="i-lucide-maximize-2 text-xs" />
+          <span class="i-lucide-maximize-2" />
         </button>
       </div>
     </div>
-    <div v-if="editableSummary" class="mt-1.5 flex items-center gap-1">
-      <div class="flex-1 min-w-0">
+    <div v-if="editableSummary" class="mt-3 pt-2 border-t border-border/50 flex items-center gap-1">
+      <div class="flex-1 min-w-0 pl-2 border-l-2 border-primary/40">
         <p
           v-if="payload.summary"
           ref="summaryEl"
-          class="card-summary italic leading-5"
+          class="text-xs text-muted/90 italic leading-5 max-h-[200px] overflow-y-auto scrollbar-hide whitespace-pre-wrap"
           v-html="summaryHtml"
         />
-        <p v-else class="card-summary-placeholder italic leading-5">
+        <p v-else class="text-xs text-muted/50 italic leading-5">
           Конспект...
         </p>
-        <p v-if="payload.summary && summaryOverflow" class="text-xs text-fg-muted mt-0.5">
+        <p v-if="payload.summary && summaryOverflow" class="text-xs text-muted mt-0.5">
           <span class="opacity-80">… </span><span class="font-medium">ещё</span>
         </p>
       </div>
       <button
         type="button"
         @click="openSummaryEditor"
-        class="btn-icon-muted-primary flex-shrink-0 card-icon-hover"
+        class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
         title="Редактировать конспект"
       >
-        <span class="i-lucide-edit-2 text-xs" />
+        <span class="i-lucide-edit-2" />
       </button>
     </div>
     <template v-else-if="payload.summary">
-      <p class="card-summary-readonly italic" v-html="summaryHtml"></p>
+      <div class="mt-3 pt-2 border-t border-border/50">
+        <p class="text-xs text-muted/90 italic pl-2 border-l-2 border-primary/40 whitespace-pre-wrap max-h-[400px] overflow-y-auto scrollbar-hide" v-html="summaryHtml"></p>
+      </div>
     </template>
 
     <DialogRoot v-model:open="showContentModal">
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="showContentModal = false" />
         <DialogContent
-          class="dialog-content-scroll max-h-[85vh] max-w-lg"
+          class="dialog-content max-h-[85vh] max-w-lg overflow-y-auto"
           @escape-key-down="showContentModal = false"
         >
           <div class="dialog-header">
             <DialogTitle class="dialog-title">Текст заметки</DialogTitle>
-            <DialogClose class="dialog-close">
-              <span class="i-lucide-x text-fg-muted" />
+            <DialogClose class="icon-btn-close">
+              <span class="i-lucide-x" />
             </DialogClose>
           </div>
           <div
@@ -143,38 +145,31 @@ function closeSummaryModal() {
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="closeSummaryModal" />
         <DialogContent
-          class="dialog-content-scroll max-h-[85vh] max-w-lg"
+          class="dialog-content max-h-[85vh] max-w-lg overflow-y-auto"
           @escape-key-down="closeSummaryModal"
         >
           <div class="dialog-header">
             <DialogTitle class="dialog-title">Редактировать конспект</DialogTitle>
-            <DialogClose class="dialog-close">
-              <span class="i-lucide-x text-fg-muted" />
+            <DialogClose class="icon-btn-close">
+              <span class="i-lucide-x" />
             </DialogClose>
           </div>
-          <div class="summary-editor mt-4 max-h-[50vh] overflow-auto rounded-lg border border-border bg-muted/30">
+          <div class="mt-4 max-h-[50vh] overflow-auto rounded-[var(--r)] border border-border bg-fg/3">
             <div class="flex">
-              <div
-                class="summary-line-numbers flex flex-col flex-shrink-0 w-9 min-w-9 py-2.5 pr-2 text-right text-fg-muted text-sm font-mono leading-7 select-none"
-              >
-                <span
-                  v-for="n in summaryLineNumbers"
-                  :key="n"
-                  class="summary-line-num block h-7 flex items-center justify-end"
-                >{{ n }}</span>
+              <div class="flex flex-col shrink-0 w-9 py-2.5 pr-2 text-right text-muted text-sm font-mono leading-7 select-none">
+                <span v-for="n in summaryLineNumbers" :key="n" class="h-7 flex items-center justify-end">{{ n }}</span>
               </div>
               <textarea
                 ref="summaryInputRef"
                 v-model="summaryEdit"
-                class="flex-1 min-w-0 py-2.5 pl-2 pr-3 text-sm text-fg bg-bg border-0 resize-none font-mono leading-7 focus:outline-none focus:ring-0"
-              spellcheck="false"
-              :rows="summaryLineCount"
-              @keydown.ctrl.enter="saveSummary"
+                class="flex-1 min-w-0 py-2.5 pl-2 pr-3 text-sm bg-transparent border-0 resize-none font-mono leading-7 focus:outline-none"
+                spellcheck="false"
+                :rows="summaryLineCount"
+                @keydown.ctrl.enter="saveSummary"
               />
             </div>
           </div>
-          <div class="form-actions mt-4">
-            <button type="button" class="btn-secondary" @click="closeSummaryModal">Отмена</button>
+          <div class="flex justify-end pt-4">
             <button type="button" class="btn-primary" @click="saveSummary">Сохранить</button>
           </div>
         </DialogContent>

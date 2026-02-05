@@ -16,7 +16,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <template>
-  <button type="button" @click="isDialogOpen = true" class="btn-primary gap-1.5" title="Добавить (Ctrl+K)">
+  <button type="button" @click="isDialogOpen = true" class="btn-primary" title="Добавить (Ctrl+K)">
     <span class="i-lucide-plus" />
     Добавить
   </button>

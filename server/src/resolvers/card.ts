@@ -7,7 +7,9 @@ import {
   LinkPayloadSchema,
   ChecklistPayloadSchema,
 } from 'dayflow-shared';
-import { UnauthenticatedError, NotFoundError } from '../lib/errors.js';
+import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
+
+const MAX_TITLE_LENGTH = 191;
 
 function mapCardType(type: string): CardType {
   const typeMap: Record<string, CardType> = {
@@ -162,6 +164,9 @@ export const cardResolvers = {
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
+      if (input.title && input.title.length > MAX_TITLE_LENGTH) {
+        throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
+      }
 
       let workspaceId: string | null = input.workspaceId ?? null;
       let columnId: string | null = input.columnId ?? null;
@@ -219,6 +224,9 @@ export const cardResolvers = {
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
+      if (input.title && input.title.length > MAX_TITLE_LENGTH) {
+        throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
+      }
       const card = await context.prisma.card.findUnique({ where: { id } });
       if (!card || card.ownerId !== context.user.id) throw NotFoundError('Card not found');
 

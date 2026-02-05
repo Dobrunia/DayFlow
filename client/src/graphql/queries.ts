@@ -18,6 +18,7 @@ export const MY_WORKSPACES_QUERY = gql`
       title
       description
       icon
+      pinned
       createdAt
       updatedAt
     }

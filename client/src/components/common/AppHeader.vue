@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
 import SearchBar from './SearchBar.vue';
 import GlobalAddButton from './GlobalAddButton.vue';
 
 const router = useRouter();
+const route = useRoute();
+
+const isLibraryActive = computed(() => route.path === '/library');
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
@@ -44,8 +47,12 @@ function handleSignOut() {
       <!-- Right: Navigation & User -->
       <nav class="flex items-center gap-4">
         <template v-if="isAuthenticated">
-          <RouterLink to="/library" class="btn-ghost text-sm text-fg-muted hover:text-fg">
-            <span class="i-lucide-inbox mr-1.5" />
+          <RouterLink
+            to="/library"
+            class="btn-ghost"
+            :class="isLibraryActive ? 'text-fg bg-fg/8 border-fg/20' : ''"
+          >
+            <span class="i-lucide-inbox" />
             Хаб
           </RouterLink>
 
@@ -53,45 +60,34 @@ function handleSignOut() {
 
           <!-- User Menu -->
           <div class="relative group">
-            <RouterLink to="/profile" class="btn-ghost p-2 rounded-full flex items-center">
+            <RouterLink to="/profile" class="block rounded-full">
               <img
                 v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
                 :src="authStore.user.avatarUrl"
                 alt=""
-                class="w-8 h-8 rounded-full object-cover"
+                class="w-9 h-9 rounded-full object-cover"
                 @error="avatarLoadFailed = true"
               />
-              <span v-else class="i-lucide-user text-lg" />
+              <span v-else class="w-9 h-9 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-lg" />
             </RouterLink>
 
             <!-- Dropdown -->
             <div
-              class="absolute right-0 mt-1 w-48 bg-bg border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+              class="absolute right-0 mt-1 w-48 dropdown-panel opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
             >
               <div class="p-3 border-b border-border">
-                <p class="text-sm font-medium text-fg truncate">
-                  {{ authStore.user?.email }}
-                </p>
+                <p class="text-sm font-medium text-fg truncate">{{ authStore.user?.email }}</p>
               </div>
               <div class="p-1">
-                <RouterLink
-                  to="/profile"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
-                >
+                <RouterLink to="/profile" class="dropdown-menu-item">
                   <span class="i-lucide-user" />
                   Профиль
                 </RouterLink>
-                <RouterLink
-                  :to="`/user/${authStore.user?.id}`"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
-                >
+                <RouterLink :to="`/user/${authStore.user?.id}`" class="dropdown-menu-item">
                   <span class="i-lucide-bar-chart-2" />
                   Моя статистика
                 </RouterLink>
-                <button
-                  @click="handleSignOut"
-                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted rounded-md"
-                >
+                <button @click="handleSignOut" class="dropdown-menu-item">
                   <span class="i-lucide-log-out" />
                   Выйти
                 </button>
@@ -107,7 +103,7 @@ function handleSignOut() {
         <!-- Смена темы -->
         <button
           type="button"
-          class="btn-icon btn-ghost p-2"
+          class="icon-btn-ghost"
           :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
           @click="themeStore.toggle()"
         >

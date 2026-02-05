@@ -72,6 +72,15 @@ export const DELETE_WORKSPACE_MUTATION = gql`
   }
 `;
 
+export const TOGGLE_WORKSPACE_PINNED_MUTATION = gql`
+  mutation ToggleWorkspacePinned($id: ID!) {
+    toggleWorkspacePinned(id: $id) {
+      id
+      pinned
+    }
+  }
+`;
+
 export const CREATE_COLUMN_MUTATION = gql`
   mutation CreateColumn($workspaceId: ID!, $title: String!) {
     createColumn(workspaceId: $workspaceId, title: $title) {

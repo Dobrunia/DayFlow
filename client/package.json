@@ -12,30 +12,25 @@
     "codegen": "graphql-codegen"
   },
   "dependencies": {
-    "dayflow-shared": "file:../shared",
     "@apollo/client": "^3.9.5",
     "@vue/apollo-composable": "^4.0.2",
-    "@vueuse/core": "^10.9.0",
-    "@vueuse/integrations": "^10.9.0",
-    "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "dayflow-shared": "file:../shared",
     "graphql": "^16.8.1",
-    "lucide-vue-next": "^0.344.0",
     "pinia": "^2.1.7",
     "radix-vue": "^1.5.0",
     "sortablejs": "^1.15.2",
     "tailwind-merge": "^2.2.1",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
-    "vue-sonner": "^1.1.2",
-    "zod": "^3.22.4"
+    "vue-sonner": "^1.1.2"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.8",
     "@eslint/js": "^9.18.0",
     "@graphql-codegen/cli": "^6.0.0",
     "@graphql-codegen/typescript": "^5.0.0",
     "@graphql-codegen/typescript-operations": "^5.0.0",
+    "@iconify-json/lucide": "^1.2.8",
     "@types/node": "^20.11.19",
     "@types/sortablejs": "^1.15.8",
     "@unocss/reset": "^0.58.5",

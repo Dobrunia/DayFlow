@@ -92,8 +92,33 @@ async function toggleChecklistItem(index: number) {
 
 async function doDelete() {
   try {
-    if (isHubCard.value) await cardsStore.deleteCard(props.card.id);
-    else await workspaceStore.deleteCard(props.card.id);
+    if (isHubCard.value) {
+      await cardsStore.deleteCard(props.card.id);
+      toast('Карточка удалена', {
+        action: {
+          label: 'Отменить',
+          onClick: () => {
+            cardsStore.undoDeleteCard().catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
+          },
+        },
+        duration: 5000,
+      });
+    } else {
+      await workspaceStore.deleteCard(props.card.id);
+      toast('Карточка удалена', {
+        action: {
+          label: 'Отменить',
+          onClick: () => {
+            workspaceStore.undoDeleteCard().catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
+          },
+        },
+        duration: 5000,
+      });
+    }
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -118,18 +143,18 @@ async function updateSummary(newSummary: string) {
 </script>
 
 <template>
-  <div class="relative group" :data-card-id="card.id">
+  <div class="card-item relative group" :data-card-id="card.id">
     <button
       type="button"
-      class="card-edit-float"
+      class="absolute -top-2 right-3 z-10 icon-btn-edit rounded-full bg-surface border border-border shadow-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
       title="Редактировать"
       @click="showEditDialog = true"
     >
-      <span class="i-lucide-pencil w-4 h-4 block shrink-0" />
+      <span class="i-lucide-pencil" />
     </button>
 
     <div
-      class="bg-bg rounded-lg border border-border shadow-sm hover:shadow transition-shadow"
+      class="card"
       :class="[
         { 'opacity-60': card.done },
         columnId || (isBacklog && card.workspaceId != null) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
@@ -139,8 +164,8 @@ async function updateSummary(newSummary: string) {
         <button
           type="button"
           @click="toggleDone"
-          class="checkbox-btn-card"
-          :class="card.done ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+          class="w-4 h-4 rounded flex-center border transition-colors shrink-0"
+          :class="card.done ? 'bg-success border-success text-on-primary' : 'border-border hover:border-success'"
         >
           <span v-if="card.done" class="i-lucide-check text-xs" />
         </button>
@@ -204,11 +229,11 @@ async function updateSummary(newSummary: string) {
         :href="linkUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="card-type-badge-link"
+        class="text-xs text-primary hover:underline flex items-center gap-1"
         title="Перейти по ссылке"
       >
         <span>Перейти</span>
-        <span :class="typeIcon" class="text-xs shrink-0" />
+        <span :class="typeIcon" class="shrink-0" />
       </a>
     </div>
 

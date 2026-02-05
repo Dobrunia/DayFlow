@@ -38,6 +38,7 @@ export interface Workspace {
   title: string;
   description?: string | null;
   icon?: string | null;
+  pinned?: boolean;
   createdAt: string;
   updatedAt: string;
   columns?: Column[];

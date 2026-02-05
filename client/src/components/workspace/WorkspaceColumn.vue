@@ -17,12 +17,19 @@ const props = withDefaults(
     backlogCards?: CardGql[];
     /** Это колонка беклога (показывать всегда, не удалять) */
     isBacklogColumn?: boolean;
+    /** Поисковый запрос для фильтрации карточек */
+    searchQuery?: string;
+    /** Это первая колонка (не беклог) */
+    isFirst?: boolean;
+    /** Это последняя колонка */
+    isLast?: boolean;
   }>(),
-  { backlogCards: () => [], isBacklogColumn: false }
+  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '', isFirst: false, isLast: false }
 );
 
 const workspaceStore = useWorkspaceStore();
 const showAddCard = ref(false);
+const hideCompleted = ref(false);
 const headerRef = ref<HTMLElement | null>(null);
 const cardsListRef = ref<HTMLElement | null>(null);
 let sortable: Sortable | null = null;
@@ -38,27 +45,58 @@ const { isEditing, editTitle, inputRef, startEdit, saveEdit } = useInlineEdit(
 
 const cards = computed(() => props.column.cards ?? []);
 
+/** Фильтрация карточек по title/tags */
+function matchesSearch(card: CardGql, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  if (card.title?.toLowerCase().includes(q)) return true;
+  if (card.tags?.some((tag) => tag.toLowerCase().includes(q))) return true;
+  return false;
+}
+
+const filteredCards = computed(() =>
+  cards.value.filter((c) => {
+    if (hideCompleted.value && c.done) return false;
+    return matchesSearch(c, props.searchQuery ?? '');
+  })
+);
+
+const filteredBacklogCards = computed(() =>
+  (props.backlogCards ?? []).filter((c) => {
+    if (hideCompleted.value && c.done) return false;
+    return matchesSearch(c, props.searchQuery ?? '');
+  })
+);
+
+const completedCount = computed(() => {
+  const list = isBacklog.value ? (props.backlogCards ?? []) : cards.value;
+  return list.filter((c) => c.done).length;
+});
+
 function handleDragEnd(evt: Sortable.SortableEvent) {
   const el = evt.item as HTMLElement;
   const to = evt.to as HTMLElement;
-  const cardId = el.getAttribute('data-card-id') ?? el.dataset.cardId;
+  const cardId = el.dataset.cardId;
   if (!cardId) return;
 
-  const order = evt.newIndex ?? 0;
-  const toBacklog = to.getAttribute('data-backlog') != null;
-  const toColumnId = to.getAttribute('data-column-id') ?? (to.dataset.columnId as string | undefined) ?? undefined;
+  // -1 потому что первый элемент в контейнере — кнопка "Добавить карточку"
+  const order = Math.max(0, (evt.newIndex ?? 1) - 1);
+  const toBacklog = to.dataset.backlog != null;
+  const toColumnId = to.dataset.columnId;
 
-  if (toBacklog) {
-    workspaceStore.moveCard(cardId, null, order).catch((e) => {
+  const doMove = (targetColumnId: string | null) => {
+    workspaceStore.moveCard(cardId, targetColumnId, order).catch((e) => {
       toast.error(getGraphQLErrorMessage(e));
     });
+  };
+
+  if (toBacklog) {
+    doMove(null);
     return;
   }
 
   if (toColumnId) {
-    workspaceStore.moveCard(cardId, toColumnId, order).catch((e) => {
-      toast.error(getGraphQLErrorMessage(e));
-    });
+    doMove(toColumnId);
   }
 }
 
@@ -80,9 +118,42 @@ onUnmounted(() => {
 
 async function deleteColumn() {
   if (isBacklog.value) return;
-  if (!confirm('Удалить колонку и все карточки в ней?')) return;
+
+  const colTitle = props.column.title;
+
   try {
     await workspaceStore.deleteColumn(props.column.id);
+    toast(`«${colTitle}» удалена`, {
+      action: {
+        label: 'Отменить',
+        onClick: () => {
+          workspaceStore
+            .undoDeleteColumn()
+            .then(() => {
+              toast.success('Колонка восстановлена');
+            })
+            .catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
+        },
+      },
+    });
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
+async function moveLeft() {
+  try {
+    await workspaceStore.moveColumnLeft(props.column.id);
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
+async function moveRight() {
+  try {
+    await workspaceStore.moveColumnRight(props.column.id);
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -90,8 +161,8 @@ async function deleteColumn() {
 </script>
 
 <template>
-  <div class="flex-shrink-0 w-72 flex flex-col bg-muted rounded-xl">
-    <div ref="headerRef" class="group p-3 flex-between">
+  <div class="flex-shrink-0 w-72 flex flex-col bg-fg/5 rounded-xl">
+    <div ref="headerRef" class="group h-12 px-3 flex-between">
       <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">
         <input
           ref="inputRef"
@@ -104,26 +175,54 @@ async function deleteColumn() {
       </div>
       <h3
         v-else
-        class="font-medium text-fg truncate flex-1 min-w-0"
+        :title="column.title"
+        class="font-medium text-fg truncate flex-1 min-w-0 leading-none"
         :class="{ 'cursor-text': !isBacklog }"
         @dblclick="!isBacklog && startEdit()"
       >
         {{ column.title }}
+        <span class="text-xs text-muted font-normal ml-1 tabular-nums">{{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}</span>
       </h3>
 
-      <div class="flex items-center gap-0.5 shrink-0">
-        <span class="text-xs text-fg-muted mr-0.5">
-          {{ isBacklog ? backlogCards!.length : cards.length }}
-        </span>
+      <div class="flex items-center gap-0.5 shrink-0 leading-none">
         <button
-          v-if="!isBacklog"
+          v-if="completedCount > 0"
           type="button"
-          @click="deleteColumn"
-          class="header-icon-danger"
-          title="Удалить колонку"
+          @click="hideCompleted = !hideCompleted"
+          class="icon-btn-ghost"
+          :class="{ 'text-primary': hideCompleted }"
+          :title="hideCompleted ? `Показать выполненные (${completedCount})` : 'Скрыть выполненные'"
         >
-          <span class="i-lucide-trash-2 text-xs" />
+          <span :class="hideCompleted ? 'i-lucide-eye-off' : 'i-lucide-eye'" />
         </button>
+        <template v-if="!isBacklog">
+          <button
+            type="button"
+            :disabled="isFirst"
+            @click="moveLeft"
+            class="icon-btn-ghost w-6 h-6 disabled:opacity-30 disabled:pointer-events-none"
+            title="Переместить влево"
+          >
+            <span class="i-lucide-chevron-left" />
+          </button>
+          <button
+            type="button"
+            :disabled="isLast"
+            @click="moveRight"
+            class="icon-btn-ghost w-6 h-6 disabled:opacity-30 disabled:pointer-events-none"
+            title="Переместить вправо"
+          >
+            <span class="i-lucide-chevron-right" />
+          </button>
+          <button
+            type="button"
+            @click="deleteColumn"
+            class="icon-btn-delete"
+            title="Удалить колонку"
+          >
+            <span class="i-lucide-trash-2" />
+          </button>
+        </template>
       </div>
     </div>
 
@@ -133,21 +232,20 @@ async function deleteColumn() {
       :data-column-id="isBacklog ? undefined : column.id"
       :data-backlog="isBacklog ? true : undefined"
     >
-      <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag flex-shrink-0 order-first">
-        <span class="i-lucide-plus text-sm" />
-        Добавить карточку
+      <button
+        type="button"
+        @click="showAddCard = true"
+        class="w-full h-10 border border-dashed border-border rounded-[var(--r)] text-sm text-muted hover:text-fg hover:border-fg/30 flex-center gap-1.5 leading-none transition-colors sortable-no-drag flex-shrink-0 order-first"
+      >
+        <span class="i-lucide-plus" />
+        <span>Добавить карточку</span>
       </button>
       <template v-if="isBacklog">
-        <CardItem
-          v-for="c in backlogCards"
-          :key="c.id"
-          :card="c"
-          :is-backlog="true"
-        />
+        <CardItem v-for="c in filteredBacklogCards" :key="c.id" :card="c" :is-backlog="true" />
       </template>
       <template v-else>
         <CardItem
-          v-for="card in cards"
+          v-for="card in filteredCards"
           :key="card.id"
           :card="card"
           :column-id="column.id"

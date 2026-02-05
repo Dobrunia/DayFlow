@@ -1,74 +1,118 @@
-/*
-  Цвета темы. X/Twitter-подобный воздушный стиль: мягкие границы, много воздуха.
-*/
+/* ── Universal ── */
 :root {
-  --fg: #0f1419;
-  --fg-muted: #536471;
-  --bg: #ffffff;
-  --muted: #e7eaec;
-  --muted-hover: #dde1e4;
-  --border: #eff3f4;
-  --border-hover: #cfd9de;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.08);
-  --primary: #1d9bf0;
-  --on-primary: #ffffff;
-  --success: #00ba7c;
-  --danger: #f4212e;
-  --on-danger: #ffffff;
-  --overlay: rgba(0, 0, 0, 0.4);
-  /* найденные в тексте ссылки — чуть темнее primary */
-  --link-inline: #0d8bd9;
+  --space: 4px;
+  --r: 12px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  --text: 14px;
+  --lh: 1.5;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 1px rgba(0, 0, 0, .04);
 }
 
-/* Тёмная тема в духе Obsidian (тёплый тёмный фон, мягкие границы) */
+/* ── Light ── */
+:root {
+  --bg: 255 255 255;
+  --fg: 17 24 39;
+
+  --surface: 255 255 255;
+  --border: 229 231 235;
+  --muted: 107 114 128;
+
+  --primary: 59 130 246;
+  --on-primary: 255 255 255;
+
+  --success: 68 207 110;
+  --danger: 251 70 76;
+
+  --link-inline: 155 138 255;
+
+  --ring: 59 130 246;
+}
+
+/* ── Dark (Obsidian) ── */
 .dark {
-  --fg: #dadada;
-  --fg-muted: #999999;
-  --bg: #1e1e1e;
-  --muted: #262626;
-  --muted-hover: #363636;
-  --border: #363636;
-  --border-hover: #3f3f3f;
-  --primary: #7b6bff;
-  --on-primary: #ffffff;
-  --success: #44cf6e;
-  --danger: #fb464c;
-  --on-danger: #ffffff;
-  --overlay: rgba(0, 0, 0, 0.65);
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --link-inline: #9b8aff;
+  --bg: 30 30 30;
+  /* #1e1e1e — основной фон Obsidian */
+  --fg: 220 221 222;
+  /* #dcddde — текст */
+
+  --surface: 38 38 38;
+  /* #262626 — карточки, панели */
+  --border: 58 58 58;
+  /* #3a3a3a — границы */
+  --muted: 136 136 136;
+  /* #888888 — приглушённый текст */
+
+  --primary: 127 109 242;
+  /* #7f6df2 — фиолетовый акцент Obsidian */
+  --on-primary: 255 255 255;
+
+  --success: 72 191 132;
+  /* #48bf84 — зелёный */
+  --danger: 233 85 99;
+  /* #e95563 — красный */
+
+  --link-inline: 168 139 250;
+  /* #a88bfa — ссылки */
+  --ring: 127 109 242;
+  /* #7f6df2 — focus ring */
+
+  --shadow: 0 4px 12px rgba(0, 0, 0, .5), 0 2px 4px rgba(0, 0, 0, .4);
 }
 
+/* body/base */
+html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: var(--fg);
-  background: var(--bg);
-}
-
-html {
+  height: 100%;
   scroll-behavior: smooth;
 }
 
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--text);
+  line-height: var(--lh);
+  color: rgb(var(--fg));
+  background: rgb(var(--bg));
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--ring) / .45);
+  border-radius: max(6px, var(--r));
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgb(var(--bg));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-hover);
-  border-radius: 4px;
+  background: rgb(var(--fg) / 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--fg-muted);
+  background: rgb(var(--fg) / 0.25);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgb(var(--bg));
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--fg) / 0.15) rgb(var(--bg));
 }
 
 /* Скрыть скроллбар (конспект на карточке и т.п.) */
@@ -76,6 +120,7 @@ html {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -100,19 +145,110 @@ a,
 input,
 textarea,
 select {
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Текст и иконки внутри кнопок наследуют цвет — при hover контент остаётся видимым */
-button * {
-  color: inherit;
+/* Фикс baseline для кнопок — текст по центру */
+button {
+  line-height: 1;
+}
+button span {
+  line-height: 1;
+}
+
+/* Иконки как flex-item: без baseline/line-box */
+[class^="i-"],
+[class*=" i-"] {
+  display: block;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Текст в кнопках — выравнивание по центру */
+button,
+button span,
+a span {
+  line-height: 1;
 }
 
 /* Ссылки, найденные в тексте (content/summary) */
 .link-inline {
-  color: var(--link-inline);
+  color: rgb(var(--link-inline));
   text-decoration: none;
 }
+
 .link-inline:hover {
   text-decoration: underline;
+}
+
+/* Select: обрезаем текст в поле, ширина фиксирована */
+select.input {
+  text-overflow: ellipsis;
+}
+
+/* ── Toast (vue-sonner) ── */
+[data-sonner-toaster] {
+  --normal-bg: rgb(var(--surface));
+  --normal-border: rgb(var(--border));
+  --normal-text: rgb(var(--fg));
+
+  --success-bg: rgb(var(--success) / 0.12);
+  --success-border: rgb(var(--success) / 0.3);
+  --success-text: rgb(var(--success));
+
+  --error-bg: rgb(var(--danger) / 0.12);
+  --error-border: rgb(var(--danger) / 0.3);
+  --error-text: rgb(var(--danger));
+
+  --info-bg: rgb(var(--primary) / 0.12);
+  --info-border: rgb(var(--primary) / 0.3);
+  --info-text: rgb(var(--primary));
+}
+
+[data-sonner-toast] {
+  font-family: var(--font);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+
+[data-sonner-toast][data-type="default"] {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border));
+  color: rgb(var(--fg));
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: rgb(var(--success) / 0.12);
+  border: 1px solid rgb(var(--success) / 0.3);
+  color: rgb(var(--success));
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: rgb(var(--danger) / 0.12);
+  border: 1px solid rgb(var(--danger) / 0.3);
+  color: rgb(var(--danger));
+}
+
+[data-sonner-toast][data-type="info"] {
+  background: rgb(var(--primary) / 0.12);
+  border: 1px solid rgb(var(--primary) / 0.3);
+  color: rgb(var(--primary));
+}
+
+/* Toast action button (Отменить и т.п.) */
+[data-sonner-toast] [data-button] {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: calc(var(--r) - 2px);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+  opacity: 0.85;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  opacity: 1;
+  background: rgb(var(--fg) / 0.08);
 }

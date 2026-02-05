@@ -34,6 +34,7 @@ model Workspace {
   title       String
   description String?  @db.Text
   icon        String?  // один эмодзи, например "📁"
+  pinned      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   ownerId     String

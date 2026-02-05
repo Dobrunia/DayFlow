@@ -13,6 +13,7 @@ type Workspace {
   title: String!
   description: String
   icon: String
+  pinned: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
   owner: User!
@@ -146,6 +147,7 @@ type Mutation {
   createWorkspace(input: CreateWorkspaceInput!): Workspace!
   updateWorkspace(id: ID!, input: UpdateWorkspaceInput!): Workspace!
   deleteWorkspace(id: ID!): Boolean!
+  toggleWorkspacePinned(id: ID!): Workspace!
 
   # Column
   createColumn(workspaceId: ID!, title: String!): Column!

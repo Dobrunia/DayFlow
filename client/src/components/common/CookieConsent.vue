@@ -24,15 +24,11 @@ function accept() {
       <h1 id="cookie-title" class="text-xl font-semibold text-fg mb-3">
         Использование файлов cookie
       </h1>
-      <p class="text-fg-muted text-sm leading-relaxed mb-6">
+      <p class="text-muted text-sm leading-relaxed mb-6">
         Мы используем cookie для входа в аккаунт и работы сервиса. Продолжая, вы соглашаетесь
         с использованием cookie в соответствии с нашей политикой. Без согласия доступ к сайту невозможен.
       </p>
-      <button
-        type="button"
-        class="btn-primary px-6 py-2.5 rounded-full text-base"
-        @click="accept"
-      >
+      <button type="button" class="btn-primary" @click="accept">
         Принять и продолжить
       </button>
     </div>

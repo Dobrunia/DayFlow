@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useThemeStore, THEMES, type ThemeId } from '@/stores/theme';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 
 const authStore = useAuthStore();
+const themeStore = useThemeStore();
+
+const lightThemes = computed(() => THEMES.filter((t) => !t.isDark));
+const darkThemes = computed(() => THEMES.filter((t) => t.isDark));
 
 const avatarUrlInput = ref('');
 const saving = ref(false);
@@ -32,6 +37,25 @@ async function save() {
     saving.value = false;
   }
 }
+
+const themeColors: Record<ThemeId, { bg: string; primary: string; accent: string }> = {
+  light: { bg: '#ffffff', primary: '#3b82f6', accent: '#44cf6e' },
+  dark: { bg: '#1e1e1e', primary: '#7f6df2', accent: '#48bf84' },
+  oldmoney: { bg: '#f8f5ee', primary: '#2e5c48', accent: '#469a70' },
+  oldmoney2: { bg: '#f7f5f3', primary: '#8b7355', accent: '#7d8471' },
+  nord: { bg: '#12161c', primary: '#5e81ac', accent: '#8fbcbb' },
+  'solarized-dark': { bg: '#002b36', primary: '#268bd2', accent: '#2aa198' },
+  fullmoon: { bg: '#0f1a2e', primary: '#f4d03f', accent: '#22c55e' },
+};
+
+function getThemePreviewColors(id: ThemeId) {
+  const c = themeColors[id];
+  return {
+    '--preview-bg': c.bg,
+    '--preview-primary': c.primary,
+    '--preview-accent': c.accent,
+  };
+}
 </script>
 
 <template>
@@ -43,7 +67,8 @@ async function save() {
       </div>
     </div>
 
-    <div v-if="user" class="space-y-6">
+    <div v-if="user" class="space-y-8">
+      <!-- Avatar -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
         <div class="flex-shrink-0 w-24 h-24 rounded-full bg-fg/5 overflow-hidden flex-center">
           <img
@@ -78,6 +103,75 @@ async function save() {
           >
             {{ saving ? 'Сохранение...' : 'Сохранить' }}
           </button>
+        </div>
+      </div>
+
+      <!-- Theme -->
+      <div>
+        <h2 class="text-lg font-semibold mb-4">Тема оформления</h2>
+        
+        <!-- Light themes -->
+        <div class="mb-4">
+          <h3 class="text-sm text-muted mb-2 flex items-center gap-1.5">
+            <span class="i-lucide-sun" />
+            <span>Светлые</span>
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <button
+              v-for="theme in lightThemes"
+              :key="theme.id"
+              type="button"
+              class="p-3 rounded-[var(--r)] border text-left transition-all"
+              :class="[
+                themeStore.themeId === theme.id
+                  ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
+                  : 'border-border hover:border-fg/30 bg-surface'
+              ]"
+              @click="themeStore.setTheme(theme.id as ThemeId)"
+            >
+              <span class="font-medium text-sm block mb-2">{{ theme.name }}</span>
+              <div
+                class="h-4 rounded flex gap-0.5 overflow-hidden"
+                :style="getThemePreviewColors(theme.id)"
+              >
+                <div class="flex-1" :style="{ background: 'var(--preview-bg)' }" />
+                <div class="w-3" :style="{ background: 'var(--preview-primary)' }" />
+                <div class="w-2" :style="{ background: 'var(--preview-accent)' }" />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dark themes -->
+        <div>
+          <h3 class="text-sm text-muted mb-2 flex items-center gap-1.5">
+            <span class="i-lucide-moon" />
+            <span>Тёмные</span>
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <button
+              v-for="theme in darkThemes"
+              :key="theme.id"
+              type="button"
+              class="p-3 rounded-[var(--r)] border text-left transition-all"
+              :class="[
+                themeStore.themeId === theme.id
+                  ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
+                  : 'border-border hover:border-fg/30 bg-surface'
+              ]"
+              @click="themeStore.setTheme(theme.id as ThemeId)"
+            >
+              <span class="font-medium text-sm block mb-2">{{ theme.name }}</span>
+              <div
+                class="h-4 rounded flex gap-0.5 overflow-hidden"
+                :style="getThemePreviewColors(theme.id)"
+              >
+                <div class="flex-1" :style="{ background: 'var(--preview-bg)' }" />
+                <div class="w-3" :style="{ background: 'var(--preview-primary)' }" />
+                <div class="w-2" :style="{ background: 'var(--preview-accent)' }" />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </div>

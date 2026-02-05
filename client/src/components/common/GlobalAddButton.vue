@@ -36,7 +36,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
   border-radius: 18px;
   font-size: 14px;
   font-weight: 500;
-  color: white;
+  color: rgb(var(--on-primary));
   cursor: pointer;
   overflow: hidden;
   transition: box-shadow 0.2s ease;

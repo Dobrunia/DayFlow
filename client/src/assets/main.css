@@ -24,7 +24,8 @@
   --success: 68 207 110;
   --danger: 251 70 76;
 
-  --link-inline: 155 138 255;
+  --link-inline: 37 99 235;
+  /* blue-600, сочетается с --primary */
 
   --ring: 59 130 246;
 }
@@ -58,6 +59,157 @@
   /* #7f6df2 — focus ring */
 
   --shadow: 0 4px 12px rgba(0, 0, 0, .5), 0 2px 4px rgba(0, 0, 0, .4);
+}
+
+/* ── Theme: Old Money ── */
+.theme-oldmoney {
+  --bg: 248 245 238;
+  /* #f8f5ee */
+  --fg: 28 34 30;
+  /* #1c221e */
+
+  --surface: 255 252 245;
+  /* #fffcf5 */
+  --border: 214 206 191;
+  /* #d6cebf */
+  --muted: 104 100 90;
+  /* #68645a */
+
+  --primary: 46 92 72;
+  /* #2e5c48 (deep green) */
+  --on-primary: 255 255 255;
+
+  --success: 70 154 112;
+  /* #469a70 */
+  --danger: 178 56 56;
+  /* #b23838 */
+
+  --link-inline: 81 122 101;
+  /* #517a65 */
+  --ring: 46 92 72;
+  /* primary */
+
+  --shadow: 0 6px 18px rgba(18, 14, 8, .10), 0 2px 6px rgba(18, 14, 8, .08);
+}
+
+/* ── Theme: Nord-ish Dark ── */
+.theme-nord {
+  --bg: 18 22 28;
+  /* #12161c */
+  --fg: 226 231 238;
+  /* #e2e7ee */
+
+  --surface: 26 32 40;
+  /* #1a2028 */
+  --border: 48 58 72;
+  /* #303a48 */
+  --muted: 160 170 184;
+  /* #a0aab8 */
+
+  --primary: 94 129 172;
+  /* #5e81ac */
+  --on-primary: 10 12 16;
+  /* near-black */
+
+  --success: 143 188 187;
+  /* #8fbcbb */
+  --danger: 191 97 106;
+  /* #bf616a */
+
+  --link-inline: 129 161 193;
+  /* #81a1c1 */
+  --ring: 129 161 193;
+
+  --shadow: 0 10px 26px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .35);
+}
+
+/* ── Theme: Solarized Dark ── */
+.theme-solarized-dark {
+  --bg: 0 43 54;
+  /* #002b36 */
+  --fg: 238 232 213;
+  /* #eee8d5 */
+
+  --surface: 7 54 66;
+  /* #073642 */
+  --border: 38 93 103;
+  /* #265d67 */
+  --muted: 147 161 161;
+  /* #93a1a1 */
+
+  --primary: 38 139 210;
+  /* #268bd2 */
+  --on-primary: 0 43 54;
+
+  --success: 133 153 0;
+  /* #859900 */
+  --danger: 220 50 47;
+  /* #dc322f */
+
+  --link-inline: 42 161 152;
+  /* #2aa198 */
+  --ring: 38 139 210;
+
+  --shadow: 0 10px 26px rgba(0, 0, 0, .50), 0 2px 6px rgba(0, 0, 0, .35);
+}
+
+/* ── Theme: Full Moon ── */
+.theme-fullmoon {
+  --bg: 15 26 46;
+  /* #0f1a2e */
+  --fg: 244 228 166;
+  /* #f4e4a6 */
+
+  --surface: 26 37 64;
+  /* #1a2540 */
+  --border: 58 69 100;
+  /* #3a4564 */
+  --muted: 212 196 134;
+  /* #d4c486 */
+
+  --primary: 244 208 63;
+  /* #f4d03f (moon gold) */
+  --on-primary: 0 0 0;
+
+  --success: 34 197 94;
+  /* #22c55e */
+  --danger: 239 68 68;
+  /* #ef4444 */
+
+  --link-inline: 244 208 63;
+  --ring: 244 208 63;
+
+  --shadow: 0 10px 28px rgba(0, 0, 0, .55),
+    0 4px 10px rgba(0, 0, 0, .45);
+}
+
+.theme-oldmoney2 {
+  --bg: 247 245 243;
+  /* #f7f5f3 */
+  --fg: 44 36 25;
+  /* #2c2419 */
+
+  --surface: 255 255 255;
+  /* #ffffff */
+  --border: 212 196 168;
+  /* #d4c4a8 */
+  --muted: 107 93 79;
+  /* #6b5d4f */
+
+  --primary: 139 115 85;
+  /* #8b7355 */
+  --on-primary: 255 255 255;
+
+  --success: 125 132 113;
+  /* #7d8471 */
+  --danger: 160 103 74;
+  /* #a0674a */
+
+  --link-inline: 139 115 85;
+  --ring: 139 115 85;
+
+  --shadow: 0 6px 18px rgba(32, 24, 16, .12),
+    0 2px 6px rgba(32, 24, 16, .08);
 }
 
 /* body/base */
@@ -152,6 +304,7 @@ select {
 button {
   line-height: 1;
 }
+
 button span {
   line-height: 1;
 }

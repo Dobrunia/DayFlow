@@ -1,35 +1,70 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { ref, computed } from 'vue';
 
 const STORAGE_KEY = 'dayflow-theme';
 
+export type ThemeId = 'light' | 'dark' | 'oldmoney' | 'oldmoney2' | 'nord' | 'solarized-dark' | 'fullmoon';
+
+export interface ThemeOption {
+  id: ThemeId;
+  name: string;
+  isDark: boolean;
+}
+
+export const THEMES: ThemeOption[] = [
+  { id: 'light', name: 'Светлая', isDark: false },
+  { id: 'dark', name: 'Тёмная (Obsidian)', isDark: true },
+  { id: 'oldmoney', name: 'Old Money', isDark: false },
+  { id: 'oldmoney2', name: 'Old Money II', isDark: false },
+  { id: 'nord', name: 'Nord', isDark: true },
+  { id: 'solarized-dark', name: 'Solarized Dark', isDark: true },
+  { id: 'fullmoon', name: 'Full Moon', isDark: true },
+];
+
 export const useThemeStore = defineStore('theme', () => {
-  const dark = ref(false);
+  const themeId = ref<ThemeId>('light');
+
+  const currentTheme = computed(() => THEMES.find((t) => t.id === themeId.value) ?? THEMES[0]);
+  const dark = computed(() => currentTheme.value.isDark);
 
   function init() {
     if (typeof document === 'undefined') return;
-    const saved = localStorage.getItem(STORAGE_KEY);
-    dark.value = saved === 'dark';
+    const saved = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
+    if (saved && THEMES.some((t) => t.id === saved)) {
+      themeId.value = saved;
+    }
     apply();
   }
 
-  function toggle() {
-    dark.value = !dark.value;
-    localStorage.setItem(STORAGE_KEY, dark.value ? 'dark' : 'light');
+  function setTheme(id: ThemeId) {
+    themeId.value = id;
+    localStorage.setItem(STORAGE_KEY, id);
     apply();
+  }
+
+  /** Legacy toggle для совместимости */
+  function toggle() {
+    const nextDark = !dark.value;
+    const nextTheme = THEMES.find((t) => t.isDark === nextDark);
+    if (nextTheme) setTheme(nextTheme.id);
   }
 
   function apply() {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
-    if (dark.value) {
+
+    // Убираем все классы тем
+    root.classList.remove('dark', 'theme-oldmoney', 'theme-oldmoney2', 'theme-nord', 'theme-solarized-dark', 'theme-fullmoon');
+
+    // Добавляем нужные классы
+    const theme = currentTheme.value;
+    if (theme.isDark) {
       root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    }
+    if (theme.id !== 'light' && theme.id !== 'dark') {
+      root.classList.add(`theme-${theme.id}`);
     }
   }
 
-  watch(dark, () => apply(), { immediate: false });
-
-  return { dark, init, toggle };
+  return { themeId, currentTheme, dark, init, setTheme, toggle };
 });

@@ -19,8 +19,12 @@ const props = withDefaults(
     isBacklogColumn?: boolean;
     /** Поисковый запрос для фильтрации карточек */
     searchQuery?: string;
+    /** Это первая колонка (не беклог) */
+    isFirst?: boolean;
+    /** Это последняя колонка */
+    isLast?: boolean;
   }>(),
-  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '' }
+  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '', isFirst: false, isLast: false }
 );
 
 const workspaceStore = useWorkspaceStore();
@@ -69,23 +73,9 @@ function handleDragEnd(evt: Sortable.SortableEvent) {
   const toColumnId = to.dataset.columnId;
 
   const doMove = (targetColumnId: string | null) => {
-    workspaceStore.moveCard(cardId, targetColumnId, order)
-      .then(() => {
-        toast('Карточка перемещена', {
-          action: {
-            label: 'Отменить',
-            onClick: () => {
-              workspaceStore.undoLastMove().catch((e) => {
-                toast.error(getGraphQLErrorMessage(e));
-              });
-            },
-          },
-          duration: 5000,
-        });
-      })
-      .catch((e) => {
-        toast.error(getGraphQLErrorMessage(e));
-      });
+    workspaceStore.moveCard(cardId, targetColumnId, order).catch((e) => {
+      toast.error(getGraphQLErrorMessage(e));
+    });
   };
 
   if (toBacklog) {
@@ -116,9 +106,39 @@ onUnmounted(() => {
 
 async function deleteColumn() {
   if (isBacklog.value) return;
-  if (!confirm('Удалить колонку и все карточки в ней?')) return;
+  
+  const colTitle = props.column.title;
+  
   try {
     await workspaceStore.deleteColumn(props.column.id);
+    toast(`«${colTitle}» удалена`, {
+      action: {
+        label: 'Отменить',
+        onClick: () => {
+          workspaceStore.undoDeleteColumn().then(() => {
+            toast.success('Колонка восстановлена');
+          }).catch((e) => {
+            toast.error(getGraphQLErrorMessage(e));
+          });
+        },
+      },
+    });
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
+async function moveLeft() {
+  try {
+    await workspaceStore.moveColumnLeft(props.column.id);
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
+async function moveRight() {
+  try {
+    await workspaceStore.moveColumnRight(props.column.id);
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -149,18 +169,37 @@ async function deleteColumn() {
       </h3>
 
       <div class="flex items-center gap-0.5 shrink-0">
-        <span class="text-xs text-muted mr-0.5">
+        <span class="text-xs text-muted mr-1">
           {{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}
         </span>
-        <button
-          v-if="!isBacklog"
-          type="button"
-          @click="deleteColumn"
-          class="icon-btn-delete"
-          title="Удалить колонку"
-        >
-          <span class="i-lucide-trash-2" />
-        </button>
+        <template v-if="!isBacklog">
+          <button
+            type="button"
+            :disabled="isFirst"
+            @click="moveLeft"
+            class="icon-btn-ghost disabled:opacity-30 disabled:pointer-events-none"
+            title="Переместить влево"
+          >
+            <span class="i-lucide-chevron-left" />
+          </button>
+          <button
+            type="button"
+            :disabled="isLast"
+            @click="moveRight"
+            class="icon-btn-ghost disabled:opacity-30 disabled:pointer-events-none"
+            title="Переместить вправо"
+          >
+            <span class="i-lucide-chevron-right" />
+          </button>
+          <button
+            type="button"
+            @click="deleteColumn"
+            class="icon-btn-delete"
+            title="Удалить колонку"
+          >
+            <span class="i-lucide-trash-2" />
+          </button>
+        </template>
       </div>
     </div>
 

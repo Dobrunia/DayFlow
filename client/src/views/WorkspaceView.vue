@@ -7,6 +7,14 @@ import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
 import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
+import {
+  DialogRoot,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from 'radix-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -29,6 +37,7 @@ const isEditing = ref(false);
 const editTitle = ref('');
 const showCreateDialog = ref(false);
 const showIconPicker = ref(false);
+const showSummariesModal = ref(false);
 const cardSearch = ref('');
 
 const workspaceId = computed(() => route.params.id as string);
@@ -101,12 +110,28 @@ async function setIcon(emoji: string) {
 }
 
 async function deleteWorkspace() {
-  if (!workspace.value || !confirm('Удалить воркспейс? Это действие нельзя отменить.')) return;
+  if (!workspace.value) return;
+
+  const wsTitle = workspace.value.title;
 
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
     router.push('/');
-    toast.success('Воркспейс удалён');
+    toast(`«${wsTitle}» удалён`, {
+      action: {
+        label: 'Отменить',
+        onClick: () => {
+          workspaceStore.undoDeleteWorkspace().then((newId) => {
+            if (newId) {
+              toast.success('Воркспейс восстановлен');
+              router.push(`/workspace/${newId}`);
+            }
+          }).catch((e) => {
+            toast.error(getGraphQLErrorMessage(e));
+          });
+        },
+      },
+    });
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -122,6 +147,80 @@ function handleDialogClose() {
   if (isNewWorkspace.value) {
     router.push('/');
   }
+}
+
+// Собираем все конспекты из карточек воркспейса
+const allSummaries = computed(() => {
+  if (!workspace.value) return [];
+  
+  const summaries: { cardTitle: string; columnTitle: string; summary: string }[] = [];
+  
+  // Беклог
+  for (const card of backlogCards.value) {
+    const payload = typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
+    const summary = (payload as { summary?: string })?.summary?.trim();
+    if (summary) {
+      summaries.push({
+        cardTitle: card.title || '(без названия)',
+        columnTitle: 'Беклог',
+        summary,
+      });
+    }
+  }
+  
+  // Колонки
+  for (const col of columns.value) {
+    for (const card of col.cards ?? []) {
+      const payload = typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
+      const summary = (payload as { summary?: string })?.summary?.trim();
+      if (summary) {
+        summaries.push({
+          cardTitle: card.title || '(без названия)',
+          columnTitle: col.title,
+          summary,
+        });
+      }
+    }
+  }
+  
+  return summaries;
+});
+
+const summariesText = computed(() => {
+  if (!workspace.value) return '';
+  
+  let text = `# ${workspace.value.title}\n\n`;
+  
+  for (const item of allSummaries.value) {
+    text += `## ${item.cardTitle}\n`;
+    text += `> ${item.columnTitle}\n\n`;
+    text += `${item.summary}\n\n---\n\n`;
+  }
+  
+  return text.trim();
+});
+
+function copySummaries() {
+  navigator.clipboard.writeText(summariesText.value).then(
+    () => toast.success('Конспекты скопированы'),
+    () => toast.error('Не удалось скопировать')
+  );
+}
+
+function downloadSummaries() {
+  if (!workspace.value) return;
+  
+  const blob = new Blob([summariesText.value], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${workspace.value.title} — конспекты.md`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  
+  toast.success('Файл скачан');
 }
 </script>
 
@@ -218,6 +317,16 @@ function handleDialogClose() {
                 <span class="i-lucide-x text-sm" />
               </button>
             </div>
+            <button
+              v-if="allSummaries.length > 0"
+              @click="showSummariesModal = true"
+              class="btn-ghost"
+              title="Все конспекты"
+            >
+              <span class="i-lucide-book-open" />
+              Конспекты
+            </button>
+
             <button @click="addColumn" class="btn-ghost">
               <span class="i-lucide-plus" />
               Колонка
@@ -251,8 +360,10 @@ function handleDialogClose() {
           />
 
           <WorkspaceColumn
-            v-for="column in columns"
+            v-for="(column, idx) in columns"
             :key="column.id"
+            :is-first="idx === 0"
+            :is-last="idx === columns.length - 1"
             :column="column"
             :workspace-id="workspace.id"
             :search-query="cardSearch"
@@ -276,5 +387,52 @@ function handleDialogClose() {
       <p class="text-muted">Воркспейс не найден</p>
       <RouterLink to="/" class="btn-primary">На главную</RouterLink>
     </div>
+
+    <!-- Summaries Modal -->
+    <DialogRoot v-model:open="showSummariesModal">
+      <DialogPortal>
+        <DialogOverlay class="dialog-overlay" @click="showSummariesModal = false" />
+        <DialogContent
+          class="dialog-content max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+          @escape-key-down="showSummariesModal = false"
+        >
+          <div class="dialog-header">
+            <DialogTitle class="dialog-title">Все конспекты</DialogTitle>
+            <DialogClose class="icon-btn-close">
+              <span class="i-lucide-x" />
+            </DialogClose>
+          </div>
+
+          <div class="flex-1 overflow-y-auto pr-2 -mr-2 space-y-4">
+            <div
+              v-for="(item, idx) in allSummaries"
+              :key="idx"
+              class="p-3 rounded-[var(--r)] bg-fg/3 border-l-2 border-primary/40"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-sm font-medium text-fg">{{ item.cardTitle }}</span>
+                <span class="text-xs text-muted">{{ item.columnTitle }}</span>
+              </div>
+              <p class="text-sm text-muted whitespace-pre-wrap">{{ item.summary }}</p>
+            </div>
+
+            <div v-if="allSummaries.length === 0" class="text-center py-8 text-muted">
+              Нет конспектов
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-border mt-4">
+            <button type="button" class="btn-ghost" @click="copySummaries">
+              <span class="i-lucide-copy" />
+              Копировать
+            </button>
+            <button type="button" class="btn-primary" @click="downloadSummaries">
+              <span class="i-lucide-download" />
+              Скачать .md
+            </button>
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
   </div>
 </template>

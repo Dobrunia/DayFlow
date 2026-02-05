@@ -41,6 +41,21 @@ interface DeletedCard {
   workspaceId: string;
 }
 
+/** Удалённый воркспейс (для undo) */
+interface DeletedWorkspace {
+  workspace: Workspace;
+  columns: Column[];
+  cards: CardGql[];
+}
+
+/** Удалённая колонка (для undo) */
+interface DeletedColumn {
+  column: Column;
+  workspaceId: string;
+  cards: CardGql[];
+  originalIndex: number;
+}
+
 export const useWorkspaceStore = defineStore('workspace', () => {
   const workspaces = ref<Workspace[]>([]);
   const currentWorkspace = ref<Workspace | null>(null);
@@ -48,6 +63,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const error = ref<string | null>(null);
   const lastMoveAction = ref<LastMoveAction | null>(null);
   const lastDeletedCard = ref<DeletedCard | null>(null);
+  const lastDeletedWorkspace = ref<DeletedWorkspace | null>(null);
+  const lastDeletedColumn = ref<DeletedColumn | null>(null);
 
   async function fetchWorkspaces() {
     try {
@@ -126,6 +143,22 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function deleteWorkspace(id: string) {
+    // Сохраняем воркспейс для undo
+    const ws = currentWorkspace.value?.id === id ? currentWorkspace.value : workspaces.value.find((w) => w.id === id);
+    if (ws) {
+      const allCards: CardGql[] = [];
+      for (const col of ws.columns ?? []) {
+        allCards.push(...(col.cards ?? []));
+      }
+      allCards.push(...(ws.backlog ?? []));
+      
+      lastDeletedWorkspace.value = {
+        workspace: { ...ws },
+        columns: (ws.columns ?? []).map((c) => ({ ...c, cards: [] })),
+        cards: allCards.map((c) => ({ ...c })),
+      };
+    }
+
     try {
       error.value = null;
       await apolloClient.mutate({
@@ -134,6 +167,68 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
       workspaces.value = workspaces.value.filter((w) => w.id !== id);
       if (currentWorkspace.value?.id === id) currentWorkspace.value = null;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      lastDeletedWorkspace.value = null;
+      throw e;
+    }
+  }
+
+  async function undoDeleteWorkspace() {
+    const deleted = lastDeletedWorkspace.value;
+    if (!deleted) return;
+    lastDeletedWorkspace.value = null;
+
+    const { workspace: ws, columns, cards } = deleted;
+
+    try {
+      error.value = null;
+
+      // 1. Создаём воркспейс
+      const { data: wsData } = await apolloClient.mutate({
+        mutation: CREATE_WORKSPACE_MUTATION,
+        variables: {
+          input: {
+            title: ws.title,
+            description: ws.description ?? undefined,
+            icon: ws.icon ?? undefined,
+          } as CreateWorkspaceInput,
+        },
+      });
+      const newWsId = wsData.createWorkspace.id;
+
+      // 2. Создаём колонки и запоминаем маппинг старых id -> новых id
+      const columnIdMap = new Map<string, string>();
+      const sortedColumns = [...columns].sort((a, b) => a.order - b.order);
+      for (const col of sortedColumns) {
+        const { data: colData } = await apolloClient.mutate({
+          mutation: CREATE_COLUMN_MUTATION,
+          variables: { workspaceId: newWsId, title: col.title },
+        });
+        columnIdMap.set(col.id, colData.createColumn.id);
+      }
+
+      // 3. Создаём карточки
+      for (const card of cards) {
+        const newColumnId = card.columnId ? columnIdMap.get(card.columnId) : undefined;
+        const input: CreateCardInput = {
+          type: card.type,
+          title: card.title ?? undefined,
+          workspaceId: newWsId,
+          columnId: newColumnId,
+          payload: card.payload,
+          tags: card.tags,
+        };
+        await apolloClient.mutate({
+          mutation: CREATE_CARD_MUTATION,
+          variables: { input },
+        });
+      }
+
+      // 4. Обновляем список воркспейсов
+      await fetchWorkspaces();
+
+      return newWsId;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;
@@ -181,6 +276,21 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function deleteColumn(id: string) {
+    // Сохраняем колонку для undo
+    const ws = currentWorkspace.value;
+    if (ws) {
+      const colIndex = ws.columns?.findIndex((c) => c.id === id) ?? -1;
+      const col = ws.columns?.[colIndex];
+      if (col) {
+        lastDeletedColumn.value = {
+          column: { ...col, cards: [] },
+          workspaceId: ws.id,
+          cards: (col.cards ?? []).map((c) => ({ ...c })),
+          originalIndex: colIndex,
+        };
+      }
+    }
+
     try {
       error.value = null;
       await apolloClient.mutate({
@@ -192,6 +302,63 @@ export const useWorkspaceStore = defineStore('workspace', () => {
           ...currentWorkspace.value,
           columns: currentWorkspace.value.columns.filter((c) => c.id !== id),
         };
+      }
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      lastDeletedColumn.value = null;
+      throw e;
+    }
+  }
+
+  async function undoDeleteColumn() {
+    const deleted = lastDeletedColumn.value;
+    if (!deleted) return;
+    lastDeletedColumn.value = null;
+
+    const { column, workspaceId, cards, originalIndex } = deleted;
+
+    try {
+      error.value = null;
+
+      // 1. Создаём колонку
+      const { data: colData } = await apolloClient.mutate({
+        mutation: CREATE_COLUMN_MUTATION,
+        variables: { workspaceId, title: column.title },
+      });
+      const newColumnId = colData.createColumn.id;
+
+      // 2. Восстанавливаем карточки
+      for (const card of cards) {
+        const input: CreateCardInput = {
+          type: card.type,
+          title: card.title ?? undefined,
+          workspaceId,
+          columnId: newColumnId,
+          payload: card.payload,
+          tags: card.tags,
+        };
+        await apolloClient.mutate({
+          mutation: CREATE_CARD_MUTATION,
+          variables: { input },
+        });
+      }
+
+      // 3. Обновляем воркспейс
+      if (currentWorkspace.value?.id === workspaceId) {
+        await fetchWorkspace(workspaceId);
+      }
+
+      // 4. Восстанавливаем порядок колонки
+      const ws = currentWorkspace.value;
+      if (ws?.columns) {
+        const currentIds = ws.columns.map((c) => c.id);
+        // Убираем новую колонку с конца и вставляем на оригинальную позицию
+        const newColCurrentIndex = currentIds.indexOf(newColumnId);
+        if (newColCurrentIndex !== -1) {
+          currentIds.splice(newColCurrentIndex, 1);
+          currentIds.splice(originalIndex, 0, newColumnId);
+          await reorderColumns(workspaceId, currentIds);
+        }
       }
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
@@ -215,6 +382,30 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       error.value = getGraphQLErrorMessage(e);
       throw e;
     }
+  }
+
+  async function moveColumnLeft(columnId: string) {
+    const ws = currentWorkspace.value;
+    if (!ws?.columns) return;
+    
+    const idx = ws.columns.findIndex((c) => c.id === columnId);
+    if (idx <= 0) return; // already first or not found
+    
+    const ids = ws.columns.map((c) => c.id);
+    [ids[idx - 1], ids[idx]] = [ids[idx], ids[idx - 1]];
+    await reorderColumns(ws.id, ids);
+  }
+
+  async function moveColumnRight(columnId: string) {
+    const ws = currentWorkspace.value;
+    if (!ws?.columns) return;
+    
+    const idx = ws.columns.findIndex((c) => c.id === columnId);
+    if (idx === -1 || idx >= ws.columns.length - 1) return; // already last or not found
+    
+    const ids = ws.columns.map((c) => c.id);
+    [ids[idx], ids[idx + 1]] = [ids[idx + 1], ids[idx]];
+    await reorderColumns(ws.id, ids);
   }
 
   async function createCard(input: CreateCardInput) {
@@ -305,7 +496,22 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         mutation: DELETE_CARD_MUTATION,
         variables: { id },
       });
-      if (currentWorkspace.value) await fetchWorkspace(currentWorkspace.value.id);
+      // Обновляем локально без перезагрузки
+      if (currentWorkspace.value) {
+        const ws = currentWorkspace.value;
+        // Удаляем из колонок
+        const updatedColumns = ws.columns?.map((col) => ({
+          ...col,
+          cards: (col.cards ?? []).filter((c) => c.id !== id),
+        }));
+        // Удаляем из беклога
+        const updatedBacklog = (ws.backlog ?? []).filter((c) => c.id !== id);
+        currentWorkspace.value = {
+          ...ws,
+          columns: updatedColumns,
+          backlog: updatedBacklog,
+        };
+      }
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       lastDeletedCard.value = null;
@@ -330,11 +536,31 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     try {
       error.value = null;
-      await apolloClient.mutate({
+      const { data } = await apolloClient.mutate({
         mutation: CREATE_CARD_MUTATION,
         variables: { input },
       });
-      if (currentWorkspace.value) await fetchWorkspace(currentWorkspace.value.id);
+      const newCard = data.createCard as CardGql;
+      
+      // Обновляем локально
+      if (currentWorkspace.value) {
+        const ws = currentWorkspace.value;
+        if (newCard.columnId) {
+          // Добавляем в колонку
+          const updatedColumns = ws.columns?.map((col) =>
+            col.id === newCard.columnId
+              ? { ...col, cards: [newCard, ...(col.cards ?? [])] }
+              : col
+          );
+          currentWorkspace.value = { ...ws, columns: updatedColumns };
+        } else {
+          // Добавляем в беклог
+          currentWorkspace.value = {
+            ...ws,
+            backlog: [newCard, ...(ws.backlog ?? [])],
+          };
+        }
+      }
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;
@@ -440,8 +666,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!action) return;
     lastMoveAction.value = null; // сбрасываем сразу, чтобы не зациклить
     await moveCard(action.cardId, action.fromColumnId, action.fromOrder, true);
-    // Sortable.js манипулирует DOM напрямую — нужно пересинхронизировать
-    if (currentWorkspace.value) await fetchWorkspace(currentWorkspace.value.id);
   }
 
   function clearCurrentWorkspace() {
@@ -455,15 +679,21 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     error,
     lastMoveAction,
     lastDeletedCard,
+    lastDeletedWorkspace,
+    lastDeletedColumn,
     fetchWorkspaces,
     fetchWorkspace,
     createWorkspace,
     updateWorkspace,
     deleteWorkspace,
+    undoDeleteWorkspace,
     createColumn,
     updateColumn,
     deleteColumn,
+    undoDeleteColumn,
     reorderColumns,
+    moveColumnLeft,
+    moveColumnRight,
     createCard,
     updateCard,
     deleteCard,

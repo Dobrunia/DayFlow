@@ -153,7 +153,6 @@ export const useCardsStore = defineStore('cards', () => {
         variables: { id },
       });
       cards.value = cards.value.filter((c) => c.id !== id);
-      await fetchCards();
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       lastDeletedCard.value = null;
@@ -177,11 +176,12 @@ export const useCardsStore = defineStore('cards', () => {
 
     try {
       error.value = null;
-      await apolloClient.mutate({
+      const { data } = await apolloClient.mutate({
         mutation: CREATE_CARD_MUTATION,
         variables: { input },
       });
-      await fetchCards();
+      const newCard = data.createCard as CardGql;
+      cards.value = [newCard, ...cards.value];
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;

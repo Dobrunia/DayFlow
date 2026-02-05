@@ -119,6 +119,16 @@ export const useCardsStore = defineStore('cards', () => {
   }
 
   async function updateCard(id: string, input: UpdateCardInput) {
+    // Optimistic update
+    const index = cards.value.findIndex((c) => c.id === id);
+    const oldCard = index !== -1 ? { ...cards.value[index] } : null;
+    
+    if (index !== -1) {
+      const next = [...cards.value];
+      next[index] = { ...next[index], ...input };
+      cards.value = next;
+    }
+
     try {
       error.value = null;
       const { data } = await apolloClient.mutate({
@@ -126,7 +136,7 @@ export const useCardsStore = defineStore('cards', () => {
         variables: { id, input },
       });
       const updated = data.updateCard as CardGql;
-      const index = cards.value.findIndex((c) => c.id === id);
+      // Sync with server response
       if (index !== -1) {
         const next = [...cards.value];
         next[index] = { ...next[index], ...updated };
@@ -135,16 +145,26 @@ export const useCardsStore = defineStore('cards', () => {
       return updated;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (oldCard && index !== -1) {
+        const next = [...cards.value];
+        next[index] = oldCard;
+        cards.value = next;
+      }
       throw e;
     }
   }
 
   async function deleteCard(id: string) {
     // Сохраняем карточку для undo
-    const card = cards.value.find((c) => c.id === id);
+    const cardIndex = cards.value.findIndex((c) => c.id === id);
+    const card = cardIndex !== -1 ? { ...cards.value[cardIndex] } : null;
     if (card) {
-      lastDeletedCard.value = { ...card };
+      lastDeletedCard.value = card;
     }
+
+    // Optimistic delete
+    cards.value = cards.value.filter((c) => c.id !== id);
 
     try {
       error.value = null;
@@ -152,9 +172,14 @@ export const useCardsStore = defineStore('cards', () => {
         mutation: DELETE_CARD_MUTATION,
         variables: { id },
       });
-      cards.value = cards.value.filter((c) => c.id !== id);
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
+      // Revert on error
+      if (card) {
+        const next = [...cards.value];
+        next.splice(cardIndex, 0, card);
+        cards.value = next;
+      }
       lastDeletedCard.value = null;
       throw e;
     }

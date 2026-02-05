@@ -33,6 +33,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   close: [];
   delete: [];
+  updated: [card: CardGql];
 }>();
 
 const openProxy = computed({
@@ -171,7 +172,14 @@ function addChecklistItem() {
     done: false,
     order: maxOrder + 100,
   });
-  nextTick(() => initChecklistSortable());
+  nextTick(() => {
+    initChecklistSortable();
+    // Focus the new input
+    const inputs = checklistListRef.value?.querySelectorAll('input');
+    if (inputs?.length) {
+      (inputs[inputs.length - 1] as HTMLInputElement).focus();
+    }
+  });
 }
 
 function removeChecklistItem(index: number) {
@@ -226,9 +234,11 @@ async function handleSubmit() {
     const tags = buildTags();
 
     if (props.card) {
-      const updatePayload = { title: title.value.trim() || undefined, payload, tags };
+      const newTitle = title.value.trim() || null;
+      const updatePayload = { title: newTitle ?? undefined, payload, tags };
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
+      emit('updated', { ...props.card, title: newTitle, payload, tags });
       toast.success('Сохранено!');
     } else if (isGlobalAdd.value && addDestination.value === 'hub') {
       await cardsStore.createCard({

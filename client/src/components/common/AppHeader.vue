@@ -49,10 +49,10 @@ function handleSignOut() {
         <template v-if="isAuthenticated">
           <RouterLink
             to="/library"
-            class="btn-link"
-            :class="isLibraryActive && 'text-fg bg-muted'"
+            class="btn-ghost"
+            :class="isLibraryActive ? 'text-fg bg-fg/8 border-fg/20' : ''"
           >
-            <span class="i-lucide-inbox mr-1.5" />
+            <span class="i-lucide-inbox" />
             Хаб
           </RouterLink>
 
@@ -60,20 +60,20 @@ function handleSignOut() {
 
           <!-- User Menu -->
           <div class="relative group">
-            <RouterLink to="/profile" class="btn-avatar">
+            <RouterLink to="/profile" class="block rounded-full">
               <img
                 v-if="authStore.user?.avatarUrl && !avatarLoadFailed"
                 :src="authStore.user.avatarUrl"
                 alt=""
-                class="w-8 h-8 rounded-full object-cover"
+                class="w-9 h-9 rounded-full object-cover"
                 @error="avatarLoadFailed = true"
               />
-              <span v-else class="i-lucide-user text-lg" />
+              <span v-else class="w-9 h-9 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-lg" />
             </RouterLink>
 
             <!-- Dropdown -->
             <div
-              class="absolute right-0 mt-1 w-48 bg-bg border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+              class="absolute right-0 mt-1 w-48 dropdown-panel opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
             >
               <div class="p-3 border-b border-border">
                 <p class="text-sm font-medium text-fg truncate">{{ authStore.user?.email }}</p>

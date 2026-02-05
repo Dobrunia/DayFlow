@@ -136,7 +136,7 @@ function handleDialogClose() {
 
     <!-- Loading -->
     <div v-if="loading && !isNewWorkspace" class="flex-1 flex-center">
-      <div class="loading-spinner" />
+      <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
     </div>
 
     <!-- Workspace Content -->
@@ -154,22 +154,22 @@ function handleDialogClose() {
             <div class="relative shrink-0 z-[60]">
               <button
                 type="button"
-                class="w-9 h-9 rounded-lg flex-center text-xl bg-muted/50 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
                 title="Сменить иконку"
                 @click="showIconPicker = !showIconPicker"
               >
                 <span v-if="workspace.icon">{{ workspace.icon }}</span>
-                <span v-else class="i-lucide-layout-grid text-base text-fg-muted" />
+                <span v-else class="i-lucide-layout-grid text-base text-muted" />
               </button>
               <div
                 v-if="showIconPicker"
-                class="absolute top-full left-0 mt-1 p-2.5 rounded-xl border border-border bg-bg shadow-xl w-[min(352px,90vw)] grid grid-cols-8 gap-1.5 max-h-[260px] overflow-y-auto overflow-x-hidden scrollbar-hide"
+                class="absolute top-full left-0 mt-1 p-2.5 card w-[min(352px,90vw)] grid grid-cols-8 gap-1.5 max-h-[260px] overflow-y-auto scrollbar-hide"
               >
                 <button
                   v-for="emoji in WORKSPACE_EMOJIS"
                   :key="emoji"
                   type="button"
-                  class="w-9 h-9 rounded-lg flex-center text-xl hover:bg-muted transition-colors shrink-0"
+                  class="w-9 h-9 rounded-[var(--r)] flex-center text-xl hover:bg-fg/6 transition-colors shrink-0"
                   @click="setIcon(emoji)"
                 >
                   {{ emoji }}
@@ -202,31 +202,29 @@ function handleDialogClose() {
           <!-- Search + Actions -->
           <div class="flex items-center gap-3">
             <div class="relative">
-              <span
-                class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-fg-muted text-sm pointer-events-none"
-              />
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-muted text-sm pointer-events-none" />
               <input
                 v-model="cardSearch"
                 type="text"
                 placeholder="Поиск карточек..."
-                class="input pl-8 pr-8 py-1.5 w-48 text-sm"
+                class="input pl-8 pr-8 h-9 w-48 text-sm"
               />
               <button
                 v-if="cardSearch"
                 type="button"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-fg"
                 @click="cardSearch = ''"
               >
                 <span class="i-lucide-x text-sm" />
               </button>
             </div>
-            <button @click="addColumn" class="btn-secondary gap-1.5">
+            <button @click="addColumn" class="btn-ghost">
               <span class="i-lucide-plus" />
               Колонка
             </button>
 
-            <button @click="deleteWorkspace" class="icon-btn-danger" title="Удалить воркспейс">
-              <span class="i-lucide-trash-2 text-xs" />
+            <button @click="deleteWorkspace" class="icon-btn-delete" title="Удалить воркспейс">
+              <span class="i-lucide-trash-2" />
             </button>
           </div>
         </div>
@@ -261,7 +259,10 @@ function handleDialogClose() {
           />
 
           <!-- Add Column Button (placeholder) -->
-          <button @click="addColumn" class="btn-add-column flex-shrink-0">
+          <button
+            @click="addColumn"
+            class="shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-[var(--r)] flex-center flex-col gap-2 text-muted hover:text-fg hover:border-fg/30 transition-colors"
+          >
             <span class="i-lucide-plus text-xl" />
             <span class="text-sm">Добавить колонку</span>
           </button>
@@ -271,9 +272,9 @@ function handleDialogClose() {
 
     <!-- Not Found -->
     <div v-else-if="!isNewWorkspace" class="flex-1 flex-center flex-col gap-4">
-      <span class="i-lucide-folder-x text-4xl text-fg-muted" />
-      <p class="text-fg-muted">Воркспейс не найден</p>
-      <RouterLink to="/" class="btn-primary"> На главную </RouterLink>
+      <span class="i-lucide-folder-x text-4xl text-muted" />
+      <p class="text-muted">Воркспейс не найден</p>
+      <RouterLink to="/" class="btn-primary">На главную</RouterLink>
     </div>
   </div>
 </template>

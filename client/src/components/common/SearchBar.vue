@@ -62,7 +62,7 @@ function getCardIcon(type: string) {
 <template>
   <div class="relative">
     <div class="relative">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-fg-muted" />
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted" />
       <input
         v-model="query"
         type="text"
@@ -73,8 +73,8 @@ function getCardIcon(type: string) {
       />
     </div>
 
-    <div v-if="isOpen && (results.length > 0 || loading)" class="dropdown-panel">
-      <div v-if="loading" class="p-4 text-center text-sm text-fg-muted">Поиск...</div>
+    <div v-if="isOpen && (results.length > 0 || loading)" class="dropdown-panel absolute w-full">
+      <div v-if="loading" class="p-4 text-center text-sm text-muted">Поиск...</div>
 
       <template v-else>
         <button
@@ -84,10 +84,10 @@ function getCardIcon(type: string) {
           @click="selectResult(card)"
           class="dropdown-item"
         >
-          <span :class="getCardIcon(card.type)" class="text-fg-muted" />
+          <span :class="getCardIcon(card.type)" class="text-muted" />
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-fg truncate">{{ card.title || '(без названия)' }}</p>
-            <p class="text-xs text-fg-muted truncate">
+            <p class="text-xs text-muted truncate">
               {{ card.type }}
               <template v-if="(card.tags ?? []).length">
                 · {{ (card.tags as string[]).join(', ') }}
@@ -97,7 +97,7 @@ function getCardIcon(type: string) {
           <span v-if="card.done" class="i-lucide-check text-success" />
         </button>
 
-        <div v-if="results.length === 0" class="p-4 text-center text-sm text-fg-muted">
+        <div v-if="results.length === 0" class="p-4 text-center text-sm text-muted">
           Ничего не найдено
         </div>
       </template>

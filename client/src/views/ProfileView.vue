@@ -36,21 +36,17 @@ async function save() {
 
 <template>
   <div class="page-container">
-    <div class="page-header-row">
-      <div class="page-header-text">
-        <h1 class="page-title">
-          Профиль
-        </h1>
-        <p class="page-desc">
-          Настройки аккаунта
-        </p>
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+      <div>
+        <h1 class="page-title">Профиль</h1>
+        <p class="page-desc">Настройки аккаунта</p>
       </div>
       <div class="flex items-center gap-3">
-        <RouterLink to="/" class="btn-link">
+        <RouterLink to="/" class="link-inline inline-flex items-center">
           <span class="i-lucide-arrow-left mr-1" />
           На главную
         </RouterLink>
-        <RouterLink v-if="user" :to="`/user/${user.id}`" class="btn-link">
+        <RouterLink v-if="user" :to="`/user/${user.id}`" class="link-inline inline-flex items-center">
           <span class="i-lucide-bar-chart-2 mr-1" />
           Моя статистика
         </RouterLink>
@@ -59,7 +55,7 @@ async function save() {
 
     <div v-if="user" class="space-y-6">
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-        <div class="flex-shrink-0 w-24 h-24 rounded-full bg-muted overflow-hidden flex-center">
+        <div class="flex-shrink-0 w-24 h-24 rounded-full bg-fg/5 overflow-hidden flex-center">
           <img
             v-if="previewUrl && !previewError"
             :src="previewUrl"
@@ -67,14 +63,14 @@ async function save() {
             class="w-full h-full object-cover"
             @error="previewError = true"
           >
-          <span v-else class="i-lucide-user text-4xl text-fg-muted" />
+          <span v-else class="i-lucide-user text-4xl text-muted" />
         </div>
         <div class="flex-1 min-w-0 space-y-4">
-          <p class="text-sm text-fg-muted">
+          <p class="text-sm text-muted">
             {{ user.email }}
           </p>
           <div>
-            <label for="avatar-url" class="form-label">URL аватара</label>
+            <label for="avatar-url" class="block text-sm font-medium mb-1">URL аватара</label>
             <input
               id="avatar-url"
               v-model="avatarUrlInput"

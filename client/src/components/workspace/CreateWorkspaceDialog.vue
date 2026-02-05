@@ -80,22 +80,22 @@ async function handleSubmit() {
       <DialogContent class="dialog-content" @escape-key-down="openProxy = false">
         <div class="dialog-header">
           <DialogTitle class="dialog-title"> Новый воркспейс </DialogTitle>
-          <DialogClose class="dialog-close">
-            <span class="i-lucide-x text-fg-muted" />
+          <DialogClose class="icon-btn-close">
+            <span class="i-lucide-x" />
           </DialogClose>
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Icon -->
           <div>
-            <label class="form-label-fg">Иконка</label>
+            <label class="block text-sm font-medium mb-1">Иконка</label>
             <div class="flex flex-wrap gap-1.5 mt-1 max-h-[200px] overflow-y-auto overflow-x-hidden p-0.5">
               <button
                 v-for="emoji in WORKSPACE_EMOJIS"
                 :key="emoji"
                 type="button"
-                class="w-9 h-9 rounded-lg flex-center text-xl transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
-                :class="icon === emoji ? 'bg-primary/20 ring-2 ring-primary' : 'bg-muted/50'"
+                class="w-9 h-9 rounded-[var(--r)] flex-center text-xl transition-colors hover:bg-fg/6 focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
+                :class="icon === emoji ? 'bg-primary/20 ring-2 ring-primary' : 'bg-fg/5'"
                 @click="icon = emoji"
               >
                 {{ emoji }}
@@ -105,7 +105,7 @@ async function handleSubmit() {
 
           <!-- Title -->
           <div>
-            <label for="ws-title" class="form-label-fg"> Название * </label>
+            <label for="ws-title" class="block text-sm font-medium mb-1">Название *</label>
             <input
               id="ws-title"
               v-model="title"
@@ -118,7 +118,7 @@ async function handleSubmit() {
 
           <!-- Description -->
           <div>
-            <label for="ws-description" class="form-label-fg"> Описание </label>
+            <label for="ws-description" class="block text-sm font-medium mb-1">Описание</label>
             <textarea
               id="ws-description"
               v-model="description"
@@ -128,7 +128,7 @@ async function handleSubmit() {
           </div>
 
           <!-- Submit -->
-          <div class="form-actions">
+          <div class="flex justify-end pt-4">
             <button type="submit" class="btn-primary" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin mr-1.5" />
               Создать

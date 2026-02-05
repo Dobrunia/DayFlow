@@ -138,15 +138,9 @@ function goToPage(p: number) {
 
 <template>
   <div class="page-container">
-    <div class="page-header-row">
-      <div class="page-header-text">
-        <h1 class="page-title">
-          Хаб
-        </h1>
-        <p class="page-desc">
-          Карточки без воркспейса
-        </p>
-      </div>
+    <div class="mb-8">
+      <h1 class="page-title">Хаб</h1>
+      <p class="page-desc">Карточки без воркспейса</p>
     </div>
 
     <!-- Single card view (from URL ?card=id) -->
@@ -155,13 +149,13 @@ function goToPage(p: number) {
         v-if="singleCardLoading"
         class="flex justify-center py-12"
       >
-        <div class="loading-spinner" />
+        <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
       </div>
       <template v-else-if="singleCard">
         <div class="mb-4">
           <RouterLink
             :to="{ path: '/library', query: { ...($route.query as Record<string, string>), card: undefined } }"
-            class="btn-link"
+            class="link-inline inline-flex items-center"
           >
             <span class="i-lucide-arrow-left mr-1" />
             Назад к хабу
@@ -177,20 +171,20 @@ function goToPage(p: number) {
     <!-- List view -->
     <template v-else>
       <div class="mb-6 flex flex-wrap items-center gap-4 cursor-default">
-        <label class="flex items-center gap-2 text-sm text-fg-muted hover:text-fg cursor-pointer">
+        <label class="flex items-center gap-2 text-sm text-muted hover:text-fg cursor-pointer">
           <button
             type="button"
             role="checkbox"
             :aria-checked="hideDone"
-            class="checkbox-btn-card"
-            :class="hideDone ? 'checkbox-btn-checked' : 'checkbox-btn-unchecked'"
+            class="w-4 h-4 rounded flex-center border transition-colors"
+            :class="hideDone ? 'bg-primary border-primary text-on-primary' : 'border-border hover:border-primary'"
             @click.prevent="hideDone = !hideDone"
           >
             <span v-if="hideDone" class="i-lucide-check text-xs" />
           </button>
           Отключить выполненные
         </label>
-        <button type="button" class="btn-link" @click="sortOldestFirst = !sortOldestFirst">
+        <button type="button" class="link-inline inline-flex items-center" @click="sortOldestFirst = !sortOldestFirst">
           {{ sortOldestFirst ? 'Сначала старые' : 'Сначала новые' }}
           <span class="i-lucide-arrow-up-down ml-1" />
         </button>
@@ -201,7 +195,7 @@ function goToPage(p: number) {
           v-if="loading"
           class="text-center py-12"
         >
-          <div class="loading-spinner mx-auto" />
+          <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
         </div>
 
         <template v-else-if="cards.length > 0">
@@ -218,11 +212,11 @@ function goToPage(p: number) {
             v-if="hasPagination"
             class="mt-8 flex items-center justify-center gap-2"
           >
-            <button type="button" class="btn-ghost-sm" :disabled="page <= 1" @click="goToPage(page - 1)">
+            <button type="button" class="btn-ghost btn-sm" :disabled="page <= 1" @click="goToPage(page - 1)">
               Назад
             </button>
-            <span class="text-sm text-fg-muted px-2">{{ page }} / {{ totalPages }}</span>
-            <button type="button" class="btn-ghost-sm" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+            <span class="text-sm text-muted px-2">{{ page }} / {{ totalPages }}</span>
+            <button type="button" class="btn-ghost btn-sm" :disabled="page >= totalPages" @click="goToPage(page + 1)">
               Вперёд
             </button>
           </div>
@@ -230,17 +224,13 @@ function goToPage(p: number) {
 
         <div
           v-else
-          class="text-center py-16"
+          class="text-center py-16 flex flex-col items-center gap-4"
         >
-          <div class="empty-state-icon">
-            <span class="i-lucide-inbox text-2xl text-fg-muted" />
+          <div class="w-16 h-16 rounded-full bg-fg/5 flex-center">
+            <span class="i-lucide-inbox text-2xl text-muted" />
           </div>
-          <h2 class="empty-state-title">
-            Пока пусто
-          </h2>
-          <p class="empty-state-desc">
-            Добавьте карточку с помощью кнопки «Добавить»
-          </p>
+          <h2 class="text-lg font-semibold text-fg">Пока пусто</h2>
+          <p class="text-sm text-muted">Добавьте карточку с помощью кнопки «Добавить»</p>
         </div>
       </div>
     </template>

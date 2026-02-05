@@ -29,15 +29,15 @@ function shareStats() {
 
 <template>
   <div class="page-container">
-    <div class="page-header-row">
-      <RouterLink to="/" class="btn-link">
+    <div class="flex-between mb-8">
+      <RouterLink to="/" class="link-inline inline-flex items-center">
         <span class="i-lucide-arrow-left mr-1" />
         На главную
       </RouterLink>
       <button
         v-if="isOwnStats && stats"
         type="button"
-        class="btn-link"
+        class="link-inline inline-flex items-center"
         @click="shareStats"
       >
         <span class="i-lucide-share-2 mr-1" />
@@ -46,11 +46,11 @@ function shareStats() {
     </div>
 
     <div v-if="loading" class="flex-center py-24">
-      <span class="loading-spinner" />
+      <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
     </div>
 
     <template v-else-if="error || !stats">
-      <div class="text-center py-24 text-fg-muted">
+      <div class="text-center py-24 text-muted">
         <span class="i-lucide-user-x text-4xl block mb-3 opacity-60" />
         <p>Пользователь не найден или доступ закрыт.</p>
       </div>
@@ -59,20 +59,20 @@ function shareStats() {
     <template v-else>
       <!-- Avatar -->
       <div class="flex flex-col items-center mb-10">
-        <div class="w-24 h-24 rounded-full bg-muted overflow-hidden flex-center shrink-0">
+        <div class="w-24 h-24 rounded-full bg-fg/5 overflow-hidden flex-center shrink-0">
           <img
             v-if="stats.avatarUrl"
             :src="stats.avatarUrl"
             alt="Аватар"
             class="w-full h-full object-cover"
           >
-          <span v-else class="i-lucide-user text-4xl text-fg-muted" />
+          <span v-else class="i-lucide-user text-4xl text-muted" />
         </div>
       </div>
 
       <!-- Block 1: total completed -->
-      <div class="rounded-2xl border border-border bg-muted/40 p-6 mb-8">
-        <p class="text-sm text-fg-muted mb-1">
+      <div class="rounded-2xl border border-border bg-fg/4 p-6 mb-8">
+        <p class="text-sm text-muted mb-1">
           Выполнено карточек
         </p>
         <p class="text-4xl font-bold text-fg tabular-nums">
@@ -86,14 +86,14 @@ function shareStats() {
           Воркспейсы
         </h2>
       </div>
-      <div v-if="stats.workspaceStats.length === 0" class="rounded-2xl border border-border bg-muted/30 p-8 text-center text-fg-muted">
+      <div v-if="stats.workspaceStats.length === 0" class="rounded-2xl border border-border bg-fg/3 p-8 text-center text-muted">
         Нет воркспейсов
       </div>
       <div v-else class="grid gap-4 sm:grid-cols-2">
         <div
           v-for="ws in stats.workspaceStats"
           :key="ws.id"
-          class="user-stats-ws-card rounded-2xl border border-border bg-muted/30 p-4 flex gap-4"
+          class="rounded-2xl border border-border bg-fg/3 p-4 flex gap-4"
         >
           <div class="flex-1 min-w-0 opacity-80">
             <div class="flex items-center gap-2 mb-1">
@@ -102,7 +102,7 @@ function shareStats() {
               </span>
               <span :title="ws.title" class="font-medium text-fg truncate">{{ ws.title }}</span>
             </div>
-            <p v-if="ws.description" class="text-sm text-fg-muted line-clamp-2">
+            <p v-if="ws.description" class="text-sm text-muted line-clamp-2">
               {{ ws.description }}
             </p>
           </div>

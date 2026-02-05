@@ -268,24 +268,24 @@ async function handleSubmit() {
   <DialogRoot v-model:open="openProxy">
     <DialogPortal>
       <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
-      <DialogContent class="dialog-content-scroll" @escape-key-down="openProxy = false">
+      <DialogContent class="dialog-content max-h-[90vh] overflow-y-auto" @escape-key-down="openProxy = false">
         <div class="dialog-header">
           <DialogTitle class="dialog-title">
             {{ isEditMode ? 'Редактировать карточку' : 'Новая карточка' }}
           </DialogTitle>
-          <DialogClose class="dialog-close">
-            <span class="i-lucide-x text-fg-muted" />
+          <DialogClose class="icon-btn-close">
+            <span class="i-lucide-x" />
           </DialogClose>
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div v-if="isGlobalAdd" class="pb-2 border-b border-border">
-            <label class="form-label-fg mb-2">Куда добавить</label>
+            <label class="block text-sm font-medium mb-2">Куда добавить</label>
             <div class="flex gap-2 mb-3">
               <button
                 type="button"
-                class="flex-1 type-selector-btn flex-center"
-                :class="addDestination === 'hub' ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
+                class="flex-1 h-9 px-3 text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
+                :class="addDestination === 'hub' ? 'bg-primary text-on-primary' : 'bg-surface border border-border text-muted hover:text-fg'"
                 @click="addDestination = 'hub'; selectedWorkspaceId = ''"
               >
                 <span class="i-lucide-inbox" />
@@ -293,8 +293,8 @@ async function handleSubmit() {
               </button>
               <button
                 type="button"
-                class="flex-1 type-selector-btn flex-center"
-                :class="addDestination === 'workspace' ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
+                class="flex-1 h-9 px-3 text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
+                :class="addDestination === 'workspace' ? 'bg-primary text-on-primary' : 'bg-surface border border-border text-muted hover:text-fg'"
                 @click="addDestination = 'workspace'"
               >
                 <span class="i-lucide-layout-grid" />
@@ -302,7 +302,7 @@ async function handleSubmit() {
               </button>
             </div>
             <div v-if="addDestination === 'workspace'" class="mt-2">
-              <label for="card-workspace" class="form-label text-fg-muted mb-1">Воркспейс (карточка попадёт в беклог)</label>
+              <label for="card-workspace" class="block text-sm text-muted mb-1">Воркспейс (карточка попадёт в беклог)</label>
               <select
                 id="card-workspace"
                 v-model="selectedWorkspaceId"
@@ -321,7 +321,7 @@ async function handleSubmit() {
           </div>
 
           <div>
-            <label for="card-title" class="form-label-fg">Название</label>
+            <label for="card-title" class="block text-sm font-medium mb-1">Название</label>
             <input
               id="card-title"
               v-model="title"
@@ -332,7 +332,7 @@ async function handleSubmit() {
           </div>
 
           <div>
-            <label for="card-tags" class="form-label-fg">Теги</label>
+            <label for="card-tags" class="block text-sm font-medium mb-1">Теги</label>
             <input
               id="card-tags"
               v-model="tagsInput"
@@ -343,15 +343,15 @@ async function handleSubmit() {
           </div>
 
           <div v-if="!isEditMode">
-            <label class="form-label-fg mb-2">Тип</label>
+            <label class="block text-sm font-medium mb-2">Тип</label>
             <div class="flex gap-2">
               <button
                 v-for="t in types"
                 :key="t.value"
                 type="button"
                 @click="cardType = t.value"
-                class="flex-1 type-selector-btn flex-center"
-                :class="cardType === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
+                class="flex-1 h-9 px-3 text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
+                :class="cardType === t.value ? 'bg-primary text-on-primary' : 'bg-surface border border-border text-muted hover:text-fg'"
               >
                 <span :class="t.icon" />
                 {{ t.label }}
@@ -361,7 +361,7 @@ async function handleSubmit() {
 
           <template v-if="cardType === 'NOTE'">
             <div>
-              <label for="card-note" class="form-label-fg">Текст заметки</label>
+              <label for="card-note" class="block text-sm font-medium mb-1">Текст заметки</label>
               <textarea
                 id="card-note"
                 v-model="noteContent"
@@ -370,7 +370,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-note" class="form-label-fg">Конспект</label>
+              <label for="card-summary-note" class="block text-sm font-medium mb-1">Конспект</label>
               <input
                 id="card-summary-note"
                 v-model="noteSummary"
@@ -383,7 +383,7 @@ async function handleSubmit() {
 
           <template v-if="cardType === 'LINK'">
             <div>
-              <label for="card-url" class="form-label-fg">URL *</label>
+              <label for="card-url" class="block text-sm font-medium mb-1">URL *</label>
               <input
                 id="card-url"
                 v-model="linkUrl"
@@ -393,7 +393,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-link" class="form-label-fg">Конспект</label>
+              <label for="card-summary-link" class="block text-sm font-medium mb-1">Конспект</label>
               <input
                 id="card-summary-link"
                 v-model="linkSummary"
@@ -406,14 +406,14 @@ async function handleSubmit() {
 
           <template v-if="cardType === 'CHECKLIST'">
             <div>
-              <label class="form-label-fg mb-2">Пункты</label>
+              <label class="block text-sm font-medium mb-2">Пункты</label>
               <div ref="checklistListRef" class="space-y-2">
                 <div
                   v-for="(item, index) in checklistItems"
                   :key="item.id"
                   class="flex items-center gap-2"
                 >
-                  <span class="checklist-grip grip-handle" />
+                  <span class="checklist-grip i-lucide-grip-vertical text-muted cursor-grab active:cursor-grabbing" />
                   <input
                     v-model="item.text"
                     type="text"
@@ -424,7 +424,7 @@ async function handleSubmit() {
                     v-if="checklistItems.length > 1"
                     type="button"
                     @click="removeChecklistItem(index)"
-                    class="btn-icon-muted-danger"
+                    class="icon-btn-delete"
                   >
                     <span class="i-lucide-x" />
                   </button>
@@ -433,14 +433,14 @@ async function handleSubmit() {
               <button
                 type="button"
                 @click="addChecklistItem"
-                class="btn-add-dashed mt-2"
+                class="w-full mt-2 py-2 border border-dashed border-border rounded-[var(--r)] text-sm text-muted hover:text-fg hover:border-fg/30 flex-center gap-1.5 transition-colors"
               >
-                <span class="i-lucide-plus text-sm flex-shrink-0" />
-                <span>Добавить пункт</span>
+                <span class="i-lucide-plus" />
+                Добавить пункт
               </button>
             </div>
             <div>
-              <label for="card-summary-checklist" class="form-label-fg">Конспект</label>
+              <label for="card-summary-checklist" class="block text-sm font-medium mb-1">Конспект</label>
               <input
                 id="card-summary-checklist"
                 v-model="checklistSummary"
@@ -455,14 +455,14 @@ async function handleSubmit() {
             <button
               v-if="isEditMode"
               type="button"
-              class="btn-danger"
+              class="btn-delete"
               @click="emit('delete')"
             >
-              <span class="i-lucide-trash-2 text-sm" />
+              <span class="i-lucide-trash-2" />
               Удалить
             </button>
             <button type="submit" class="btn-primary ml-auto" :disabled="loading">
-              <span v-if="loading" class="loading-spinner mr-1.5" />
+              <span v-if="loading" class="i-lucide-loader-2 animate-spin" />
               {{ isEditMode ? 'Сохранить' : 'Создать' }}
             </button>
           </div>

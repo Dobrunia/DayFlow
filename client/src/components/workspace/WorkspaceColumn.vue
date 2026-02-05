@@ -126,7 +126,7 @@ async function deleteColumn() {
 </script>
 
 <template>
-  <div class="flex-shrink-0 w-72 flex flex-col bg-muted rounded-xl">
+  <div class="flex-shrink-0 w-72 flex flex-col bg-fg/5 rounded-xl">
     <div ref="headerRef" class="group p-3 flex-between">
       <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">
         <input
@@ -149,17 +149,17 @@ async function deleteColumn() {
       </h3>
 
       <div class="flex items-center gap-0.5 shrink-0">
-        <span class="text-xs text-fg-muted mr-0.5">
+        <span class="text-xs text-muted mr-0.5">
           {{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}
         </span>
         <button
           v-if="!isBacklog"
           type="button"
           @click="deleteColumn"
-          class="header-icon-danger"
+          class="icon-btn-delete"
           title="Удалить колонку"
         >
-          <span class="i-lucide-trash-2 text-xs" />
+          <span class="i-lucide-trash-2" />
         </button>
       </div>
     </div>
@@ -170,9 +170,13 @@ async function deleteColumn() {
       :data-column-id="isBacklog ? undefined : column.id"
       :data-backlog="isBacklog ? true : undefined"
     >
-      <button type="button" @click="showAddCard = true" class="btn-add-dashed sortable-no-drag flex-shrink-0 order-first">
-        <span class="i-lucide-plus text-sm" />
-        Добавить карточку
+      <button
+        type="button"
+        @click="showAddCard = true"
+        class="w-full py-2 border border-dashed border-border rounded-[var(--r)] text-sm text-muted hover:text-fg hover:border-fg/30 flex-center gap-1.5 transition-colors sortable-no-drag flex-shrink-0 order-first"
+      >
+        <span class="i-lucide-plus" />
+        <span>Добавить карточку</span>
       </button>
       <template v-if="isBacklog">
         <CardItem

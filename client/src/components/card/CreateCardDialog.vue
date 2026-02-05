@@ -342,20 +342,16 @@ async function handleSubmit() {
             />
           </div>
 
-          <div>
+          <div v-if="!isEditMode">
             <label class="form-label-fg mb-2">Тип</label>
             <div class="flex gap-2">
               <button
                 v-for="t in types"
                 :key="t.value"
                 type="button"
-                :disabled="isEditMode"
-                @click="!isEditMode && (cardType = t.value)"
+                @click="cardType = t.value"
                 class="flex-1 type-selector-btn flex-center"
-                :class="[
-                  cardType === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive',
-                  isEditMode && 'opacity-70 cursor-not-allowed pointer-events-none',
-                ]"
+                :class="cardType === t.value ? 'type-selector-btn-active' : 'type-selector-btn-inactive'"
               >
                 <span :class="t.icon" />
                 {{ t.label }}

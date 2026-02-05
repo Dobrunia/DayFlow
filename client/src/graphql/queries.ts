@@ -86,6 +86,11 @@ export const CARDS_QUERY = gql`
       done
       payload
       tags
+      workspace {
+        id
+        title
+        icon
+      }
     }
   }
 `;

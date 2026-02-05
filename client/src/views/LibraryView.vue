@@ -146,13 +146,13 @@ function goToPage(p: number) {
         <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
       </div>
       <template v-else-if="singleCard">
-        <div class="mb-4">
+        <div class="mb-6">
           <RouterLink
             :to="{
               path: '/library',
               query: { ...($route.query as Record<string, string>), card: undefined },
             }"
-            class="link-inline inline-flex items-center gap-1"
+            class="inline-flex items-center gap-1 text-link hover:underline underline-offset-3"
           >
             <span class="i-lucide-arrow-left" />
             <span>Назад к хабу</span>

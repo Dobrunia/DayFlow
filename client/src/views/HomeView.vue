@@ -111,11 +111,11 @@ function togglePinned(e: Event, id: string) {
             <span>Закреплённые</span>
           </h2>
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-            <button
+            <div
               v-for="workspace in pinnedWorkspaces"
               :key="workspace.id"
               @click="navigateToWorkspace(workspace.id)"
-              class="card-hover text-left p-5 group relative"
+              class="card-hover text-left p-5 group relative cursor-pointer"
             >
               <button
                 type="button"
@@ -143,17 +143,17 @@ function togglePinned(e: Event, id: string) {
               <p class="text-xs text-muted">
                 {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
               </p>
-            </button>
+            </div>
           </div>
         </template>
 
         <!-- Unpinned -->
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <button
+          <div
             v-for="workspace in unpinnedWorkspaces"
             :key="workspace.id"
             @click="navigateToWorkspace(workspace.id)"
-            class="card-hover text-left p-5 group relative"
+            class="card-hover text-left p-5 group relative cursor-pointer"
           >
             <button
               type="button"
@@ -180,7 +180,7 @@ function togglePinned(e: Event, id: string) {
             <p class="text-xs text-muted">
               {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
             </p>
-          </button>
+          </div>
 
           <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
             <p class="col-span-full text-sm text-muted py-4">По запросу ничего не найдено</p>

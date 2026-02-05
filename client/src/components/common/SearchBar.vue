@@ -88,7 +88,11 @@ function getCardIcon(type: string) {
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-fg truncate">{{ card.title || '(без названия)' }}</p>
             <p class="text-xs text-muted truncate">
-              {{ card.type }}
+              <span v-if="card.workspace" class="inline-flex items-center gap-0.5">
+                <span v-if="card.workspace.icon">{{ card.workspace.icon }}</span>
+                <span>{{ card.workspace.title }}</span>
+              </span>
+              <span v-else>Хаб</span>
               <template v-if="(card.tags ?? []).length">
                 · {{ (card.tags as string[]).join(', ') }}
               </template>

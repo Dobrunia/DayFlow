@@ -245,8 +245,9 @@ function downloadSummaries() {
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 shrink-0">
             <!-- Back button -->
-            <RouterLink to="/" class="icon-btn-ghost">
+            <RouterLink to="/" class="inline-flex items-center gap-1 text-link hover:underline underline-offset-3">
               <span class="i-lucide-arrow-left" />
+              <span>Назад</span>
             </RouterLink>
 
             <!-- Workspace icon (click to change) -->

@@ -108,7 +108,7 @@
 
   --primary: 94 129 172;
   /* #5e81ac */
-  --on-primary: 10 12 16;
+  --on-primary: 255 255 255;
   /* near-black */
 
   --success: 143 188 187;
@@ -139,7 +139,7 @@
 
   --primary: 38 139 210;
   /* #268bd2 */
-  --on-primary: 0 43 54;
+  --on-primary: 255 255 255;
 
   --success: 133 153 0;
   /* #859900 */

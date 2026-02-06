@@ -15,7 +15,7 @@ function accept() {
 
 <template>
   <div
-    class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-bg px-6 py-8"
+    class="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-6 py-8"
     role="dialog"
     aria-modal="true"
     aria-labelledby="cookie-title"

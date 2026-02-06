@@ -17,9 +17,12 @@ const themeStore = useThemeStore();
 
 const isAuthenticated = computed(() => !!authStore.user);
 const avatarLoadFailed = ref(false);
-watch(() => authStore.user?.avatarUrl, () => {
-  avatarLoadFailed.value = false;
-});
+watch(
+  () => authStore.user?.avatarUrl,
+  () => {
+    avatarLoadFailed.value = false;
+  }
+);
 
 function handleSignOut() {
   authStore.signOut();
@@ -28,9 +31,9 @@ function handleSignOut() {
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 bg-bg">
+  <header class="fixed top-0 left-0 right-0 z-50">
     <!-- Main header -->
-    <div class="h-14 border-b border-border">
+    <div class="h-14" style="background: color-mix(in srgb, rgb(var(--bg)) 90%, black 10%)">
       <div class="h-full max-w-7xl mx-auto px-4 flex-between">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
@@ -61,7 +64,10 @@ function handleSignOut() {
                   class="w-9 h-9 rounded-full object-cover"
                   @error="avatarLoadFailed = true"
                 />
-                <span v-else class="w-9 h-9 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-lg" />
+                <span
+                  v-else
+                  class="w-9 h-9 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-lg"
+                />
               </RouterLink>
 
               <!-- Dropdown -->
@@ -96,7 +102,7 @@ function handleSignOut() {
           <!-- Смена темы -->
           <button
             type="button"
-            class="icon-btn-ghost"
+            class="icon-btn-ghost ui-border"
             :aria-label="themeStore.dark ? 'Светлая тема' : 'Тёмная тема'"
             @click="themeStore.toggle()"
           >
@@ -108,30 +114,18 @@ function handleSignOut() {
     </div>
 
     <!-- Secondary nav (only for authenticated) -->
-    <div v-if="isAuthenticated" class="h-11 border-b border-border">
-      <nav class="h-full max-w-7xl mx-auto px-4 flex items-center">
+    <div v-if="isAuthenticated" class="h-max border-b border-border" style="background: color-mix(in srgb, rgb(var(--bg)) 90%, black 10%)">
+      <nav class="h-full max-w-7xl mx-auto px-4 flex items-center py-2">
         <div class="flex items-center gap-1">
-          <RouterLink
-            to="/"
-            class="h-9 px-4 rounded-[var(--r)] text-sm font-medium flex-center gap-2 transition-colors"
-            :class="isHomeActive ? 'bg-fg/10 text-fg' : 'text-muted hover:text-fg hover:bg-fg/5'"
-          >
+          <RouterLink to="/" class="btn-ghost" :class="isHomeActive && 'bg-fg/10'">
             <span class="i-lucide-layout-grid" />
             <span>Воркспейсы</span>
           </RouterLink>
-          <RouterLink
-            to="/library"
-            class="h-9 px-4 rounded-[var(--r)] text-sm font-medium flex-center gap-2 transition-colors"
-            :class="isLibraryActive ? 'bg-fg/10 text-fg' : 'text-muted hover:text-fg hover:bg-fg/5'"
-          >
+          <RouterLink to="/library" class="btn-ghost" :class="isLibraryActive && 'bg-fg/10'">
             <span class="i-lucide-inbox" />
             <span>Хаб</span>
           </RouterLink>
-          <RouterLink
-            to="/tags"
-            class="h-9 px-4 rounded-[var(--r)] text-sm font-medium flex-center gap-2 transition-colors"
-            :class="isTagsActive ? 'bg-fg/10 text-fg' : 'text-muted hover:text-fg hover:bg-fg/5'"
-          >
+          <RouterLink to="/tags" class="btn-ghost" :class="isTagsActive && 'bg-fg/10'">
             <span class="i-lucide-hash" />
             <span>Теги</span>
           </RouterLink>

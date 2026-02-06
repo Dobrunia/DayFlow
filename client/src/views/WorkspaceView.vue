@@ -225,7 +225,7 @@ function downloadSummaries() {
 </script>
 
 <template>
-  <div class="h-[calc(100vh-120px)] flex flex-col">
+  <div class="h-[calc(100vh-128px)] flex flex-col">
     <!-- Create Dialog -->
     <CreateWorkspaceDialog
       :open="showCreateDialog"
@@ -241,7 +241,7 @@ function downloadSummaries() {
     <!-- Workspace Content -->
     <template v-else-if="workspace">
       <!-- Header -->
-      <div class="flex-shrink-0 px-6 py-4 border-b border-border bg-bg">
+      <div class="flex-shrink-0 px-6 py-2">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 shrink-0">
             <!-- Back button -->
@@ -351,7 +351,7 @@ function downloadSummaries() {
         class="flex-1 overflow-x-auto overflow-y-hidden workspace-scroll"
         @wheel="handleWheel"
       >
-        <div class="h-full flex gap-4 p-6" style="min-width: max-content">
+        <div class="h-full flex gap-4 px-6 pb-6" style="min-width: max-content">
           <WorkspaceColumn
             :column="backlogColumn"
             :workspace-id="workspace.id"

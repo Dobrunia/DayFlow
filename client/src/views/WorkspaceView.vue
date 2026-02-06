@@ -348,7 +348,7 @@ function downloadSummaries() {
       <!-- Backlog + Columns -->
       <div
         ref="columnsContainer"
-        class="flex-1 overflow-x-hidden overflow-y-hidden"
+        class="flex-1 overflow-x-auto overflow-y-hidden workspace-scroll"
         @wheel="handleWheel"
       >
         <div class="h-full flex gap-4 p-6" style="min-width: max-content">
@@ -437,3 +437,30 @@ function downloadSummaries() {
     </DialogRoot>
   </div>
 </template>
+
+<style scoped>
+/* Видимый горизонтальный скроллбар для колонок */
+.workspace-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.workspace-scroll::-webkit-scrollbar-track {
+  background: rgb(var(--fg) / 0.05);
+  border-radius: 5px;
+  margin: 0 24px;
+}
+
+.workspace-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--fg) / 0.2);
+  border-radius: 5px;
+}
+
+.workspace-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--fg) / 0.3);
+}
+
+.workspace-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: rgb(var(--fg) / 0.2) rgb(var(--fg) / 0.05);
+}
+</style>

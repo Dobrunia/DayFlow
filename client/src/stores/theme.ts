@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 const STORAGE_KEY = 'dayflow-theme';
+const STORAGE_KEY_PREF_LIGHT = 'dayflow-pref-light';
+const STORAGE_KEY_PREF_DARK = 'dayflow-pref-dark';
 
 export type ThemeId = 'light' | 'dark' | 'oldmoney' | 'oldmoney2' | 'nord' | 'solarized-dark' | 'fullmoon';
 
@@ -23,16 +25,34 @@ export const THEMES: ThemeOption[] = [
 
 export const useThemeStore = defineStore('theme', () => {
   const themeId = ref<ThemeId>('light');
+  
+  // Предпочтительные темы для toggle
+  const preferredLight = ref<ThemeId>('light');
+  const preferredDark = ref<ThemeId>('dark');
 
   const currentTheme = computed(() => THEMES.find((t) => t.id === themeId.value) ?? THEMES[0]);
   const dark = computed(() => currentTheme.value.isDark);
 
   function init() {
     if (typeof document === 'undefined') return;
+    
+    // Загружаем текущую тему
     const saved = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
     if (saved && THEMES.some((t) => t.id === saved)) {
       themeId.value = saved;
     }
+    
+    // Загружаем предпочтительные темы
+    const savedLight = localStorage.getItem(STORAGE_KEY_PREF_LIGHT) as ThemeId | null;
+    const savedDark = localStorage.getItem(STORAGE_KEY_PREF_DARK) as ThemeId | null;
+    
+    if (savedLight && THEMES.some((t) => t.id === savedLight && !t.isDark)) {
+      preferredLight.value = savedLight;
+    }
+    if (savedDark && THEMES.some((t) => t.id === savedDark && t.isDark)) {
+      preferredDark.value = savedDark;
+    }
+    
     apply();
   }
 
@@ -42,11 +62,24 @@ export const useThemeStore = defineStore('theme', () => {
     apply();
   }
 
-  /** Legacy toggle для совместимости */
+  function setPreferredLight(id: ThemeId) {
+    const theme = THEMES.find((t) => t.id === id);
+    if (!theme || theme.isDark) return;
+    preferredLight.value = id;
+    localStorage.setItem(STORAGE_KEY_PREF_LIGHT, id);
+  }
+
+  function setPreferredDark(id: ThemeId) {
+    const theme = THEMES.find((t) => t.id === id);
+    if (!theme?.isDark) return;
+    preferredDark.value = id;
+    localStorage.setItem(STORAGE_KEY_PREF_DARK, id);
+  }
+
+  /** Toggle переключает между предпочтительной светлой и тёмной */
   function toggle() {
-    const nextDark = !dark.value;
-    const nextTheme = THEMES.find((t) => t.isDark === nextDark);
-    if (nextTheme) setTheme(nextTheme.id);
+    const nextThemeId = dark.value ? preferredLight.value : preferredDark.value;
+    setTheme(nextThemeId);
   }
 
   function apply() {
@@ -66,5 +99,16 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  return { themeId, currentTheme, dark, init, setTheme, toggle };
+  return {
+    themeId,
+    currentTheme,
+    dark,
+    preferredLight,
+    preferredDark,
+    init,
+    setTheme,
+    setPreferredLight,
+    setPreferredDark,
+    toggle,
+  };
 });

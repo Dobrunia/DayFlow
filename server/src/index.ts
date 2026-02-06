@@ -9,6 +9,9 @@ import { resolvers } from './resolvers/index.js';
 import { createContext } from './lib/context.js';
 import { wrapExecuteWithErrorHandler } from './lib/errors.js';
 import { prisma } from './lib/prisma.js';
+import { checkRateLimit } from './lib/rate-limiter.js';
+import { RateLimitExceededError } from './lib/errors.js';
+import { RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS } from './lib/constants.js';
 
 // Absolute dir of *current file* (src in dev, dist in prod)
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -73,8 +76,21 @@ const yoga = createYoga({
         args: { operationName?: string; contextValue?: unknown; variableValues?: unknown };
       }) => {
         const op = args.operationName ?? undefined;
-        const ctx = args.contextValue as { user?: { id: string } | null };
+        const ctx = args.contextValue as { user?: { id: string } | null; ip?: string };
         const userId = ctx?.user?.id ?? null;
+        const ip = ctx?.ip ?? 'unknown';
+        
+        // Rate limit by user ID or IP
+        const rateLimitKey = userId ?? `ip:${ip}`;
+        const { allowed } = checkRateLimit(rateLimitKey, {
+          windowMs: RATE_LIMIT_WINDOW_MS,
+          maxRequests: RATE_LIMIT_MAX_REQUESTS,
+        });
+        
+        if (!allowed) {
+          throw RateLimitExceededError();
+        }
+        
         const vars = args.variableValues as Record<string, unknown> | undefined;
         const safeVars =
           vars && typeof vars === 'object'

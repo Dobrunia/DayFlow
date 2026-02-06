@@ -33,9 +33,9 @@ watch(
 <template>
   <CookieConsent v-if="!cookieConsent.accepted" />
   <template v-else>
-    <div class="min-h-screen bg-bg">
+    <div class="min-h-screen">
       <AppHeader />
-      <main :class="authStore.user ? 'pt-25' : 'pt-14'">
+      <main :class="authStore.user ? 'pt-[126px]' : 'pt-[63px]'">
         <RouterView />
       </main>
       <Toaster position="bottom-right" />

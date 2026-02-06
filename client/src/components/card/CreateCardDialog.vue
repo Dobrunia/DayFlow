@@ -64,6 +64,7 @@ const checklistItems = ref<ChecklistItem[]>([]);
 const checklistSummary = ref('');
 const tagsInput = ref('');
 const loading = ref(false);
+const submitted = ref(false);
 const checklistListRef = ref<HTMLElement | null>(null);
 const titleInputRef = ref<HTMLInputElement | null>(null);
 let checklistSortable: Sortable | null = null;
@@ -105,7 +106,8 @@ watch(
         title.value = card.title ?? '';
         cardType.value = card.type as 'NOTE' | 'LINK' | 'CHECKLIST';
         try {
-          const pl = typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
+          const pl =
+            typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
           if (card.type === 'NOTE') {
             noteContent.value = (pl as { content?: string }).content ?? '';
             noteSummary.value = (pl as { summary?: string }).summary ?? '';
@@ -113,11 +115,15 @@ watch(
             linkUrl.value = (pl as { url?: string }).url ?? '';
             linkSummary.value = (pl as { summary?: string }).summary ?? '';
           } else if (card.type === 'CHECKLIST') {
-            const items = (pl as { items?: { id: string; text: string; done: boolean; order: number }[] }).items ?? [];
-            checklistItems.value = items.length ? items.map((i) => ({ ...i })) : [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
+            const items =
+              (pl as { items?: { id: string; text: string; done: boolean; order: number }[] })
+                .items ?? [];
+            checklistItems.value = items.length
+              ? items.map((i) => ({ ...i }))
+              : [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
             checklistSummary.value = (pl as { summary?: string }).summary ?? '';
           }
-        tagsInput.value = Array.isArray(card.tags) ? card.tags.join(', ') : '';
+          tagsInput.value = Array.isArray(card.tags) ? card.tags.join(', ') : '';
         } catch {
           noteContent.value = '';
           noteSummary.value = '';
@@ -141,6 +147,7 @@ watch(
         tagsInput.value = '';
         if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
       }
+      submitted.value = false;
       nextTick(() => {
         initChecklistSortable();
         titleInputRef.value?.focus();
@@ -165,7 +172,9 @@ onUnmounted(() => {
 });
 
 function addChecklistItem() {
-  const maxOrder = checklistItems.value.length ? Math.max(...checklistItems.value.map((i) => i.order)) : 0;
+  const maxOrder = checklistItems.value.length
+    ? Math.max(...checklistItems.value.map((i) => i.order))
+    : 0;
   checklistItems.value.push({
     id: crypto.randomUUID(),
     text: '',
@@ -219,6 +228,8 @@ function buildPayload(): string {
 }
 
 async function handleSubmit() {
+  submitted.value = true;
+
   if (cardType.value === 'LINK' && !linkUrl.value.trim()) {
     toast.error('Введите URL ссылки');
     return;
@@ -282,7 +293,10 @@ async function handleSubmit() {
   <DialogRoot v-model:open="openProxy">
     <DialogPortal>
       <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
-      <DialogContent class="dialog-content max-h-[90vh] overflow-y-auto" @escape-key-down="openProxy = false">
+      <DialogContent
+        class="dialog-content max-h-[90vh] overflow-y-auto"
+        @escape-key-down="openProxy = false"
+      >
         <div class="dialog-header">
           <DialogTitle class="dialog-title">
             {{ isEditMode ? 'Редактировать карточку' : 'Новая карточка' }}
@@ -298,39 +312,54 @@ async function handleSubmit() {
             <div class="flex gap-2 mb-3">
               <button
                 type="button"
-                class="flex-1 h-9 px-3 text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
-                :class="addDestination === 'hub' ? 'bg-primary text-on-primary' : 'bg-surface border border-border text-muted hover:text-fg'"
-                @click="addDestination = 'hub'; selectedWorkspaceId = ''"
+                class="flex-1 h-9 px-3 border border-border text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
+                :class="
+                  addDestination === 'hub'
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface text-muted hover:text-fg'
+                "
+                @click="
+                  addDestination = 'hub';
+                  selectedWorkspaceId = '';
+                "
               >
                 <span class="i-lucide-inbox" />
                 Хаб
               </button>
               <button
                 type="button"
-                class="flex-1 h-9 px-3 text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
-                :class="addDestination === 'workspace' ? 'bg-primary text-on-primary' : 'bg-surface border border-border text-muted hover:text-fg'"
+                class="flex-1 h-9 px-3 border border-border text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
+                :class="
+                  addDestination === 'workspace'
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface text-muted hover:text-fg'
+                "
                 @click="addDestination = 'workspace'"
               >
                 <span class="i-lucide-layout-grid" />
                 Воркспейс
               </button>
             </div>
-            <div v-if="addDestination === 'workspace'" class="mt-2">
-              <label for="card-workspace" class="block text-sm text-muted mb-1">Воркспейс (карточка попадёт в беклог)</label>
-              <select
-                id="card-workspace"
-                v-model="selectedWorkspaceId"
-                class="input py-2 max-w-full truncate"
-              >
-                <option value="" disabled hidden>Выберите воркспейс</option>
-                <option
-                  v-for="w in workspaces"
-                  :key="w.id"
-                  :value="w.id"
+            <div class="mt-2 h-[72px]">
+              <template v-if="addDestination === 'hub'">
+                <p class="text-sm text-muted text-center h-full flex-center">Карточка попадёт в общий список без привязки к воркспейсу</p>
+              </template>
+              <template v-else>
+                <label for="card-workspace" class="block text-sm text-muted mb-1"
+                  >Воркспейс * (карточка попадёт в беклог)</label
                 >
-                  {{ w.title.length > 40 ? w.title.slice(0, 40) + '…' : w.title }}
-                </option>
-              </select>
+                <select
+                  id="card-workspace"
+                  v-model="selectedWorkspaceId"
+                  class="input py-2 max-w-full truncate"
+                  :class="submitted && !selectedWorkspaceId && 'border-danger!'"
+                >
+                  <option value="" disabled hidden>Выберите воркспейс</option>
+                  <option v-for="w in workspaces" :key="w.id" :value="w.id">
+                    {{ w.title.length > 40 ? w.title.slice(0, 40) + '…' : w.title }}
+                  </option>
+                </select>
+              </template>
             </div>
           </div>
 
@@ -346,17 +375,6 @@ async function handleSubmit() {
             />
           </div>
 
-          <div>
-            <label for="card-tags" class="block text-sm font-medium mb-1">Теги</label>
-            <input
-              id="card-tags"
-              v-model="tagsInput"
-              type="text"
-              class="input"
-              placeholder="Через запятую, например: работа, идеи"
-            />
-          </div>
-
           <div v-if="!isEditMode">
             <label class="block text-sm font-medium mb-2">Тип</label>
             <div class="flex gap-2">
@@ -365,8 +383,12 @@ async function handleSubmit() {
                 :key="t.value"
                 type="button"
                 @click="cardType = t.value"
-                class="flex-1 h-9 px-3 text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
-                :class="cardType === t.value ? 'bg-primary text-on-primary' : 'bg-surface border border-border text-muted hover:text-fg'"
+                class="flex-1 h-9 px-3 border border-border text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
+                :class="
+                  cardType === t.value
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface text-muted hover:text-fg'
+                "
               >
                 <span :class="t.icon" />
                 {{ t.label }}
@@ -375,7 +397,7 @@ async function handleSubmit() {
           </div>
 
           <template v-if="cardType === 'NOTE'">
-            <div>
+            <div class="min-h-[152px]">
               <label for="card-note" class="block text-sm font-medium mb-1">Текст заметки</label>
               <textarea
                 id="card-note"
@@ -385,7 +407,17 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-note" class="block text-sm font-medium mb-1">Конспект</label>
+              <label for="card-tags-note" class="block text-sm font-medium mb-1">Теги</label>
+              <input
+                id="card-tags-note"
+                v-model="tagsInput"
+                type="text"
+                class="input"
+                placeholder="Через запятую: работа, идеи"
+              />
+            </div>
+            <div>
+              <label for="card-summary-note" class="block text-sm font-medium mb-1">Заметка</label>
               <input
                 id="card-summary-note"
                 v-model="noteSummary"
@@ -397,18 +429,29 @@ async function handleSubmit() {
           </template>
 
           <template v-if="cardType === 'LINK'">
-            <div>
+            <div class="min-h-[152px]">
               <label for="card-url" class="block text-sm font-medium mb-1">URL *</label>
               <input
                 id="card-url"
                 v-model="linkUrl"
                 type="url"
                 class="input"
+                :class="submitted && !linkUrl.trim() && 'border-danger!'"
                 placeholder="https://..."
               />
             </div>
             <div>
-              <label for="card-summary-link" class="block text-sm font-medium mb-1">Конспект</label>
+              <label for="card-tags-link" class="block text-sm font-medium mb-1">Теги</label>
+              <input
+                id="card-tags-link"
+                v-model="tagsInput"
+                type="text"
+                class="input"
+                placeholder="Через запятую: работа, идеи"
+              />
+            </div>
+            <div>
+              <label for="card-summary-link" class="block text-sm font-medium mb-1">Заметка</label>
               <input
                 id="card-summary-link"
                 v-model="linkSummary"
@@ -420,7 +463,7 @@ async function handleSubmit() {
           </template>
 
           <template v-if="cardType === 'CHECKLIST'">
-            <div>
+            <div class="min-h-[152px]">
               <label class="block text-sm font-medium mb-2">Пункты</label>
               <div ref="checklistListRef" class="space-y-2">
                 <div
@@ -428,7 +471,9 @@ async function handleSubmit() {
                   :key="item.id"
                   class="flex items-center gap-2"
                 >
-                  <span class="checklist-grip i-lucide-grip-vertical text-muted cursor-grab active:cursor-grabbing" />
+                  <span
+                    class="checklist-grip i-lucide-grip-vertical text-muted cursor-grab active:cursor-grabbing"
+                  />
                   <input
                     v-model="item.text"
                     type="text"
@@ -455,7 +500,19 @@ async function handleSubmit() {
               </button>
             </div>
             <div>
-              <label for="card-summary-checklist" class="block text-sm font-medium mb-1">Конспект</label>
+              <label for="card-tags-checklist" class="block text-sm font-medium mb-1">Теги</label>
+              <input
+                id="card-tags-checklist"
+                v-model="tagsInput"
+                type="text"
+                class="input"
+                placeholder="Через запятую: работа, идеи"
+              />
+            </div>
+            <div>
+              <label for="card-summary-checklist" class="block text-sm font-medium mb-1"
+                >Заметка</label
+              >
               <input
                 id="card-summary-checklist"
                 v-model="checklistSummary"
@@ -467,12 +524,7 @@ async function handleSubmit() {
           </template>
 
           <div class="flex justify-between items-center gap-3 pt-4">
-            <button
-              v-if="isEditMode"
-              type="button"
-              class="btn-delete"
-              @click="emit('delete')"
-            >
+            <button v-if="isEditMode" type="button" class="btn-delete" @click="emit('delete')">
               <span class="i-lucide-trash-2" />
               Удалить
             </button>

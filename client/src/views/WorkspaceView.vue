@@ -225,7 +225,7 @@ function downloadSummaries() {
 </script>
 
 <template>
-  <div class="h-[calc(100vh-120px)] flex flex-col">
+  <div class="h-[calc(100vh-128px)] flex flex-col">
     <!-- Create Dialog -->
     <CreateWorkspaceDialog
       :open="showCreateDialog"
@@ -241,7 +241,7 @@ function downloadSummaries() {
     <!-- Workspace Content -->
     <template v-else-if="workspace">
       <!-- Header -->
-      <div class="flex-shrink-0 px-6 py-4 border-b border-border bg-bg">
+      <div class="flex-shrink-0 px-6 py-2">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 shrink-0">
             <!-- Back button -->
@@ -348,10 +348,10 @@ function downloadSummaries() {
       <!-- Backlog + Columns -->
       <div
         ref="columnsContainer"
-        class="flex-1 overflow-x-hidden overflow-y-hidden"
+        class="flex-1 overflow-x-auto overflow-y-hidden workspace-scroll"
         @wheel="handleWheel"
       >
-        <div class="h-full flex gap-4 p-6" style="min-width: max-content">
+        <div class="h-full flex gap-4 px-6 pb-6" style="min-width: max-content">
           <WorkspaceColumn
             :column="backlogColumn"
             :workspace-id="workspace.id"
@@ -437,3 +437,30 @@ function downloadSummaries() {
     </DialogRoot>
   </div>
 </template>
+
+<style scoped>
+/* Видимый горизонтальный скроллбар для колонок */
+.workspace-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.workspace-scroll::-webkit-scrollbar-track {
+  background: rgb(var(--fg) / 0.05);
+  border-radius: 5px;
+  margin: 0 24px;
+}
+
+.workspace-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--fg) / 0.2);
+  border-radius: 5px;
+}
+
+.workspace-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--fg) / 0.3);
+}
+
+.workspace-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: rgb(var(--fg) / 0.2) rgb(var(--fg) / 0.05);
+}
+</style>

@@ -19,6 +19,7 @@ export interface Context {
   prisma: PrismaClient;
   user: SessionUser | null;
   sessionToken: string | null;
+  ip: string;
   loaders: DataLoaders;
   setCookie: (name: string, value: string, attributes: Record<string, unknown>) => void;
   deleteCookie: (name: string) => void;

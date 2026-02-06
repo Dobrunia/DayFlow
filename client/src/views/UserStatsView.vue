@@ -98,7 +98,7 @@ function getProgressColor(percent: number) {
         >
           <div class="flex-1 min-w-0 opacity-80">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-xl shrink-0 w-8 h-8 flex-center rounded-lg bg-bg/80">
+              <span class="text-xl shrink-0 w-8 h-8 flex-center rounded-lg">
                 {{ ws.icon || '📁' }}
               </span>
               <span :title="ws.title" class="font-medium text-fg truncate">{{ ws.title }}</span>

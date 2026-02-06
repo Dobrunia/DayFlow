@@ -56,6 +56,16 @@ function getThemePreviewColors(id: ThemeId) {
     '--preview-accent': c.accent,
   };
 }
+
+function selectLightTheme(id: ThemeId) {
+  themeStore.setPreferredLight(id);
+  themeStore.setTheme(id);
+}
+
+function selectDarkTheme(id: ThemeId) {
+  themeStore.setPreferredDark(id);
+  themeStore.setTheme(id);
+}
 </script>
 
 <template>
@@ -121,14 +131,19 @@ function getThemePreviewColors(id: ThemeId) {
               v-for="theme in lightThemes"
               :key="theme.id"
               type="button"
-              class="p-3 rounded-[var(--r)] border text-left transition-all"
+              class="p-3 rounded-[var(--r)] border text-left transition-all relative"
               :class="[
-                themeStore.themeId === theme.id
+                themeStore.preferredLight === theme.id
                   ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
                   : 'border-border hover:border-fg/30 bg-surface'
               ]"
-              @click="themeStore.setTheme(theme.id as ThemeId)"
+              @click="selectLightTheme(theme.id as ThemeId)"
             >
+              <span
+                v-if="themeStore.preferredLight === theme.id"
+                class="absolute top-1 right-1 i-lucide-pin text-xs text-primary"
+                title="Дефолтная светлая тема"
+              />
               <span class="font-medium text-sm block mb-2">{{ theme.name }}</span>
               <div
                 class="h-4 rounded flex gap-0.5 overflow-hidden"
@@ -153,14 +168,19 @@ function getThemePreviewColors(id: ThemeId) {
               v-for="theme in darkThemes"
               :key="theme.id"
               type="button"
-              class="p-3 rounded-[var(--r)] border text-left transition-all"
+              class="p-3 rounded-[var(--r)] border text-left transition-all relative"
               :class="[
-                themeStore.themeId === theme.id
+                themeStore.preferredDark === theme.id
                   ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
                   : 'border-border hover:border-fg/30 bg-surface'
               ]"
-              @click="themeStore.setTheme(theme.id as ThemeId)"
+              @click="selectDarkTheme(theme.id as ThemeId)"
             >
+              <span
+                v-if="themeStore.preferredDark === theme.id"
+                class="absolute top-1 right-1 i-lucide-pin text-xs text-primary"
+                title="Дефолтная тёмная тема"
+              />
               <span class="font-medium text-sm block mb-2">{{ theme.name }}</span>
               <div
                 class="h-4 rounded flex gap-0.5 overflow-hidden"
@@ -173,6 +193,11 @@ function getThemePreviewColors(id: ThemeId) {
             </button>
           </div>
         </div>
+        
+        <p class="text-xs text-muted mt-3">
+          <span class="i-lucide-info inline-block align-middle mr-1" />
+          Кнопка в шапке переключает между выбранными светлой и тёмной темами
+        </p>
       </div>
     </div>
   </div>

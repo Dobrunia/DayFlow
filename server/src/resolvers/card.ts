@@ -8,8 +8,7 @@ import {
   ChecklistPayloadSchema,
 } from 'dayflow-shared';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
-
-const MAX_TITLE_LENGTH = 191;
+import { MAX_TITLE_LENGTH, MAX_CARDS_PER_USER } from '../lib/constants.js';
 
 function mapCardType(type: string): CardType {
   const typeMap: Record<string, CardType> = {
@@ -166,6 +165,14 @@ export const cardResolvers = {
       if (!context.user) throw UnauthenticatedError();
       if (input.title && input.title.length > MAX_TITLE_LENGTH) {
         throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
+      }
+
+      // Check card limit per user
+      const cardCount = await context.prisma.card.count({
+        where: { ownerId: context.user.id },
+      });
+      if (cardCount >= MAX_CARDS_PER_USER) {
+        throw BadRequestError(`Максимум ${MAX_CARDS_PER_USER} карточек на аккаунт`);
       }
 
       let workspaceId: string | null = input.workspaceId ?? null;

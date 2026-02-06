@@ -86,7 +86,7 @@ function handleSignOut() {
                     <span class="i-lucide-bar-chart-2" />
                     <span>Моя статистика</span>
                   </RouterLink>
-                  <button @click="handleSignOut" class="dropdown-menu-item">
+                  <button @click="handleSignOut" class="dropdown-menu-item text-danger hover:bg-danger/10">
                     <span class="i-lucide-log-out" />
                     <span>Выйти</span>
                   </button>

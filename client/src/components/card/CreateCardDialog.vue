@@ -385,7 +385,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-note" class="block text-sm font-medium mb-1">Конспект</label>
+              <label for="card-summary-note" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
               <input
                 id="card-summary-note"
                 v-model="noteSummary"
@@ -408,7 +408,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-link" class="block text-sm font-medium mb-1">Конспект</label>
+              <label for="card-summary-link" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
               <input
                 id="card-summary-link"
                 v-model="linkSummary"
@@ -455,7 +455,7 @@ async function handleSubmit() {
               </button>
             </div>
             <div>
-              <label for="card-summary-checklist" class="block text-sm font-medium mb-1">Конспект</label>
+              <label for="card-summary-checklist" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
               <input
                 id="card-summary-checklist"
                 v-model="checklistSummary"

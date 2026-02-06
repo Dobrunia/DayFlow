@@ -1,8 +1,7 @@
 import type { CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
 import type { Context } from '../lib/context.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
-
-const MAX_TITLE_LENGTH = 191; // MySQL VARCHAR limit
+import { MAX_TITLE_LENGTH } from '../lib/constants.js';
 
 export const workspaceResolvers = {
   Query: {

@@ -12,6 +12,11 @@ export async function createContext(initialContext: YogaInitialContext): Promise
   const cookieHeader = request.headers.get('cookie');
   const sessionToken = parseSessionCookie(cookieHeader);
 
+  // Get client IP from headers (for proxied requests) or connection
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+  const ip = forwardedFor?.split(',')[0]?.trim() ?? realIp ?? 'unknown';
+
   let user: SessionUser | null = null;
 
   if (sessionToken) {
@@ -26,6 +31,7 @@ export async function createContext(initialContext: YogaInitialContext): Promise
     prisma,
     user,
     sessionToken,
+    ip,
     loaders: createDataLoaders(),
     setCookie: (name: string, value: string, attributes: Record<string, unknown>) => {
       cookies.set(name, { value, attributes });

@@ -1,7 +1,6 @@
 import type { Context } from '../lib/context.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
-
-const MAX_TITLE_LENGTH = 191;
+import { MAX_TITLE_LENGTH, MAX_COLUMNS_PER_WORKSPACE } from '../lib/constants.js';
 
 export const columnResolvers = {
   Mutation: {
@@ -24,6 +23,14 @@ export const columnResolvers = {
 
       if (!workspace || workspace.ownerId !== context.user.id) {
         throw NotFoundError('Workspace not found');
+      }
+
+      // Check column limit
+      const columnCount = await context.prisma.column.count({
+        where: { workspaceId },
+      });
+      if (columnCount >= MAX_COLUMNS_PER_WORKSPACE) {
+        throw BadRequestError(`Максимум ${MAX_COLUMNS_PER_WORKSPACE} колонок в воркспейсе`);
       }
 
       // Get max order

@@ -5,6 +5,7 @@ export const ErrorCodes = {
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
   BAD_REQUEST: 'BAD_REQUEST',
+  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   INTERNAL: 'INTERNAL',
 } as const;
 
@@ -36,9 +37,17 @@ export function InternalError(message = 'Something went wrong'): GraphQLError {
   return createError(ErrorCodes.INTERNAL, message);
 }
 
+export function RateLimitExceededError(message = 'Слишком много запросов. Подождите немного.'): GraphQLError {
+  return createError(ErrorCodes.RATE_LIMIT_EXCEEDED, message);
+}
+
 /** Преобразует любую ошибку в GraphQLError; для неожиданных — INTERNAL, в prod без утечки деталей. */
 export function toGraphQLError(err: unknown): GraphQLError {
   if (err instanceof GraphQLError) return err;
+  // Handle RateLimitError from rate-limiter
+  if (err instanceof Error && (err as { code?: string }).code === 'RATE_LIMIT_EXCEEDED') {
+    return RateLimitExceededError(err.message);
+  }
   const isProd = process.env.NODE_ENV === 'production';
   const message =
     isProd ? 'Something went wrong' : (err instanceof Error ? err.message : 'Unknown error');

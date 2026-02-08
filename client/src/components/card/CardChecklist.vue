@@ -154,6 +154,7 @@ const hasMore = computed(() => items.value.length > showLimit);
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="closeSummaryModal" />
         <DialogContent
+          :aria-describedby="undefined"
           class="dialog-content max-h-[85vh] max-w-lg overflow-y-auto"
           @escape-key-down="closeSummaryModal"
         >

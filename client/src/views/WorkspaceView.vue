@@ -394,6 +394,7 @@ function downloadSummaries() {
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="showSummariesModal = false" />
         <DialogContent
+          :aria-describedby="undefined"
           class="dialog-content max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
           @escape-key-down="showSummariesModal = false"
         >

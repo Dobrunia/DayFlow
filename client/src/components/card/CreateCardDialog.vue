@@ -294,6 +294,7 @@ async function handleSubmit() {
     <DialogPortal>
       <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
       <DialogContent
+        :aria-describedby="undefined"
         class="dialog-content max-h-[90vh] overflow-y-auto"
         @escape-key-down="openProxy = false"
       >

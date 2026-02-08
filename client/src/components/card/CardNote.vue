@@ -124,6 +124,7 @@ function closeSummaryModal() {
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="showContentModal = false" />
         <DialogContent
+          :aria-describedby="undefined"
           class="dialog-content max-h-[85vh] max-w-lg overflow-y-auto"
           @escape-key-down="showContentModal = false"
         >
@@ -145,6 +146,7 @@ function closeSummaryModal() {
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="closeSummaryModal" />
         <DialogContent
+          :aria-describedby="undefined"
           class="dialog-content max-h-[85vh] max-w-lg overflow-y-auto"
           @escape-key-down="closeSummaryModal"
         >

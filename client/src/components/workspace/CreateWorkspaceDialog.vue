@@ -77,7 +77,7 @@ async function handleSubmit() {
     <DialogPortal>
       <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
 
-      <DialogContent class="dialog-content" @escape-key-down="openProxy = false">
+      <DialogContent :aria-describedby="undefined" class="dialog-content" @escape-key-down="openProxy = false">
         <div class="dialog-header">
           <DialogTitle class="dialog-title"> Новый воркспейс </DialogTitle>
           <DialogClose class="icon-btn-close">

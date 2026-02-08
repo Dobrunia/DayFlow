@@ -1,0 +1,588 @@
+---
+name: Roadmap Feature MVP
+overview: 'Full MVP implementation of the Roadmap feature: database models, GraphQL API, server resolvers, markdown parser, tree UI with collapse/expand/inline-edit/drag-n-drop, card linking with progress indicators, and a dedicated /workspace/:id/roadmap route.'
+todos:
+  - id: prisma-schema
+    content: Add Roadmap, RoadmapNode, CardRoadmapNode models to Prisma schema with cross-roadmap protection + run migration
+    status: pending
+  - id: shared-types
+    content: Add roadmap types, cardCountsForCoverage() + cardHasNotes() + normalizeTitle() helpers to dayflow-shared
+    status: pending
+  - id: graphql-schema
+    content: Add Roadmap/RoadmapNode types (flat list, IDs only, done + computedStatus separate), queries, and mutations to schema.graphql
+    status: pending
+  - id: server-resolver
+    content: Create roadmap.ts resolver with batch computedStatus, cycle protection, cross-roadmap + sibling validation, import create-first strategy, idempotent link/unlink
+    status: pending
+  - id: client-graphql
+    content: Add roadmap queries and mutations to client GraphQL definitions
+    status: pending
+  - id: client-store
+    content: Create roadmap Pinia store with defensive flat-to-tree builder, fetch/CRUD/link/optimistic updates
+    status: pending
+  - id: router-layout
+    content: Extract WorkspaceLayout.vue, add nested routes (board + roadmap), tab navigation
+    status: pending
+  - id: roadmap-view
+    content: Build RoadmapView with empty state, tree, progress bar with hover breakdown, import toolbar
+    status: pending
+  - id: tree-components
+    content: Build RoadmapTree + RoadmapNodeItem (recursive, collapse, inline edit, drag-n-drop, status indicators, done tooltip)
+    status: pending
+  - id: import-dialog
+    content: Build ImportRoadmapDialog with textarea, live preview, node count warning, link preservation with title normalization
+    status: pending
+  - id: card-linking
+    content: Build LinkCardsDialog + add 'Related roadmap sections' field to card create/edit flow
+    status: pending
+  - id: markdown-parser
+    content: Implement roadmap text parser (client preview + server import) for markdown/indented lists
+    status: pending
+isProject: false
+---
+
+# Roadmap Feature (Full MVP)
+
+## Architecture Overview
+
+```mermaid
+erDiagram
+    Workspace ||--o| Roadmap : "0..1"
+    Roadmap ||--o{ RoadmapNode : "has"
+    RoadmapNode ||--o{ RoadmapNode : "children"
+    Card }o--o{ RoadmapNode : "CardRoadmapNode"
+```
+
+```mermaid
+flowchart LR
+    subgraph client [Client]
+        RoadmapView --> RoadmapStore
+        RoadmapStore --> GraphQL
+        RoadmapView --> RoadmapTree
+        RoadmapTree --> RoadmapNodeComp
+        RoadmapNodeComp --> RoadmapNodeComp
+    end
+    subgraph server [Server]
+        GraphQL --> RoadmapResolver
+        RoadmapResolver --> Prisma
+        Prisma --> MySQL
+    end
+```
+
+## Core Invariants
+
+- Roadmap NEVER affects card completion (`done` field on Card). It is read-only relative to cards.
+- Node `done` is a manual user flag ("I've covered this topic"). It does NOT touch linked cards.
+- `computedStatus` is derived from linked knowledge-cards (note/link only). It exists independently of `done`.
+- Deleting a roadmap node UNLINKS cards (via DB cascade on `CardRoadmapNode`), NEVER deletes cards.
+- Cards can exist without any roadmap link. Cards can link to multiple nodes.
+- If roadmap is deleted/absent, card UI shows no roadmap fields and no errors.
+- **Client must tolerate orphan nodes**: if `parentId` not found among roadmap nodes, treat node as root-level. Never crash on corrupted data.
+- `**linkCardToNode` and `unlinkCardFromNode` must be idempotent: link already exists -> return true; link doesn't exist on unlink -> return true.
+- `**computedStatus` MUST be computed in `roadmap()` query resolver in batch (all nodes + all links + all cards in one pass), NOT via per-node field resolvers, to avoid O(N) DB calls.
+- **Import with `preserveLinks` MUST create new nodes and new links first, then delete old nodes** (single transaction). Never rely on intermediate state where both old and new coexist.
+
+---
+
+## Phase 1: Data Model
+
+### 1.1 Prisma Schema ([server/prisma/schema.prisma](server/prisma/schema.prisma))
+
+Add 3 new models:
+
+```prisma
+model Roadmap {
+  id          String   @id @default(cuid())
+  workspaceId String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  nodes     RoadmapNode[]
+}
+
+model RoadmapNode {
+  id        String  @id @default(cuid())
+  roadmapId String
+  parentId  String?
+  title     String
+  order     Float    // fractional ordering to avoid mass reorder
+  done      Boolean  @default(false)  // manual user flag, independent of computedStatus
+
+  roadmap  Roadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  parent   RoadmapNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children RoadmapNode[] @relation("NodeTree")
+  cards    CardRoadmapNode[]
+
+  @@index([roadmapId, parentId, order])
+}
+
+model CardRoadmapNode {
+  cardId        String
+  roadmapNodeId String
+
+  card        Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  roadmapNode RoadmapNode @relation(fields: [roadmapNodeId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, roadmapNodeId])
+}
+```
+
+- Add `roadmap Roadmap?` relation to `Workspace` model
+- Add `roadmapNodes CardRoadmapNode[]` relation to `Card` model
+- `order` is `Float` for fractional positioning (insert between neighbors without mass reorder)
+- `done` is manual user flag, separate from computed coverage status
+- `CardRoadmapNode` cascade on `roadmapNode` = "unlink" happens automatically when node is deleted. No manual cleanup needed. Never attempt to re-delete already-cascaded rows.
+- `@@id([cardId, roadmapNodeId])` composite PK guarantees no duplicate links at DB level.
+
+### 1.2 Cross-roadmap protection (Variant B for MVP)
+
+Prisma doesn't support composite FKs easily. Instead:
+
+- **All resolvers** that set `parentId` (create, move, import) MUST validate `parent.roadmapId === node.roadmapId`
+- Shared helper: `assertSameRoadmap(nodeId, parentId)` in resolver
+
+### 1.3 Constants ([server/src/lib/constants.ts](server/src/lib/constants.ts))
+
+- `MAX_ROADMAP_NODES_PER_WORKSPACE = 200`
+- `MAX_TREE_WALK_DEPTH = 500` (cycle protection limit)
+
+---
+
+## Phase 2: Shared Types
+
+### 2.1 New file `shared/roadmap.ts`
+
+**Two separate concerns: `done` (manual) + `computedStatus` (derived)**
+
+```typescript
+// Computed status based on linked knowledge-cards (note/link only)
+export type NodeComputedStatus = 'EMPTY' | 'PARTIAL' | 'COMPLETE';
+
+// GraphQL response types (flat)
+export interface RoadmapNodeGql {
+  id: string;
+  title: string;
+  parentId: string | null;
+  order: number;
+  done: boolean; // manual user flag
+  linkedCardIds: string[]; // IDs only, not full Card objects
+  computedStatus: NodeComputedStatus; // derived, independent of done
+}
+
+export interface RoadmapGql {
+  id: string;
+  workspaceId: string;
+  nodes: RoadmapNodeGql[]; // FLAT list, tree built on client
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### 2.2 Knowledge-card helpers in `shared/card.ts`
+
+Two functions with clear separation of concerns:
+
+```typescript
+/** Does this card type count toward roadmap topic coverage? */
+export function cardCountsForCoverage(card: CardTyped): boolean {
+  // Only knowledge-source cards affect coverage.
+  // Checklists are task-oriented, not knowledge-oriented.
+  return card.type === 'note' || card.type === 'link';
+}
+
+/** Does this knowledge-card have meaningful content (notes/summary)? */
+export function cardHasNotes(card: CardTyped): boolean {
+  switch (card.type) {
+    case 'note':
+      return (
+        (card.payload.summary?.trim().length ?? 0) > 0 ||
+        (card.payload.content?.trim().length ?? 0) > 0
+      );
+    case 'link':
+      return (card.payload.summary?.trim().length ?? 0) > 0;
+    case 'checklist':
+      // Checklists don't count for coverage, but if asked:
+      return (card.payload.summary?.trim().length ?? 0) > 0;
+  }
+}
+```
+
+### 2.3 Title normalization in `shared/roadmap.ts`
+
+```typescript
+/** Normalize title for fuzzy matching during import link preservation */
+export function normalizeTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/^\s*[-*•]\s*/, '') // strip leading bullets
+    .replace(/^\s*\d+[.)]\s*/, '') // strip leading numbers (1. 2) etc)
+    .replace(/^[\p{So}\p{Sk}]+\s*/u, '') // strip leading decorative emojis only
+    .replace(/\s+/g, ' ') // collapse whitespace
+    .trim();
+}
+```
+
+Note: only strip **leading** emojis. Emojis inside the title are preserved for matching consistency.
+
+Export from `shared/index.ts`.
+
+---
+
+## Phase 3: GraphQL Schema
+
+### 3.1 Types ([server/src/schema/schema.graphql](server/src/schema/schema.graphql))
+
+**Flat list. `done` and `computedStatus` are separate fields.**
+
+```graphql
+type Roadmap {
+  id: ID!
+  workspaceId: ID!
+  nodes: [RoadmapNode!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RoadmapNode {
+  id: ID!
+  title: String!
+  parentId: ID
+  order: Float!
+  done: Boolean!
+  linkedCardIds: [ID!]!
+  computedStatus: NodeComputedStatus!
+}
+
+enum NodeComputedStatus {
+  EMPTY
+  PARTIAL
+  COMPLETE
+}
+```
+
+No `children` field in GraphQL. No `linkedCards: [Card!]!`. Tree built on client. Card details fetched separately.
+
+### 3.2 Queries
+
+- `roadmap(workspaceId: ID!): Roadmap` - returns null if no roadmap exists. `computedStatus` for all nodes computed in batch within this resolver.
+
+### 3.3 Mutations
+
+- `createRoadmap(workspaceId: ID!): Roadmap!`
+- `deleteRoadmap(id: ID!): Boolean!`
+- `importRoadmapNodes(roadmapId: ID!, text: String!, preserveLinks: Boolean): Roadmap!` - parse + optional link preservation with title normalization
+- `createRoadmapNode(roadmapId: ID!, parentId: ID, title: String!): RoadmapNode!`
+- `updateRoadmapNode(id: ID!, title: String, done: Boolean): RoadmapNode!`
+- `deleteRoadmapNode(id: ID!): Boolean!` - cascade children + auto-unlink cards via DB cascade
+- `moveRoadmapNode(id: ID!, parentId: ID, beforeId: ID, afterId: ID): Roadmap!` - server computes order from neighbors
+- `linkCardToNode(cardId: ID!, nodeId: ID!): Boolean!` - **idempotent**: if link exists, return true
+- `unlinkCardFromNode(cardId: ID!, nodeId: ID!): Boolean!` - **idempotent**: if link doesn't exist, return true
+
+---
+
+## Phase 4: Server Resolvers
+
+### 4.1 New file [server/src/resolvers/roadmap.ts](server/src/resolvers/roadmap.ts)
+
+**Auth guard**: every mutation resolves node -> roadmap -> workspace, checks `workspace.ownerId === ctx.user.id`. Never trust IDs from client without ownership check.
+
+**Cross-roadmap validation**: helper `assertSameRoadmap(prisma, parentId, roadmapId)` called in create/move/import.
+
+**Cycle protection** in `moveRoadmapNode`:
+
+- Reject `parentId === id`
+- Walk up from `parentId` to root using visited `Set<string>` + counter capped at `MAX_TREE_WALK_DEPTH`
+- If `id` encountered in chain -> reject "would create cycle"
+- If counter exceeds limit (corrupted data) -> reject "Roadmap tree is corrupted, please re-import"
+
+**Sibling validation** in `moveRoadmapNode`:
+
+- If `beforeId` provided: assert `before.parentId === targetParentId` AND `before.roadmapId === node.roadmapId`
+- If `afterId` provided: assert `after.parentId === targetParentId` AND `after.roadmapId === node.roadmapId`
+- If both provided: assert `before.order < after.order` (correct neighbor pair)
+- Reject if any check fails
+
+**moveRoadmapNode** with fractional ordering:
+
+- Receives `parentId`, `beforeId`, `afterId`
+- Both provided: `order = (before.order + after.order) / 2`
+- Only afterId (insert at start): query `min(siblings.order)`, set `order = min - 1.0`
+- Only beforeId (insert at end): query `max(siblings.order)`, set `order = max + 1.0`
+- Neither (first/only child): `order = 0`
+- Entire operation wrapped in `prisma.$transaction`
+- Normalize when gap < 0.001: reindex all siblings of same parent as 1.0, 2.0, 3.0...
+
+**importRoadmapNodes** with link preservation (create-first strategy):
+
+- If `preserveLinks = true` (default), in a single `prisma.$transaction`:
+  1. Load existing nodes with their `CardRoadmapNode` links
+  2. Build map: `normalizedPath -> oldNodeId -> cardIds[]`
+  - Path = `normalizeTitle(root) > normalizeTitle(parent) > normalizeTitle(node)`
+  1. Parse new text into nodes
+  2. **Create new nodes** (get new IDs)
+  3. For each new node, match by normalized path to old node
+  4. **Create new `CardRoadmapNode` rows** for matched links
+  5. **Delete old nodes** (cascade cleans up old `CardRoadmapNode` rows)
+- If `preserveLinks = false`: delete all + create
+- This order (create new -> transfer links -> delete old) prevents any window where links are lost.
+
+`**linkCardToNode` / `unlinkCardFromNode**` idempotent:
+
+- `linkCardToNode`: use `prisma.cardRoadmapNode.upsert()` (or `createMany` with `skipDuplicates`). If row exists, no-op.
+- `unlinkCardFromNode`: use `prisma.cardRoadmapNode.deleteMany({ where: { cardId, roadmapNodeId } })`. If 0 rows deleted, still return true.
+
+`**roadmap()` query resolver with batch status computation:
+
+1. Load roadmap + all nodes in one query
+2. Load all `CardRoadmapNode` rows for these nodeIds -> build `Map<nodeId, cardId[]>`
+3. Collect all unique cardIds, load all cards in one batch
+4. For each node, compute `computedStatus` in memory:
+
+- Filter linked cards to knowledge-cards: `cardCountsForCoverage(card) === true`
+- 0 knowledge-cards -> `EMPTY`
+- All have notes (`cardHasNotes()`) -> `COMPLETE`
+- Else -> `PARTIAL`
+
+1. Return enriched nodes with `linkedCardIds` and `computedStatus` pre-computed
+
+- This is **3 DB queries total** regardless of node count, not O(N).
+
+### 4.2 DataLoaders ([server/src/lib/dataloaders.ts](server/src/lib/dataloaders.ts))
+
+Add (used by mutation resolvers that return single nodes):
+
+- `roadmapNodesByRoadmapId: DataLoader<string, RoadmapNode[]>` (flat, all nodes)
+- `cardIdsByRoadmapNodeId: DataLoader<string, string[]>` (IDs only)
+- `cardsByIds: DataLoader<string, Card[]>` (for status computation in mutations)
+
+Note: the main `roadmap()` query does its own batch loading (see above), DataLoaders are for individual node resolvers in mutations.
+
+### 4.3 Register in [server/src/resolvers/index.ts](server/src/resolvers/index.ts)
+
+---
+
+## Phase 5: Client - Store & GraphQL
+
+### 5.1 GraphQL definitions
+
+Add to [client/src/graphql/queries.ts](client/src/graphql/queries.ts):
+
+- `ROADMAP_QUERY` - fetch roadmap with flat node list + linkedCardIds + done + computedStatus
+
+Add to [client/src/graphql/mutations.ts](client/src/graphql/mutations.ts):
+
+- All roadmap mutations listed above
+
+### 5.2 New Pinia store [client/src/stores/roadmap.ts](client/src/stores/roadmap.ts)
+
+State:
+
+- `roadmap: RoadmapGql | null`
+- `loading: boolean`
+- `error: string | null`
+- `collapsedNodes: Set<string>` (local UI state, not persisted)
+
+Actions:
+
+- `fetchRoadmap(workspaceId)` - query, receives flat list
+- `createRoadmap(workspaceId)` - create empty
+- `deleteRoadmap(id)`
+- `importNodes(roadmapId, text, preserveLinks)` - send markdown, receive flat list
+- `createNode(roadmapId, parentId, title)` - optimistic
+- `updateNode(id, { title?, done? })` - optimistic
+- `deleteNode(id)` - optimistic, remove from flat list (cascade handles unlink)
+- `moveNode(id, parentId, beforeId, afterId)` - optimistic
+- `linkCard(cardId, nodeId)` / `unlinkCard(cardId, nodeId)`
+- `toggleCollapse(nodeId)` - local only
+
+Getters (build tree from flat list on client):
+
+- `nodeTree` - recursive tree built from flat `roadmap.nodes` using `parentId`.
+  **Defensive**: if `parentId` references a non-existent node, treat as root-level. Log warning but never crash.
+  ```typescript
+  // Pseudocode for defensive tree builder
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const roots = [];
+  for (const node of nodes) {
+    if (!node.parentId || !nodeMap.has(node.parentId)) {
+      roots.push(node); // orphan -> promote to root
+    } else {
+      nodeMap.get(node.parentId).children.push(node);
+    }
+  }
+  ```
+- `flatNodes` - alias for raw list (for search/autocomplete)
+- `progress` - aggregate from all nodes:
+  - `total`: all nodes
+  - `manualDone`: nodes where `done === true`
+  - `notesCovered`: nodes where `done === false && computedStatus === 'COMPLETE'`
+  - `covered`: `manualDone + notesCovered` (for progress bar numerator)
+  - `partial`: nodes where `computedStatus === 'PARTIAL'`
+  - `empty`: nodes where `computedStatus === 'EMPTY'`
+
+---
+
+## Phase 6: Client - Router
+
+### 6.1 Nested route ([client/src/router/index.ts](client/src/router/index.ts))
+
+```typescript
+{
+  path: '/workspace/:id',
+  component: () => import('@/views/WorkspaceLayout.vue'),
+  meta: { requiresAuth: true },
+  children: [
+    { path: '', name: 'workspace', component: () => import('@/views/WorkspaceView.vue') },
+    { path: 'roadmap', name: 'workspace-roadmap', component: () => import('@/views/RoadmapView.vue') },
+  ],
+}
+```
+
+- Extract shared workspace header/navigation into `WorkspaceLayout.vue` (wrapper with `<router-view>`)
+- Current `WorkspaceView.vue` becomes a child route
+- Add tab navigation in layout: **Board** | **Roadmap**
+
+---
+
+## Phase 7: Client - Components
+
+### 7.1 `WorkspaceLayout.vue` (new)
+
+- Shared header: back button, icon, title, tabs (Board | Roadmap)
+- `<router-view>` for child content
+- Fetches workspace data (moved from WorkspaceView)
+
+### 7.2 `RoadmapView.vue` (new)
+
+- Fetch roadmap on mount via `roadmapStore.fetchRoadmap(workspaceId)`
+- If no roadmap: show `RoadmapEmptyState`
+- If roadmap exists: show `RoadmapTree` + progress bar + toolbar (import, add root node)
+
+### 7.3 `RoadmapEmptyState.vue` (new)
+
+- CTA buttons:
+  - "Paste roadmap" - opens `ImportRoadmapDialog`
+  - "Start empty" - creates roadmap, adds first empty node
+
+### 7.4 `ImportRoadmapDialog.vue` (new)
+
+- Textarea for pasting markdown/text
+- Live preview of parsed tree (client-side parser)
+- **Node count indicator**: "X nodes detected" with warning if > 200
+- **Auto-truncation option**: "Keep only depth <= 2" or "Truncate after 200"
+- **Link preservation checkbox** (default ON): "Try to preserve existing card links by matching titles"
+- Warning banner when re-importing: "This will replace existing roadmap structure"
+- "Import" button - sends to server
+
+### 7.5 `RoadmapTree.vue` (new)
+
+- Builds tree from flat list via `roadmapStore.nodeTree` getter
+- Progress bar at top: `{covered}/{total} topics covered`
+  - **Hover breakdown tooltip**: "X manually done, Y covered by notes"
+- "Add topic" button at root level
+- Uses SortableJS for drag-n-drop with nested support
+
+### 7.6 `RoadmapNodeItem.vue` (new, recursive)
+
+- **Two independent indicators**:
+  - Checkbox for `done` (manual toggle) - when checked, shows green checkmark
+    - **Tooltip on done checkbox**: "Ручная отметка -- не требует привязанных заметок"
+  - `computedStatus` badge (secondary, always visible):
+    - ○ = EMPTY (no linked knowledge-cards)
+    - ◐ = PARTIAL (some knowledge-cards lack notes)
+    - ● = COMPLETE (all linked knowledge-cards have notes)
+  - When `done` is true: row styled as "completed" (muted/struck-through), but `computedStatus` still shown as secondary info (e.g. smaller opacity badge or tooltip)
+- Inline title editing (reuse `useInlineEdit` composable)
+- Collapse/expand toggle for nodes with children
+- Context menu or icon buttons: add child, delete, link cards
+- Indent visual based on depth
+- Drop zone for drag-n-drop reparenting
+
+### 7.7 `LinkCardsDialog.vue` (new)
+
+- Multiselect autocomplete for workspace cards (search by title/tags)
+- Shows currently linked cards with unlink option
+- Uses existing workspace cards from `workspaceStore`, not a separate query
+- Returns only IDs
+
+### 7.8 Card integration
+
+In `CreateCardDialog.vue` and card edit flow:
+
+- Add optional "Related roadmap sections" multiselect field
+- Only shown when workspace has a roadmap
+- Autocomplete from `roadmapStore.flatNodes`
+- If roadmap is deleted later, field silently disappears, no errors
+- Old cards without links are never affected
+- Linking/unlinking cards NEVER changes card `done` status
+
+---
+
+## Phase 8: Markdown Parser
+
+### 8.1 [client/src/lib/roadmap-parser.ts](client/src/lib/roadmap-parser.ts) (new)
+
+Client-side parser for live preview in ImportRoadmapDialog:
+
+```typescript
+interface ParsedNode {
+  title: string;
+  depth: number;
+  children: ParsedNode[];
+}
+function parseRoadmapText(text: string): ParsedNode[];
+function countNodes(nodes: ParsedNode[]): number;
+function truncateToDepth(nodes: ParsedNode[], maxDepth: number): ParsedNode[];
+function truncateToCount(nodes: ParsedNode[], maxCount: number): ParsedNode[];
+```
+
+Parsing rules:
+
+- `# Heading` = depth 0, `## Heading` = depth 1, etc.
+- `- item` with indentation = depth based on indent level
+- `1. item` numbered lists = same as `-`
+- Mixed formats supported
+- Empty lines ignored
+
+`normalizeTitle()` lives in `shared/roadmap.ts` and is used by both client (preview matching) and server (import).
+
+### 8.2 [server/src/lib/roadmap-parser.ts](server/src/lib/roadmap-parser.ts) (new)
+
+Server-side version (same logic) for `importRoadmapNodes` mutation. Outputs flat array with parentId references. Imports `normalizeTitle()` from shared package for link matching.
+
+---
+
+## Key Design Decisions
+
+- `**done` and `computedStatus` are independent - `done: boolean` is a manual user flag ("I covered this"). `computedStatus: EMPTY|PARTIAL|COMPLETE` is purely derived from linked knowledge-cards. They never interfere. No "DONE" in the status enum.
+- **Knowledge-cards only for coverage** - `computedStatus` counts only note/link cards (`cardCountsForCoverage()`). Checklists are task-oriented and excluded from coverage computation to avoid false COMPLETE.
+- **Batch status computation** - `computedStatus` is computed in `roadmap()` query resolver: 3 DB queries total (nodes + links + cards), then in-memory enrichment. NOT per-node field resolvers.
+- **Roadmap is DECOUPLED from cards** - never affects card `done`, never deletes cards, only links/unlinks
+- **Flat GraphQL response** - no recursive `children` in API; tree built on client from `parentId` references. Prevents N+1, deep recursion, and cycle issues
+- **Defensive tree builder on client** - orphan nodes (parentId not found) promoted to root level, never crash
+- **linkedCardIds, not linkedCards** - only IDs returned in roadmap query; card details already available in workspace store
+- **Cross-roadmap validation in code** (MVP) - all create/move/import resolvers validate `parent.roadmapId === node.roadmapId`
+- **Cycle protection with depth limit** - `moveRoadmapNode` walks up parent chain with `visited Set` + `MAX_TREE_WALK_DEPTH` counter. On corrupted data (counter exceeded) returns error suggesting re-import
+- **Sibling validation in move** - `beforeId`/`afterId` must have same `parentId` as target AND same `roadmapId`. If both provided, `before.order < after.order`. Reject otherwise
+- **Fractional ordering** - `order: Float`; insert between = avg of neighbors; insert at start/end = `min(siblings) - 1` / `max(siblings) + 1`; normalize siblings when gap < 0.001
+- **moveRoadmapNode uses beforeId/afterId** - server computes order from neighbors, client sends relative position
+- **Import preserves links by default** - create-first strategy: new nodes created -> links transferred -> old nodes deleted (single transaction). Matches by normalized path using `normalizeTitle()` (trim, lowercase, collapse whitespace, strip leading bullets/numbers, strip leading emojis only -- emojis inside title preserved)
+- **Import UI shows node count** - warns at > 200, offers truncation options
+- **Idempotent link/unlink** - `linkCardToNode` uses upsert/skipDuplicates. `unlinkCardFromNode` uses deleteMany (0 rows = success). No crashes on race conditions.
+- **Cascade = auto-unlink** - deleting node cascades to `CardRoadmapNode` rows via DB FK. No manual "unlink" code needed. Never re-delete already-cascaded rows
+- **Composite PK prevents duplicate links** - `@@id([cardId, roadmapNodeId])` at DB level
+- **Progress bar with hover breakdown** - shows "X manually done, Y covered by notes" to make clear that manual done and computed coverage are separate
+- **Done tooltip** - checkbox has tooltip explaining it doesn't require linked notes
+- **Lazy loading** - RoadmapView loaded only when navigating to /roadmap route
+- **Graceful degradation** - if roadmap deleted, card UI hides roadmap fields silently
+
+## “Acceptance Criteria (must pass)”
+
+- moveNode rejects cross-roadmap parents
+- moveNode rejects cycles
+- roadmap query runs in ≤ 3 SQL queries (nodes + links + cards)
+- import preserveLinks keeps links for unchanged sections
+- tree builder never crashes on orphan parentId
+- link/unlink are idempotent

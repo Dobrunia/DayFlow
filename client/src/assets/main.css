@@ -403,3 +403,98 @@ select.input {
   opacity: 1;
   background: rgb(var(--fg) / 0.08);
 }
+
+/* ── Markdown body (rendered preview) ── */
+.markdown-body h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.3;
+}
+.markdown-body h2 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+  line-height: 1.3;
+}
+.markdown-body h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.4em 0 0.2em;
+}
+.markdown-body p {
+  margin: 0.4em 0;
+}
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.markdown-body li {
+  margin: 0.15em 0;
+}
+.markdown-body li > input[type="checkbox"] {
+  margin-right: 0.4em;
+}
+.markdown-body code {
+  background: rgb(var(--fg) / 0.07);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  font-size: 0.88em;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+.markdown-body pre {
+  background: rgb(var(--fg) / 0.07);
+  padding: 0.75em 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+}
+.markdown-body blockquote {
+  border-left: 3px solid rgb(var(--primary) / 0.5);
+  padding-left: 0.75em;
+  margin: 0.5em 0;
+  color: rgb(var(--muted));
+}
+.markdown-body a {
+  color: rgb(var(--primary));
+  text-decoration: underline;
+}
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid rgb(var(--border));
+  margin: 0.75em 0;
+}
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid rgb(var(--border));
+  padding: 0.4em 0.6em;
+  text-align: left;
+  font-size: 0.9em;
+}
+.markdown-body th {
+  background: rgb(var(--fg) / 0.04);
+  font-weight: 600;
+}
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.markdown-body strong {
+  font-weight: 600;
+}
+
+/* CodeMirror: убрать focus-visible ring от глобального стиля */
+.cm-content:focus-visible {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}

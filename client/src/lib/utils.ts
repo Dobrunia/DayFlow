@@ -1,5 +1,26 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { marked } from 'marked';
+import hljs from 'highlight.js';
+
+// Configure marked
+marked.setOptions({ breaks: true });
+
+// Custom renderer for code blocks with syntax highlighting
+const renderer = new marked.Renderer();
+renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
+  const validLanguage = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+  const highlighted = hljs.highlight(text, { language: validLanguage }).value;
+  return `<pre><code class="hljs language-${validLanguage}">${highlighted}</code></pre>`;
+};
+
+marked.use({ renderer });
+
+/** Render markdown string to HTML. Safe to call from computed. */
+export function renderMarkdown(src: string): string {
+  if (!src) return '';
+  return marked.parse(src) as string;
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

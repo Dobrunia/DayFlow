@@ -2,6 +2,7 @@
 import { ref, nextTick, computed, watch, onMounted } from 'vue';
 import type { NotePayload } from 'dayflow-shared';
 import { linkify } from '@/lib/utils';
+import { toast } from 'vue-sonner';
 import {
   DialogRoot,
   DialogPortal,
@@ -10,6 +11,15 @@ import {
   DialogTitle,
   DialogClose,
 } from 'radix-vue';
+
+const copied = ref(false);
+function copyContent() {
+  navigator.clipboard.writeText(props.payload.content ?? '').then(() => {
+    copied.value = true;
+    toast.success('Текст скопирован');
+    setTimeout(() => { copied.value = false; }, 2000);
+  });
+}
 
 const props = defineProps<{
   title: string | null;
@@ -130,9 +140,21 @@ function closeSummaryModal() {
         >
           <div class="dialog-header">
             <DialogTitle class="dialog-title">Текст заметки</DialogTitle>
-            <DialogClose class="icon-btn-close">
-              <span class="i-lucide-x" />
-            </DialogClose>
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                class="icon-btn-ghost transition-colors"
+                :class="copied && 'text-success!'"
+                title="Скопировать текст"
+                @click="copyContent"
+              >
+                <span v-if="copied" class="i-lucide-check" />
+                <span v-else class="i-lucide-copy" />
+              </button>
+              <DialogClose class="icon-btn-close">
+                <span class="i-lucide-x" />
+              </DialogClose>
+            </div>
           </div>
           <div
             class="text-sm text-fg whitespace-pre-wrap break-words mt-2"

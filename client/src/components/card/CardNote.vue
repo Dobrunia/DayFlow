@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, nextTick, computed, watch, onMounted } from 'vue';
+import { ref, nextTick, computed, watch, onMounted, defineAsyncComponent } from 'vue';
 import type { NotePayload } from 'dayflow-shared';
 import { linkify, renderMarkdown } from '@/lib/utils';
 import { toast } from 'vue-sonner';
-import SummaryEditorModal from './SummaryEditorModal.vue';
+
+// Lazy load editor modal (includes CodeMirror ~500kB)
+const SummaryEditorModal = defineAsyncComponent(() => import('./SummaryEditorModal.vue'));
 import {
   DialogRoot,
   DialogPortal,

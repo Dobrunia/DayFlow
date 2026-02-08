@@ -1,7 +1,45 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { marked } from 'marked';
-import hljs from 'highlight.js';
+import hljs from 'highlight.js/lib/core';
+
+// Import only commonly used languages to reduce bundle size
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import python from 'highlight.js/lib/languages/python';
+import java from 'highlight.js/lib/languages/java';
+import cpp from 'highlight.js/lib/languages/cpp';
+import csharp from 'highlight.js/lib/languages/csharp';
+import go from 'highlight.js/lib/languages/go';
+import rust from 'highlight.js/lib/languages/rust';
+import sql from 'highlight.js/lib/languages/sql';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import json from 'highlight.js/lib/languages/json';
+import markdown from 'highlight.js/lib/languages/markdown';
+import bash from 'highlight.js/lib/languages/bash';
+import yaml from 'highlight.js/lib/languages/yaml';
+import docker from 'highlight.js/lib/languages/dockerfile';
+
+// Register languages
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('python', python);
+hljs.registerLanguage('java', java);
+hljs.registerLanguage('cpp', cpp);
+hljs.registerLanguage('csharp', csharp);
+hljs.registerLanguage('go', go);
+hljs.registerLanguage('rust', rust);
+hljs.registerLanguage('sql', sql);
+hljs.registerLanguage('xml', xml);
+hljs.registerLanguage('html', xml);
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('markdown', markdown);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('sh', bash);
+hljs.registerLanguage('yaml', yaml);
+hljs.registerLanguage('dockerfile', docker);
 
 // Configure marked
 marked.setOptions({ breaks: true });
@@ -9,9 +47,12 @@ marked.setOptions({ breaks: true });
 // Custom renderer for code blocks with syntax highlighting
 const renderer = new marked.Renderer();
 renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
-  const validLanguage = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
-  const highlighted = hljs.highlight(text, { language: validLanguage }).value;
-  return `<pre><code class="hljs language-${validLanguage}">${highlighted}</code></pre>`;
+  if (lang && hljs.getLanguage(lang)) {
+    const highlighted = hljs.highlight(text, { language: lang }).value;
+    return `<pre><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+  }
+  // No highlighting for unknown languages
+  return `<pre><code class="hljs">${text}</code></pre>`;
 };
 
 marked.use({ renderer });

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, defineAsyncComponent } from 'vue';
 import type { ChecklistPayload } from 'dayflow-shared';
 import { renderMarkdown } from '@/lib/utils';
-import SummaryEditorModal from './SummaryEditorModal.vue';
+
+// Lazy load editor modal (includes CodeMirror ~500kB)
+const SummaryEditorModal = defineAsyncComponent(() => import('./SummaryEditorModal.vue'));
 
 const props = defineProps<{
   title: string | null;

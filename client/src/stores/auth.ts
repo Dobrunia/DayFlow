@@ -43,9 +43,10 @@ export const useAuthStore = defineStore('auth', () => {
         variables: { email, password },
       });
 
-      const userFromResponse = data?.signIn?.user;
-      if (userFromResponse) {
-        user.value = userFromResponse;
+      const result = data?.signIn;
+      if (result?.user) {
+        user.value = result.user;
+        if (result.token) localStorage.setItem('df_sid', result.token);
         return true;
       }
       error.value = 'Ошибка входа';
@@ -68,9 +69,10 @@ export const useAuthStore = defineStore('auth', () => {
         variables: { email, password },
       });
 
-      const userFromResponse = data?.signUp?.user;
-      if (userFromResponse) {
-        user.value = userFromResponse;
+      const result = data?.signUp;
+      if (result?.user) {
+        user.value = result.user;
+        if (result.token) localStorage.setItem('df_sid', result.token);
         return true;
       }
       error.value = 'Ошибка регистрации';
@@ -89,11 +91,13 @@ export const useAuthStore = defineStore('auth', () => {
         mutation: SIGN_OUT_MUTATION,
       });
       user.value = null;
+      localStorage.removeItem('df_sid');
       // Clear Apollo cache
       await apolloClient.resetStore();
     } catch (e) {
       // Ignore errors on sign out
       user.value = null;
+      localStorage.removeItem('df_sid');
     }
   }
 

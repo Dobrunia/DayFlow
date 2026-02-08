@@ -17,7 +17,10 @@ app.use(createPinia());
 app.use(router);
 
 setUnauthorizedHandler(() => {
-  useAuthStore().signOut();
+  const auth = useAuthStore();
+  // Don't call signOut() — it sends a mutation + resetStore which crashes mid-flight
+  auth.user = null;
+  localStorage.removeItem('df_sid');
   router.push({ name: 'auth', query: { redirect: router.currentRoute.value.fullPath } });
 });
 

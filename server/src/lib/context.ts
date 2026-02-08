@@ -1,5 +1,5 @@
 import type { YogaInitialContext } from 'graphql-yoga';
-import { validateSession, parseSessionCookie } from './auth.js';
+import { validateSession } from './auth.js';
 import { prisma } from './prisma.js';
 import { createDataLoaders } from './dataloaders.js';
 import type { Context, SessionUser } from 'dayflow-shared/backend';
@@ -9,8 +9,13 @@ export type { Context, SessionUser } from 'dayflow-shared/backend';
 export async function createContext(initialContext: YogaInitialContext): Promise<Context> {
   const { request } = initialContext;
 
-  const cookieHeader = request.headers.get('cookie');
-  const sessionToken = parseSessionCookie(cookieHeader);
+  // Auth only via Authorization: Bearer <token> (localStorage on client)
+  const authHeader = request.headers.get('authorization');
+  const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  // Cookie auth disabled — was unreliable cross-domain (Safari/Yandex)
+  // const cookieHeader = request.headers.get('cookie');
+  // const sessionToken = parseSessionCookie(cookieHeader);
 
   // Get client IP from headers (for proxied requests) or connection
   const forwardedFor = request.headers.get('x-forwarded-for');
@@ -20,8 +25,13 @@ export async function createContext(initialContext: YogaInitialContext): Promise
   let user: SessionUser | null = null;
 
   if (sessionToken) {
-    const result = await validateSession(sessionToken);
-    user = result.user;
+    try {
+      const result = await validateSession(sessionToken);
+      user = result.user;
+    } catch {
+      // Invalid/corrupted token — silently treat as unauthenticated
+      user = null;
+    }
   }
 
   // Cookie storage for response

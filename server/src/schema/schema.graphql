@@ -57,6 +57,7 @@ type Card {
 
 type AuthPayload {
   user: User!
+  token: String
 }
 
 """Публичная статистика пользователя (доступна любому авторизованному)."""

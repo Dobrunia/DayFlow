@@ -56,7 +56,7 @@ function closeSummaryModal() {
       <div class="flex-1 min-w-0 pl-2 border-l-2 border-primary/40">
         <p
           v-if="payload.summary"
-          class="text-xs text-muted/90 italic max-h-[200px] overflow-y-auto scrollbar-hide whitespace-pre-wrap"
+          class="text-xs text-muted italic max-h-[200px] overflow-y-auto scrollbar-hide whitespace-pre-wrap"
           v-html="summaryHtml"
         />
         <p v-else class="text-xs text-muted/50 italic">

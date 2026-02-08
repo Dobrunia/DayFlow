@@ -105,7 +105,7 @@ function closeSummaryModal() {
         <p
           v-if="payload.summary"
           ref="summaryEl"
-          class="text-xs text-muted/90 italic leading-5 max-h-[200px] overflow-y-auto scrollbar-hide whitespace-pre-wrap"
+          class="text-xs text-muted italic leading-5 max-h-[200px] overflow-y-auto scrollbar-hide whitespace-pre-wrap"
           v-html="summaryHtml"
         />
         <p v-else class="text-xs text-muted/50 italic leading-5">

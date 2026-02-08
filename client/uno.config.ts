@@ -176,13 +176,9 @@ export default defineConfig({
   },
 
   safelist: [
-    // оставь как было — это ок
-    'i-lucide-video',
     'i-lucide-file-text',
     'i-lucide-check-square',
     'i-lucide-link',
-    'i-lucide-github',
-    'i-lucide-layers',
     'i-lucide-inbox',
     'i-lucide-plus',
     'i-lucide-search',
@@ -190,13 +186,11 @@ export default defineConfig({
     'i-lucide-check',
     'i-lucide-trash-2',
     'i-lucide-edit-2',
-    'i-lucide-pencil',
     'i-lucide-log-out',
     'i-lucide-user',
     'i-lucide-folder',
     'i-lucide-external-link',
     'i-lucide-loader-2',
-    'i-lucide-play-circle',
     'i-lucide-arrow-left',
     'i-lucide-folder-x',
     'i-lucide-grip-vertical',

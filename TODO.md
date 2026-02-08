@@ -11,6 +11,8 @@
 
 # Микрофиксы
 
+- @client/src/views/WorkspaceView.vue 2ой клик по названию воркспейса пусть вокус будет сразу на инпуте @client/src/composables/useInlineEdit.ts @client/src/components/card/CardItem.vue 
+
 # На далекое будущее
 
 - загрузка фото из буфера в виде карточки (яндекс диск)

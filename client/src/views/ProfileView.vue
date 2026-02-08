@@ -194,9 +194,9 @@ function selectDarkTheme(id: ThemeId) {
           </div>
         </div>
         
-        <p class="text-xs text-muted mt-3">
-          <span class="i-lucide-info inline-block align-middle mr-1" />
-          Кнопка в шапке переключает между выбранными светлой и тёмной темами
+        <p class="text-xs text-muted mt-3 flex items-end h-[20px]">
+          <span class="i-lucide-info inline-block mr-1" />
+          <div class="h-[18px]">Кнопка в шапке переключает между выбранными светлой и тёмной темами</div>
         </p>
       </div>
     </div>

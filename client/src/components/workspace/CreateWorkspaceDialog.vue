@@ -48,6 +48,11 @@ watch(
 );
 
 async function handleSubmit() {
+  if (workspaceStore.workspaces.length >= 20) {
+    toast.error('Максимум 20 воркспейсов');
+    return;
+  }
+
   if (!title.value.trim()) {
     toast.error('Введите название воркспейса');
     return;
@@ -77,7 +82,7 @@ async function handleSubmit() {
     <DialogPortal>
       <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
 
-      <DialogContent class="dialog-content" @escape-key-down="openProxy = false">
+      <DialogContent :aria-describedby="undefined" class="dialog-content" @escape-key-down="openProxy = false">
         <div class="dialog-header">
           <DialogTitle class="dialog-title"> Новый воркспейс </DialogTitle>
           <DialogClose class="icon-btn-close">

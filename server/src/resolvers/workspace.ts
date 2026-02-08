@@ -1,7 +1,7 @@
 import type { CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
 import type { Context } from '../lib/context.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
-import { MAX_TITLE_LENGTH } from '../lib/constants.js';
+import { MAX_TITLE_LENGTH, MAX_WORKSPACES_PER_USER } from '../lib/constants.js';
 
 export const workspaceResolvers = {
   Query: {
@@ -31,6 +31,15 @@ export const workspaceResolvers = {
       if (input.title && input.title.length > MAX_TITLE_LENGTH) {
         throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
       }
+
+      // Check workspace limit
+      const workspaceCount = await context.prisma.workspace.count({
+        where: { ownerId: context.user.id },
+      });
+      if (workspaceCount >= MAX_WORKSPACES_PER_USER) {
+        throw BadRequestError(`Максимум ${MAX_WORKSPACES_PER_USER} воркспейсов на аккаунт`);
+      }
+
       return context.prisma.workspace.create({
         data: {
           title: input.title,

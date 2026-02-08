@@ -2,8 +2,8 @@ import { hash, verify } from 'argon2';
 import {
   createSession,
   invalidateSession,
-  createSessionCookie,
-  createBlankSessionCookie,
+  // createSessionCookie,
+  // createBlankSessionCookie,
 } from '../lib/auth.js';
 import type { Context } from '../lib/context.js';
 import { BadRequestError, UnauthenticatedError } from '../lib/errors.js';
@@ -42,12 +42,9 @@ export const authResolvers = {
       });
 
       // Create session
-      const { token, expiresAt } = await createSession(user.id);
-      const sessionCookie = createSessionCookie(token, expiresAt);
+      const { token } = await createSession(user.id);
 
-      context.setCookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-
-      return { user };
+      return { user, token };
     },
 
     signIn: async (
@@ -68,21 +65,15 @@ export const authResolvers = {
       }
 
       // Create session
-      const { token, expiresAt } = await createSession(user.id);
-      const sessionCookie = createSessionCookie(token, expiresAt);
+      const { token } = await createSession(user.id);
 
-      context.setCookie(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-
-      return { user };
+      return { user, token };
     },
 
     signOut: async (_: unknown, __: unknown, context: Context) => {
       if (context.sessionToken) {
         await invalidateSession(context.sessionToken);
       }
-
-      const blankCookie = createBlankSessionCookie();
-      context.setCookie(blankCookie.name, blankCookie.value, blankCookie.attributes);
 
       return true;
     },

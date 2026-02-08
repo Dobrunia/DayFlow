@@ -67,7 +67,7 @@ function getCardIcon(type: string) {
         v-model="query"
         type="text"
         placeholder="Поиск карточек..."
-        class="input pl-10"
+        class="input pl-9"
         @focus="isOpen = query.trim().length > 0"
         @blur="handleBlur"
       />

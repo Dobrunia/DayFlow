@@ -6,6 +6,7 @@
 export const MAX_TITLE_LENGTH = 191; // MySQL VARCHAR limit
 
 // Entity limits
+export const MAX_WORKSPACES_PER_USER = 20;
 export const MAX_COLUMNS_PER_WORKSPACE = 20;
 export const MAX_CARDS_PER_USER = 500;
 

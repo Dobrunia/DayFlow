@@ -158,7 +158,7 @@ function goToPage(p: number) {
             <span>Назад к хабу</span>
           </RouterLink>
         </div>
-        <CardItem :card="singleCard" :is-backlog="true" />
+        <CardItem :card="singleCard" :is-backlog="true" @updated="singleCard = $event" @deleted="goToList" />
       </template>
     </template>
 

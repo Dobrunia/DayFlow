@@ -56,7 +56,7 @@ const typeIcon = computed(() => {
     case 'NOTE':
       return 'i-lucide-file-text';
     case 'LINK':
-      return 'i-lucide-link';
+      return 'i-lucide-external-link';
     case 'CHECKLIST':
       return 'i-lucide-check-square';
     default:
@@ -84,7 +84,7 @@ function handleDeleteFromDialog() {
       title="Редактировать"
       @click="showEditDialog = true"
     >
-      <span class="i-lucide-pencil" />
+      <span class="i-lucide-edit-2" />
     </button>
 
     <div

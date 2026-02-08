@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useWorkspaceStore } from '@/stores/workspace';
+import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
 import type { Workspace } from '@/graphql/types';
 
 const router = useRouter();
@@ -12,6 +13,7 @@ const workspaceStore = useWorkspaceStore();
 const isAuthenticated = computed(() => !!authStore.user);
 
 const workspaceSearch = ref('');
+const showCreateDialog = ref(false);
 
 const filteredWorkspaces = computed(() => {
   const list = workspaceStore.workspaces;
@@ -25,16 +27,22 @@ const filteredWorkspaces = computed(() => {
 const pinnedWorkspaces = computed(() => filteredWorkspaces.value.filter((w) => w.pinned));
 const unpinnedWorkspaces = computed(() => filteredWorkspaces.value.filter((w) => !w.pinned));
 
+const canCreateWorkspace = computed(() => workspaceStore.workspaces.length < 20);
+
 watch(
   () => authStore.user,
   (u) => {
-    if (u) workspaceStore.fetchWorkspaces();
+    if (u && workspaceStore.workspaces.length === 0) workspaceStore.fetchWorkspaces();
   },
   { immediate: true }
 );
 
 function navigateToWorkspace(id: string) {
   router.push(`/workspace/${id}`);
+}
+
+function handleWorkspaceCreated() {
+  showCreateDialog.value = false;
 }
 
 function togglePinned(e: Event, id: string) {
@@ -79,19 +87,26 @@ function togglePinned(e: Event, id: string) {
           <h1 class="page-title">Мои воркспейсы</h1>
           <p class="page-desc">Доски для тем и проектов</p>
         </div>
-        <div
-          v-if="workspaceStore.workspaces.length > 0"
-          class="relative w-full min-w-0 sm:w-64 shrink-0"
-        >
-          <span
-            class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted pointer-events-none"
-          />
-          <input
-            v-model="workspaceSearch"
-            type="search"
-            class="input w-full py-2 pl-9"
-            placeholder="Поиск воркспейсов..."
-          />
+        <div v-if="workspaceStore.workspaces.length > 0" class="flex items-center gap-3">
+          <div class="relative w-full min-w-0 sm:w-64 shrink-0">
+            <span
+              class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted pointer-events-none"
+            />
+            <input
+              v-model="workspaceSearch"
+              type="search"
+              class="input w-full py-2 pl-9"
+              placeholder="Поиск воркспейсов..."
+            />
+          </div>
+          <button
+            v-if="canCreateWorkspace"
+            class="btn-ghost shrink-0"
+            @click="showCreateDialog = true"
+          >
+            <span class="i-lucide-plus" />
+            Новый воркспейс
+          </button>
         </div>
       </div>
 
@@ -106,7 +121,9 @@ function togglePinned(e: Event, id: string) {
         <template v-if="pinnedWorkspaces.length > 0">
           <h2 class="text-sm font-medium text-muted mb-3 flex items-center gap-1.5">
             <svg class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              <path
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              />
             </svg>
             <span>Закреплённые</span>
           </h2>
@@ -123,8 +140,14 @@ function togglePinned(e: Event, id: string) {
                 title="Открепить"
                 @click="togglePinned($event, workspace.id)"
               >
-                <svg class="w-[18px] h-[18px] group-hover/star:opacity-0 absolute" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <svg
+                  class="w-[18px] h-[18px] group-hover/star:opacity-0 absolute"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  />
                 </svg>
                 <span class="i-lucide-star-off opacity-0 group-hover/star:opacity-100" />
               </button>
@@ -162,7 +185,9 @@ function togglePinned(e: Event, id: string) {
               @click="togglePinned($event, workspace.id)"
             >
               <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                />
               </svg>
             </button>
             <div
@@ -185,17 +210,6 @@ function togglePinned(e: Event, id: string) {
           <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
             <p class="col-span-full text-sm text-muted py-4">По запросу ничего не найдено</p>
           </template>
-
-          <!-- Create New -->
-          <button
-            @click="$router.push('/workspace/new')"
-            class="p-5 border-2 border-dashed border-border rounded-[var(--r)] flex flex-col items-center justify-center text-muted hover:text-fg hover:border-fg/30 transition-colors"
-          >
-            <span class="w-10 h-10 rounded-xl bg-fg/5 flex-center mb-1">
-              <span class="i-lucide-plus text-xl" />
-            </span>
-            <span class="text-sm font-medium">Новый воркспейс</span>
-          </button>
         </div>
       </template>
 
@@ -206,11 +220,18 @@ function togglePinned(e: Event, id: string) {
         </div>
         <h2 class="text-lg font-semibold text-fg">Нет воркспейсов</h2>
         <p class="text-sm text-muted">Создайте первый воркспейс для изучения новой темы</p>
-        <button class="btn-primary" @click="router.push('/workspace/new')">
+        <button class="btn-primary" @click="showCreateDialog = true">
           <span class="i-lucide-plus" />
           <span>Создать воркспейс</span>
         </button>
       </div>
     </template>
+
+    <!-- Create Workspace Dialog -->
+    <CreateWorkspaceDialog
+      :open="showCreateDialog"
+      @close="showCreateDialog = false"
+      @created="handleWorkspaceCreated"
+    />
   </div>
 </template>

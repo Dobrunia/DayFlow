@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
-import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -35,10 +34,14 @@ function handleWheel(e: WheelEvent) {
 
 const isEditing = ref(false);
 const editTitle = ref('');
-const showCreateDialog = ref(false);
 const showIconPicker = ref(false);
 const showSummariesModal = ref(false);
+const showEditModal = ref(false);
+const editModalTitle = ref('');
+const editModalDescription = ref('');
+const editModalLoading = ref(false);
 const cardSearch = ref('');
+const titleInputRef = ref<HTMLInputElement | null>(null);
 
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
@@ -54,25 +57,22 @@ const backlogColumn = computed(() => ({
 
 const loading = computed(() => workspaceStore.loading);
 
-// Check if creating new workspace
-const isNewWorkspace = computed(() => workspaceId.value === 'new');
-
 watch(
   workspaceId,
   (id) => {
-    if (id && id !== 'new') {
+    if (id) {
       workspaceStore.fetchWorkspace(id);
-    } else if (id === 'new') {
-      showCreateDialog.value = true;
     }
   },
   { immediate: true }
 );
 
-function startEditTitle() {
+async function startEditTitle() {
   if (!workspace.value) return;
   editTitle.value = workspace.value.title;
   isEditing.value = true;
+  await nextTick();
+  titleInputRef.value?.focus();
 }
 
 async function saveTitle() {
@@ -109,10 +109,41 @@ async function setIcon(emoji: string) {
   }
 }
 
+function openEditModal() {
+  if (!workspace.value) return;
+  editModalTitle.value = workspace.value.title;
+  editModalDescription.value = workspace.value.description ?? '';
+  showEditModal.value = true;
+}
+
+async function saveWorkspaceEdit() {
+  if (!workspace.value) return;
+  const title = editModalTitle.value.trim();
+  if (!title) {
+    toast.error('Введите название воркспейса');
+    return;
+  }
+
+  try {
+    editModalLoading.value = true;
+    await workspaceStore.updateWorkspace(workspace.value.id, {
+      title,
+      description: editModalDescription.value.trim() || undefined,
+    });
+    showEditModal.value = false;
+    toast.success('Сохранено');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  } finally {
+    editModalLoading.value = false;
+  }
+}
+
 async function deleteWorkspace() {
   if (!workspace.value) return;
 
   const wsTitle = workspace.value.title;
+  showEditModal.value = false;
 
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
@@ -121,14 +152,17 @@ async function deleteWorkspace() {
       action: {
         label: 'Отменить',
         onClick: () => {
-          workspaceStore.undoDeleteWorkspace().then((newId) => {
-            if (newId) {
-              toast.success('Воркспейс восстановлен');
-              router.push(`/workspace/${newId}`);
-            }
-          }).catch((e) => {
-            toast.error(getGraphQLErrorMessage(e));
-          });
+          workspaceStore
+            .undoDeleteWorkspace()
+            .then((newId) => {
+              if (newId) {
+                toast.success('Воркспейс восстановлен');
+                router.push(`/workspace/${newId}`);
+              }
+            })
+            .catch((e) => {
+              toast.error(getGraphQLErrorMessage(e));
+            });
         },
       },
     });
@@ -137,27 +171,16 @@ async function deleteWorkspace() {
   }
 }
 
-function handleWorkspaceCreated(id: string) {
-  showCreateDialog.value = false;
-  router.replace(`/workspace/${id}`);
-}
-
-function handleDialogClose() {
-  showCreateDialog.value = false;
-  if (isNewWorkspace.value) {
-    router.push('/');
-  }
-}
-
 // Собираем все конспекты из карточек воркспейса
 const allSummaries = computed(() => {
   if (!workspace.value) return [];
-  
+
   const summaries: { cardTitle: string; columnTitle: string; summary: string }[] = [];
-  
+
   // Беклог
   for (const card of backlogCards.value) {
-    const payload = typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
+    const payload =
+      typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
     const summary = (payload as { summary?: string })?.summary?.trim();
     if (summary) {
       summaries.push({
@@ -167,11 +190,12 @@ const allSummaries = computed(() => {
       });
     }
   }
-  
+
   // Колонки
   for (const col of columns.value) {
     for (const card of col.cards ?? []) {
-      const payload = typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
+      const payload =
+        typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
       const summary = (payload as { summary?: string })?.summary?.trim();
       if (summary) {
         summaries.push({
@@ -182,21 +206,21 @@ const allSummaries = computed(() => {
       }
     }
   }
-  
+
   return summaries;
 });
 
 const summariesText = computed(() => {
   if (!workspace.value) return '';
-  
+
   let text = `# ${workspace.value.title}\n\n`;
-  
+
   for (const item of allSummaries.value) {
     text += `## ${item.cardTitle}\n`;
     text += `> ${item.columnTitle}\n\n`;
     text += `${item.summary}\n\n---\n\n`;
   }
-  
+
   return text.trim();
 });
 
@@ -209,7 +233,7 @@ function copySummaries() {
 
 function downloadSummaries() {
   if (!workspace.value) return;
-  
+
   const blob = new Blob([summariesText.value], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -219,22 +243,15 @@ function downloadSummaries() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  
+
   toast.success('Файл скачан');
 }
 </script>
 
 <template>
   <div class="h-[calc(100vh-128px)] flex flex-col">
-    <!-- Create Dialog -->
-    <CreateWorkspaceDialog
-      :open="showCreateDialog"
-      @close="handleDialogClose"
-      @created="handleWorkspaceCreated"
-    />
-
     <!-- Loading -->
-    <div v-if="loading && !isNewWorkspace" class="flex-1 flex-center">
+    <div v-if="loading" class="flex-1 flex-center">
       <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
     </div>
 
@@ -245,7 +262,10 @@ function downloadSummaries() {
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 shrink-0">
             <!-- Back button -->
-            <RouterLink to="/" class="inline-flex items-center gap-1 text-link hover:underline underline-offset-3">
+            <RouterLink
+              to="/"
+              class="inline-flex items-center gap-1 text-link hover:underline underline-offset-3"
+            >
               <span class="i-lucide-arrow-left" />
               <span>Назад</span>
             </RouterLink>
@@ -282,12 +302,12 @@ function downloadSummaries() {
           <div class="flex-1 min-w-0">
             <input
               v-if="isEditing"
+              ref="titleInputRef"
               v-model="editTitle"
               @keyup.enter="saveTitle"
               @keyup.escape="isEditing = false"
               @blur="saveTitle"
               class="input w-full text-xl font-bold py-1 px-2"
-              autofocus
             />
             <h1
               v-else
@@ -302,7 +322,9 @@ function downloadSummaries() {
           <!-- Search + Actions -->
           <div class="flex items-center gap-3">
             <div class="relative">
-              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-muted text-sm pointer-events-none" />
+              <span
+                class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-muted text-sm pointer-events-none"
+              />
               <input
                 v-model="cardSearch"
                 type="text"
@@ -328,19 +350,14 @@ function downloadSummaries() {
               Конспекты
             </button>
 
-            <button @click="addColumn" class="btn-ghost">
-              <span class="i-lucide-plus" />
-              Колонка
-            </button>
-
-            <button @click="deleteWorkspace" class="icon-btn-delete" title="Удалить воркспейс">
-              <span class="i-lucide-trash-2" />
+            <button @click="openEditModal" class="icon-btn-edit" title="Редактировать воркспейс">
+              <span class="i-lucide-edit-2" />
             </button>
           </div>
         </div>
 
         <!-- Description -->
-        <p v-if="workspace.description" class="page-desc mt-2 ml-12">
+        <p v-if="workspace.description" class="page-desc mt-2">
           {{ workspace.description }}
         </p>
       </div>
@@ -370,8 +387,9 @@ function downloadSummaries() {
             :search-query="cardSearch"
           />
 
-          <!-- Add Column Button (placeholder) -->
+          <!-- Add Column Button -->
           <button
+            v-if="columns.length < 20"
             @click="addColumn"
             class="shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-[var(--r)] flex-center flex-col gap-2 text-muted hover:text-fg hover:border-fg/30 transition-colors"
           >
@@ -383,7 +401,7 @@ function downloadSummaries() {
     </template>
 
     <!-- Not Found -->
-    <div v-else-if="!isNewWorkspace" class="flex-1 flex-center flex-col gap-4">
+    <div v-else class="flex-1 flex-center flex-col gap-4">
       <span class="i-lucide-folder-x text-4xl text-muted" />
       <p class="text-muted">Воркспейс не найден</p>
       <RouterLink to="/" class="btn-primary">На главную</RouterLink>
@@ -394,6 +412,7 @@ function downloadSummaries() {
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="showSummariesModal = false" />
         <DialogContent
+          :aria-describedby="undefined"
           class="dialog-content max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
           @escape-key-down="showSummariesModal = false"
         >
@@ -432,6 +451,57 @@ function downloadSummaries() {
               Скачать .md
             </button>
           </div>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
+
+    <!-- Edit Workspace Modal -->
+    <DialogRoot v-model:open="showEditModal">
+      <DialogPortal>
+        <DialogOverlay class="dialog-overlay" @click="showEditModal = false" />
+        <DialogContent
+          :aria-describedby="undefined"
+          class="dialog-content max-w-md"
+          @escape-key-down="showEditModal = false"
+        >
+          <div class="dialog-header">
+            <DialogTitle class="dialog-title">Редактировать воркспейс</DialogTitle>
+            <DialogClose class="icon-btn-close">
+              <span class="i-lucide-x" />
+            </DialogClose>
+          </div>
+
+          <form @submit.prevent="saveWorkspaceEdit" class="space-y-4">
+            <div>
+              <label for="ws-edit-title" class="block text-sm font-medium mb-1">Название *</label>
+              <input
+                id="ws-edit-title"
+                v-model="editModalTitle"
+                type="text"
+                class="input"
+                required
+              />
+            </div>
+            <div>
+              <label for="ws-edit-desc" class="block text-sm font-medium mb-1">Описание</label>
+              <textarea
+                id="ws-edit-desc"
+                v-model="editModalDescription"
+                class="textarea h-24"
+                placeholder="Опционально"
+              />
+            </div>
+            <div class="flex justify-between items-center gap-3 pt-4">
+              <button type="button" class="btn-delete" @click="deleteWorkspace">
+                <span class="i-lucide-trash-2" />
+                Удалить
+              </button>
+              <button type="submit" class="btn-primary" :disabled="editModalLoading">
+                <span v-if="editModalLoading" class="i-lucide-loader-2 animate-spin" />
+                Сохранить
+              </button>
+            </div>
+          </form>
         </DialogContent>
       </DialogPortal>
     </DialogRoot>

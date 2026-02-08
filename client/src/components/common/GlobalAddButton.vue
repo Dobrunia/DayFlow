@@ -5,8 +5,8 @@ import CreateCardDialog from '@/components/card/CreateCardDialog.vue';
 const isDialogOpen = ref(false);
 
 function handleKeydown(e: KeyboardEvent) {
-  // Ctrl+Shift+N для Windows/Linux
-  if (e.ctrlKey && e.shiftKey && e.code === 'KeyN') {
+  // Ctrl/⌘ + Alt/Option + N
+  if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyN') {
     e.preventDefault();
     isDialogOpen.value = true;
   }
@@ -17,7 +17,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <template>
-  <button type="button" @click="isDialogOpen = true" class="global-add-btn" title="Ctrl+Shift+N">
+  <button type="button" @click="isDialogOpen = true" class="global-add-btn" title="Ctrl+Alt+N / ⌘+⌥+N">
     <span class="global-add-btn-bg" />
     <span class="global-add-btn-content">
       <span class="i-lucide-plus" />
@@ -33,7 +33,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
   position: relative;
   padding: 0 16px;
   height: 36px;
-  border-radius: 18px;
+  border-radius: var(--r);
   font-size: 14px;
   font-weight: 500;
   color: rgb(var(--on-primary));
@@ -49,7 +49,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 .global-add-btn-bg {
   position: absolute;
   inset: 0;
-  background: rgb(var(--primary));
+  background: rgb(var(--primary) / 0.5);
 }
 
 /* Shimmer overlay - only on hover */

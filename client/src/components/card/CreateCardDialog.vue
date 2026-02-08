@@ -294,6 +294,7 @@ async function handleSubmit() {
     <DialogPortal>
       <DialogOverlay class="dialog-overlay" @click="openProxy = false" />
       <DialogContent
+        :aria-describedby="undefined"
         class="dialog-content max-h-[90vh] overflow-y-auto"
         @escape-key-down="openProxy = false"
       >
@@ -417,7 +418,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-note" class="block text-sm font-medium mb-1">Заметка</label>
+              <label for="card-summary-note" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
               <input
                 id="card-summary-note"
                 v-model="noteSummary"
@@ -451,7 +452,7 @@ async function handleSubmit() {
               />
             </div>
             <div>
-              <label for="card-summary-link" class="block text-sm font-medium mb-1">Заметка</label>
+              <label for="card-summary-link" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
               <input
                 id="card-summary-link"
                 v-model="linkSummary"
@@ -511,7 +512,7 @@ async function handleSubmit() {
             </div>
             <div>
               <label for="card-summary-checklist" class="block text-sm font-medium mb-1"
-                >Заметка</label
+                >Конспект/Заметка</label
               >
               <input
                 id="card-summary-checklist"

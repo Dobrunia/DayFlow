@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
@@ -43,6 +43,7 @@ const editModalTitle = ref('');
 const editModalDescription = ref('');
 const editModalLoading = ref(false);
 const cardSearch = ref('');
+const titleInputRef = ref<HTMLInputElement | null>(null);
 
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
@@ -73,10 +74,12 @@ watch(
   { immediate: true }
 );
 
-function startEditTitle() {
+async function startEditTitle() {
   if (!workspace.value) return;
   editTitle.value = workspace.value.title;
   isEditing.value = true;
+  await nextTick();
+  titleInputRef.value?.focus();
 }
 
 async function saveTitle() {
@@ -325,12 +328,12 @@ function downloadSummaries() {
           <div class="flex-1 min-w-0">
             <input
               v-if="isEditing"
+              ref="titleInputRef"
               v-model="editTitle"
               @keyup.enter="saveTitle"
               @keyup.escape="isEditing = false"
               @blur="saveTitle"
               class="input w-full text-xl font-bold py-1 px-2"
-              autofocus
             />
             <h1
               v-else

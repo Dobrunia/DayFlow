@@ -340,7 +340,7 @@ function downloadSummaries() {
         </div>
 
         <!-- Description -->
-        <p v-if="workspace.description" class="page-desc mt-2 ml-12">
+        <p v-if="workspace.description" class="page-desc mt-2">
           {{ workspace.description }}
         </p>
       </div>

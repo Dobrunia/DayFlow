@@ -34,7 +34,7 @@ function handleSignOut() {
   <header class="fixed top-0 left-0 right-0 z-50">
     <!-- Main header -->
     <div class="h-14" style="background: color-mix(in srgb, rgb(var(--bg)) 90%, black 10%)">
-      <div class="h-full max-w-7xl mx-auto px-4 flex-between">
+      <div class="h-full max-w-7xl mx-auto px-4 pt-[12px] flex-between">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
           <span

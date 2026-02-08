@@ -33,7 +33,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
   position: relative;
   padding: 0 16px;
   height: 36px;
-  border-radius: 18px;
+  border-radius: var(--r);
   font-size: 14px;
   font-weight: 500;
   color: rgb(var(--on-primary));
@@ -49,7 +49,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 .global-add-btn-bg {
   position: absolute;
   inset: 0;
-  background: rgb(var(--primary));
+  background: rgb(var(--primary) / 0.5);
 }
 
 /* Shimmer overlay - only on hover */

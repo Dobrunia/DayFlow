@@ -52,7 +52,9 @@ export const CREATE_WORKSPACE_MUTATION = gql`
       title
       description
       icon
+      pinned
       createdAt
+      updatedAt
     }
   }
 `;

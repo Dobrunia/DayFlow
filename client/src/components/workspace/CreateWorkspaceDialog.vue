@@ -48,6 +48,11 @@ watch(
 );
 
 async function handleSubmit() {
+  if (workspaceStore.workspaces.length >= 20) {
+    toast.error('Максимум 20 воркспейсов');
+    return;
+  }
+
   if (!title.value.trim()) {
     toast.error('Введите название воркспейса');
     return;

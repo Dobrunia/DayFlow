@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
-import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -35,7 +34,6 @@ function handleWheel(e: WheelEvent) {
 
 const isEditing = ref(false);
 const editTitle = ref('');
-const showCreateDialog = ref(false);
 const showIconPicker = ref(false);
 const showSummariesModal = ref(false);
 const showEditModal = ref(false);
@@ -59,16 +57,11 @@ const backlogColumn = computed(() => ({
 
 const loading = computed(() => workspaceStore.loading);
 
-// Check if creating new workspace
-const isNewWorkspace = computed(() => workspaceId.value === 'new');
-
 watch(
   workspaceId,
   (id) => {
-    if (id && id !== 'new') {
+    if (id) {
       workspaceStore.fetchWorkspace(id);
-    } else if (id === 'new') {
-      showCreateDialog.value = true;
     }
   },
   { immediate: true }
@@ -178,18 +171,6 @@ async function deleteWorkspace() {
   }
 }
 
-function handleWorkspaceCreated(id: string) {
-  showCreateDialog.value = false;
-  router.replace(`/workspace/${id}`);
-}
-
-function handleDialogClose() {
-  showCreateDialog.value = false;
-  if (isNewWorkspace.value) {
-    router.push('/');
-  }
-}
-
 // Собираем все конспекты из карточек воркспейса
 const allSummaries = computed(() => {
   if (!workspace.value) return [];
@@ -269,15 +250,8 @@ function downloadSummaries() {
 
 <template>
   <div class="h-[calc(100vh-128px)] flex flex-col">
-    <!-- Create Dialog -->
-    <CreateWorkspaceDialog
-      :open="showCreateDialog"
-      @close="handleDialogClose"
-      @created="handleWorkspaceCreated"
-    />
-
     <!-- Loading -->
-    <div v-if="loading && !isNewWorkspace" class="flex-1 flex-center">
+    <div v-if="loading" class="flex-1 flex-center">
       <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
     </div>
 
@@ -427,7 +401,7 @@ function downloadSummaries() {
     </template>
 
     <!-- Not Found -->
-    <div v-else-if="!isNewWorkspace" class="flex-1 flex-center flex-col gap-4">
+    <div v-else class="flex-1 flex-center flex-col gap-4">
       <span class="i-lucide-folder-x text-4xl text-muted" />
       <p class="text-muted">Воркспейс не найден</p>
       <RouterLink to="/" class="btn-primary">На главную</RouterLink>

@@ -5,8 +5,8 @@ import CreateCardDialog from '@/components/card/CreateCardDialog.vue';
 const isDialogOpen = ref(false);
 
 function handleKeydown(e: KeyboardEvent) {
-  // Ctrl+Shift+N для Windows/Linux
-  if (e.ctrlKey && e.shiftKey && e.code === 'KeyN') {
+  // Ctrl/⌘ + Alt/Option + N
+  if ((e.ctrlKey || e.metaKey) && e.altKey && e.code === 'KeyN') {
     e.preventDefault();
     isDialogOpen.value = true;
   }
@@ -17,7 +17,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <template>
-  <button type="button" @click="isDialogOpen = true" class="global-add-btn" title="Ctrl+Shift+N">
+  <button type="button" @click="isDialogOpen = true" class="global-add-btn" title="Ctrl+Alt+N / ⌘+⌥+N">
     <span class="global-add-btn-bg" />
     <span class="global-add-btn-content">
       <span class="i-lucide-plus" />

@@ -3,6 +3,13 @@ import { z } from "zod";
 export const CardTypeEnum = z.enum(["note", "link", "checklist"]);
 export type CardType = z.infer<typeof CardTypeEnum>;
 
+export const LearningStatusEnum = z.enum([
+  "want_to_repeat",
+  "questions_remain",
+  "deepen_knowledge",
+]);
+export type LearningStatus = z.infer<typeof LearningStatusEnum>;
+
 export const NotePayloadSchema = z.object({
   content: z.string().optional(),
   summary: z.string().optional(),
@@ -47,6 +54,7 @@ export const CardSchema = z.object({
   done: z.boolean(),
 
   tags: z.array(z.string()).default([]),
+  learningStatus: LearningStatusEnum.nullable().optional(),
 
   type: CardTypeEnum,
   payload: z.unknown(),
@@ -85,6 +93,7 @@ export const CreateCardInputSchema = z.object({
   columnId: z.string().optional(),
   payload: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  learningStatus: LearningStatusEnum.optional(),
 });
 export type CreateCardInput = z.infer<typeof CreateCardInputSchema>;
 
@@ -95,6 +104,7 @@ export const UpdateCardInputSchema = z.object({
   order: z.number().int().optional(),
   payload: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  learningStatus: LearningStatusEnum.optional(),
 });
 export type UpdateCardInput = z.infer<typeof UpdateCardInputSchema>;
 
@@ -104,5 +114,6 @@ export const CardFilterSchema = z.object({
   workspaceId: z.string().nullable().optional(),
   columnId: z.string().nullable().optional(),
   search: z.string().optional(),
+  learningStatus: LearningStatusEnum.optional(),
 });
 export type CardFilter = z.infer<typeof CardFilterSchema>;

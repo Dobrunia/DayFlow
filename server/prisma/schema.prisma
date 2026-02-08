@@ -75,6 +75,8 @@ model Card {
   payload Json
   tags    Json    @default("[]") // MySQL: массив строк как JSON
 
+  learningStatus LearningStatus? // Новое поле: статус обучения
+
   owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   column    Column?    @relation(fields: [columnId], references: [id], onDelete: Cascade)
@@ -84,10 +86,17 @@ model Card {
   @@index([columnId])
   @@index([type])
   @@index([columnId, order])
+  @@index([learningStatus])
 }
 
 enum CardType {
   note
   link
   checklist
+}
+
+enum LearningStatus {
+  want_to_repeat
+  questions_remain
+  deepen_knowledge
 }

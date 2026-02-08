@@ -173,6 +173,20 @@ export default defineConfig({
     'page-title': 'text-2xl font-bold tracking-tight',
     'page-desc': 'text-sm text-muted',
     'link-inline': 'text-link hover:underline underline-offset-3',
+
+    /* ─────────────────────────────
+       Mode Tabs (segmented control)
+       ───────────────────────────── */
+    'mode-tabs': 'flex items-center gap-0 bg-fg/10 rounded-[calc(var(--r)-2px)] p-0.5',
+    'mode-tab': [
+      'flex items-center gap-1.5 px-3 py-1.5',
+      'border-none bg-transparent',
+      'rounded-[calc(var(--r)-4px)]',
+      'text-[13px] font-medium text-muted leading-none',
+      'cursor-pointer select-none transition-all duration-150',
+      'hover:(text-fg bg-fg/5)',
+      '[&.active]:(bg-surface text-fg shadow-sm)',
+    ].join(' '),
   },
 
   safelist: [

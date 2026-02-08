@@ -134,6 +134,7 @@ export const CREATE_CARD_MUTATION = gql`
       done
       payload
       tags
+      learningStatus
     }
   }
 `;
@@ -147,6 +148,7 @@ export const UPDATE_CARD_MUTATION = gql`
       done
       payload
       tags
+      learningStatus
     }
   }
 `;

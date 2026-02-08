@@ -446,46 +446,7 @@ watch(
   color: rgb(var(--fg));
 }
 
-/* Mode tabs (GitHub-style) */
-.mode-tabs {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: rgb(var(--fg) / 0.1);
-  border-radius: calc(var(--r) - 2px);
-  padding: 2px;
-}
-
-.mode-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.4em;
-  padding: 0.4em 0.75em;
-  border: none;
-  background: transparent;
-  border-radius: calc(var(--r) - 4px);
-  font-size: 13px;
-  font-weight: 500;
-  color: rgb(var(--muted));
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.mode-tab:hover {
-  color: rgb(var(--fg));
-  background: rgb(var(--fg) / 0.05);
-}
-
-.mode-tab.active {
-  background: rgb(var(--surface));
-  color: rgb(var(--fg));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.mode-tab span:first-child {
-  font-size: 14px;
-}
+/* Mode tabs (GitHub-style) - moved to uno.config.ts */
 
 /* Hotkeys panel */
 .hotkeys-panel {

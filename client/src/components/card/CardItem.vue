@@ -70,6 +70,18 @@ const linkUrl = computed(() => {
   return (parsed.value.payload as { url?: string }).url ?? null;
 });
 
+const learningStatusInfo = computed(() => {
+  if (!props.card.learningStatus) return null;
+  const map: Record<string, { icon: string; title: string; color: string }> = {
+    WANT_TO_REPEAT: { icon: 'i-lucide-repeat', title: 'Хочу повторить', color: 'text-orange-500' },
+    QUESTIONS_REMAIN: { icon: 'i-lucide-help-circle', title: 'Остались вопросы', color: 'text-red-500' },
+    DEEPEN_KNOWLEDGE: { icon: 'i-lucide-book-open', title: 'Хочу углубить знания', color: 'text-blue-500' },
+  };
+  return map[props.card.learningStatus];
+});
+
+const isCollapsed = ref(!!props.card.learningStatus);
+
 function handleDeleteFromDialog() {
   showEditDialog.value = false;
   cardActions.deleteCard();
@@ -92,6 +104,7 @@ function handleDeleteFromDialog() {
       :class="[
         { 'opacity-60': card.done },
         !static && (columnId || (isBacklog && card.workspaceId != null)) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
+        isCollapsed && 'pb-2'
       ]"
     >
       <div class="flex items-center gap-2 p-3 pb-0">
@@ -103,6 +116,14 @@ function handleDeleteFromDialog() {
         >
           <span v-if="card.done" class="i-lucide-check text-xs" />
         </button>
+
+        <div
+          v-if="learningStatusInfo"
+          class="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-surface border border-border"
+          :title="learningStatusInfo.title"
+        >
+          <span :class="[learningStatusInfo.icon, learningStatusInfo.color]" class="text-xs" />
+        </div>
 
         <div
           ref="titleContainerRef"
@@ -130,7 +151,7 @@ function handleDeleteFromDialog() {
         </div>
       </div>
 
-    <template v-if="parsed">
+    <template v-if="parsed && !isCollapsed">
       <CardNote
         v-if="parsed.type === 'note'"
         :title="card.title"
@@ -158,7 +179,7 @@ function handleDeleteFromDialog() {
       />
     </template>
 
-    <div v-if="linkUrl" class="flex items-center gap-2 px-3 pb-2 pt-1">
+    <div v-if="linkUrl && !isCollapsed" class="flex items-center gap-2 px-3 pb-2 pt-1">
       <a
         :href="linkUrl"
         target="_blank"
@@ -169,6 +190,16 @@ function handleDeleteFromDialog() {
         <span>Перейти</span>
         <span :class="typeIcon" class="shrink-0" />
       </a>
+    </div>
+
+    <div v-if="learningStatusInfo && isCollapsed" class="px-3 pt-0 text-center">
+      <button
+        type="button"
+        @click="isCollapsed = false"
+        class="text-xs text-muted hover:text-fg transition-colors w-full py-1 border-t border-border mt-2"
+      >
+        Развернуть
+      </button>
     </div>
 
     </div>

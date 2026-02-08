@@ -45,6 +45,24 @@ const router = createRouter({
       component: () => import('@/views/UserStatsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/learning/repeat',
+      name: 'learning-repeat',
+      component: () => import('@/views/LearningView.vue'),
+      meta: { requiresAuth: true, status: 'WANT_TO_REPEAT' },
+    },
+    {
+      path: '/learning/questions',
+      name: 'learning-questions',
+      component: () => import('@/views/LearningView.vue'),
+      meta: { requiresAuth: true, status: 'QUESTIONS_REMAIN' },
+    },
+    {
+      path: '/learning/deepen',
+      name: 'learning-deepen',
+      component: () => import('@/views/LearningView.vue'),
+      meta: { requiresAuth: true, status: 'DEEPEN_KNOWLEDGE' },
+    },
   ],
 });
 

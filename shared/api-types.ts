@@ -3,6 +3,8 @@
  */
 import type { CardType } from "./card.js";
 
+export type LearningStatus = "WANT_TO_REPEAT" | "QUESTIONS_REMAIN" | "DEEPEN_KNOWLEDGE";
+
 /** Карточка как приходит с API: type в верхнем регистре, payload — JSON-строка */
 export interface CardGql {
   id: string;
@@ -17,6 +19,7 @@ export interface CardGql {
   done: boolean;
   payload: string;
   tags: string[];
+  learningStatus?: LearningStatus | null;
   workspace?: { id: string; title: string; icon?: string | null } | null;
 }
 

@@ -129,6 +129,22 @@ function handleSignOut() {
             <span class="i-lucide-hash" />
             <span>Теги</span>
           </RouterLink>
+
+          <!-- Learning routes -->
+          <div class="w-px h-5 bg-border mx-1"></div>
+          
+          <RouterLink to="/learning/repeat" class="btn-ghost" active-class="bg-fg/10">
+            <span class="i-lucide-repeat" />
+            <span>Повторить</span>
+          </RouterLink>
+          <RouterLink to="/learning/questions" class="btn-ghost" active-class="bg-fg/10">
+            <span class="i-lucide-help-circle" />
+            <span>Вопросы</span>
+          </RouterLink>
+          <RouterLink to="/learning/deepen" class="btn-ghost" active-class="bg-fg/10">
+            <span class="i-lucide-book-open" />
+            <span>Углубить</span>
+          </RouterLink>
         </div>
         <div class="ml-auto">
           <GlobalAddButton />

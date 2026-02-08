@@ -1,6 +1,6 @@
 import type { Context } from '../lib/context.js';
 import { Prisma } from '@prisma/client';
-import type { CardType } from '@prisma/client';
+import type { CardType, LearningStatus } from '@prisma/client';
 import type { CreateCardInput, UpdateCardInput, CardFilter } from 'dayflow-shared';
 import {
   NotePayloadSchema,
@@ -19,6 +19,19 @@ function mapCardType(type: string): CardType {
   return typeMap[type] ?? 'note';
 }
 
+function mapLearningStatus(status: string | null | undefined): LearningStatus | null {
+  if (!status) return null;
+  const map: Record<string, LearningStatus> = {
+    WANT_TO_REPEAT: 'want_to_repeat',
+    QUESTIONS_REMAIN: 'questions_remain',
+    DEEPEN_KNOWLEDGE: 'deepen_knowledge',
+    want_to_repeat: 'want_to_repeat',
+    questions_remain: 'questions_remain',
+    deepen_knowledge: 'deepen_knowledge',
+  };
+  return map[status] ?? null;
+}
+
 function parseTags(tags: unknown): string[] {
   if (Array.isArray(tags)) return tags.filter((t): t is string => typeof t === 'string');
   return [];
@@ -30,6 +43,10 @@ function buildCardsWhere(filter: CardFilter | undefined, userId: string): Prisma
   if (filter?.done !== undefined) where.done = filter.done;
   if (filter?.workspaceId !== undefined) where.workspaceId = filter.workspaceId ?? null;
   if (filter?.columnId !== undefined) where.columnId = filter.columnId ?? null;
+  if (filter?.learningStatus) {
+    const status = mapLearningStatus(filter.learningStatus);
+    if (status) where.learningStatus = status;
+  }
   if (filter?.search) {
     const term = filter.search.trim();
     where.OR = [{ title: { contains: term } }];
@@ -53,6 +70,10 @@ function buildSearchRawConditions(
     conditions.push(Prisma.sql`c.workspaceId <=> ${filter.workspaceId ?? null}`);
   if (filter?.columnId !== undefined)
     conditions.push(Prisma.sql`c.columnId <=> ${filter.columnId ?? null}`);
+  if (filter?.learningStatus) {
+    const status = mapLearningStatus(filter.learningStatus);
+    if (status) conditions.push(Prisma.sql`c.learningStatus = ${status}`);
+  }
   return conditions;
 }
 
@@ -221,6 +242,7 @@ export const cardResolvers = {
           title: input.title ?? null,
           payload,
           tags: tagsJson,
+          learningStatus: mapLearningStatus(input.learningStatus),
         },
       });
     },
@@ -256,6 +278,9 @@ export const cardResolvers = {
         data.payload = (input.payload === '' ? {} : raw) as Prisma.InputJsonValue;
       }
       if (input.tags !== undefined) data.tags = input.tags as Prisma.InputJsonValue;
+      if (input.learningStatus !== undefined) {
+        data.learningStatus = mapLearningStatus(input.learningStatus);
+      }
 
       return context.prisma.card.update({ where: { id }, data });
     },
@@ -348,6 +373,8 @@ export const cardResolvers = {
         ? JSON.stringify(parent.payload)
         : '{}',
     tags: (parent: { tags: unknown }) => parseTags(parent.tags),
+    learningStatus: (parent: { learningStatus: LearningStatus | null }) => 
+      parent.learningStatus ? parent.learningStatus.toUpperCase() : null,
     owner: (parent: { ownerId: string }, _: unknown, context: Context) =>
       context.loaders.userById.load(parent.ownerId),
     workspace: (parent: { workspaceId: string | null }, _: unknown, context: Context) =>

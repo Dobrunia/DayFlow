@@ -3,7 +3,7 @@ import { ref, watch, computed, nextTick, onUnmounted } from 'vue';
 import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { useCardsStore } from '@/stores/cards';
-import type { CardGql } from '@/graphql/types';
+import type { CardGql, LearningStatus } from '@/graphql/types';
 import type { ChecklistItem } from 'dayflow-shared';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
@@ -63,11 +63,33 @@ const linkSummary = ref('');
 const checklistItems = ref<ChecklistItem[]>([]);
 const checklistSummary = ref('');
 const tagsInput = ref('');
+const learningStatus = ref<LearningStatus | null>(null);
 const loading = ref(false);
+const showDetails = ref(false);
+
+const learningStatuses: { value: LearningStatus; label: string; icon: string }[] = [
+  { value: 'WANT_TO_REPEAT', label: 'Хочу повторить', icon: 'i-lucide-repeat' },
+  { value: 'QUESTIONS_REMAIN', label: 'Остались вопросы', icon: 'i-lucide-help-circle' },
+  { value: 'DEEPEN_KNOWLEDGE', label: 'Хочу углубить знания', icon: 'i-lucide-book-open' },
+];
+
 const submitted = ref(false);
 const checklistListRef = ref<HTMLElement | null>(null);
 const titleInputRef = ref<HTMLInputElement | null>(null);
 let checklistSortable: Sortable | null = null;
+
+const currentSummary = computed({
+  get: () => {
+    if (cardType.value === 'NOTE') return noteSummary.value;
+    if (cardType.value === 'LINK') return linkSummary.value;
+    return checklistSummary.value;
+  },
+  set: (val) => {
+    if (cardType.value === 'NOTE') noteSummary.value = val;
+    else if (cardType.value === 'LINK') linkSummary.value = val;
+    else checklistSummary.value = val;
+  }
+});
 
 const isEditMode = computed(() => !!props.card);
 
@@ -124,6 +146,7 @@ watch(
             checklistSummary.value = (pl as { summary?: string }).summary ?? '';
           }
           tagsInput.value = Array.isArray(card.tags) ? card.tags.join(', ') : '';
+          learningStatus.value = card.learningStatus ?? null;
         } catch {
           noteContent.value = '';
           noteSummary.value = '';
@@ -132,6 +155,7 @@ watch(
           checklistItems.value = [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
           checklistSummary.value = '';
           tagsInput.value = '';
+          learningStatus.value = null;
         }
       } else {
         title.value = '';
@@ -145,6 +169,7 @@ watch(
         addDestination.value = 'hub';
         selectedWorkspaceId.value = '';
         tagsInput.value = '';
+        learningStatus.value = null;
         if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
       }
       submitted.value = false;
@@ -246,10 +271,10 @@ async function handleSubmit() {
 
     if (props.card) {
       const newTitle = title.value.trim() || null;
-      const updatePayload = { title: newTitle ?? undefined, payload, tags };
+      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: learningStatus.value };
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
-      emit('updated', { ...props.card, title: newTitle, payload, tags });
+      emit('updated', { ...props.card, title: newTitle, payload, tags, learningStatus: learningStatus.value });
       toast.success('Сохранено!');
     } else if (isGlobalAdd.value && addDestination.value === 'hub') {
       await cardsStore.createCard({
@@ -257,6 +282,7 @@ async function handleSubmit() {
         title: title.value.trim() || undefined,
         payload,
         tags,
+        learningStatus: learningStatus.value ?? undefined,
       });
       toast.success('Карточка создана в хабе!');
     } else if (isGlobalAdd.value && addDestination.value === 'workspace') {
@@ -267,6 +293,7 @@ async function handleSubmit() {
         columnId: undefined,
         payload,
         tags,
+        learningStatus: learningStatus.value ?? undefined,
       });
       toast.success('Карточка добавлена в беклог воркспейса');
     } else {
@@ -277,6 +304,7 @@ async function handleSubmit() {
         columnId: props.columnId,
         payload,
         tags,
+        learningStatus: learningStatus.value ?? undefined,
       });
       toast.success('Карточка создана!');
     }
@@ -407,26 +435,6 @@ async function handleSubmit() {
                 placeholder="Ваши мысли..."
               />
             </div>
-            <div>
-              <label for="card-tags-note" class="block text-sm font-medium mb-1">Теги</label>
-              <input
-                id="card-tags-note"
-                v-model="tagsInput"
-                type="text"
-                class="input"
-                placeholder="Через запятую: работа, идеи"
-              />
-            </div>
-            <div>
-              <label for="card-summary-note" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
-              <input
-                id="card-summary-note"
-                v-model="noteSummary"
-                type="text"
-                class="input"
-                placeholder="Опционально"
-              />
-            </div>
           </template>
 
           <template v-if="cardType === 'LINK'">
@@ -439,26 +447,6 @@ async function handleSubmit() {
                 class="input"
                 :class="submitted && !linkUrl.trim() && 'border-danger!'"
                 placeholder="https://..."
-              />
-            </div>
-            <div>
-              <label for="card-tags-link" class="block text-sm font-medium mb-1">Теги</label>
-              <input
-                id="card-tags-link"
-                v-model="tagsInput"
-                type="text"
-                class="input"
-                placeholder="Через запятую: работа, идеи"
-              />
-            </div>
-            <div>
-              <label for="card-summary-link" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
-              <input
-                id="card-summary-link"
-                v-model="linkSummary"
-                type="text"
-                class="input"
-                placeholder="Опционально"
               />
             </div>
           </template>
@@ -500,29 +488,73 @@ async function handleSubmit() {
                 Добавить пункт
               </button>
             </div>
-            <div>
-              <label for="card-tags-checklist" class="block text-sm font-medium mb-1">Теги</label>
-              <input
-                id="card-tags-checklist"
-                v-model="tagsInput"
-                type="text"
-                class="input"
-                placeholder="Через запятую: работа, идеи"
-              />
-            </div>
-            <div>
-              <label for="card-summary-checklist" class="block text-sm font-medium mb-1"
-                >Конспект/Заметка</label
-              >
-              <input
-                id="card-summary-checklist"
-                v-model="checklistSummary"
-                type="text"
-                class="input"
-                placeholder="Опционально"
-              />
-            </div>
           </template>
+
+          <div class="pt-2 border-t border-border">
+            <button
+              type="button"
+              class="flex items-center gap-2 text-sm text-muted font-medium hover:text-fg transition-colors select-none w-full text-left"
+              @click="showDetails = !showDetails"
+            >
+              <span
+                class="i-lucide-chevron-right transition-transform duration-200"
+                :class="showDetails && 'rotate-90'"
+              />
+              Дополнительно
+            </button>
+
+            <div v-if="showDetails" class="space-y-4 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <!-- Tags -->
+              <div>
+                <label for="card-tags" class="block text-sm font-medium mb-1">Теги</label>
+                <input
+                  id="card-tags"
+                  v-model="tagsInput"
+                  type="text"
+                  class="input"
+                  placeholder="Через запятую: работа, идеи"
+                />
+              </div>
+
+              <!-- Summary -->
+              <div v-if="!isEditMode">
+                <label for="card-summary" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
+                <input
+                  id="card-summary"
+                  v-model="currentSummary"
+                  type="text"
+                  class="input"
+                  placeholder="Опционально"
+                />
+              </div>
+
+              <!-- Learning Status -->
+              <div v-if="isEditMode">
+                <label class="block text-sm font-medium mb-2">Статус обучения</label>
+                <div class="flex flex-col gap-1 bg-fg/10 rounded-[var(--r)] p-1">
+                  <button
+                    type="button"
+                    class="mode-tab w-full justify-start px-3 py-2"
+                    :class="learningStatus === null && 'active'"
+                    @click="learningStatus = null"
+                  >
+                    <span>Нет</span>
+                  </button>
+                  <button
+                    v-for="s in learningStatuses"
+                    :key="s.value"
+                    type="button"
+                    class="mode-tab w-full justify-start px-3 py-2"
+                    :class="learningStatus === s.value && 'active'"
+                    @click="learningStatus = s.value"
+                  >
+                    <span :class="s.icon" />
+                    <span>{{ s.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="flex justify-between items-center gap-3 pt-4">
             <button v-if="isEditMode" type="button" class="btn-delete" @click="emit('delete')">

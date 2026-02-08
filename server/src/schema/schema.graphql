@@ -37,6 +37,12 @@ enum CardType {
   CHECKLIST
 }
 
+enum LearningStatus {
+  WANT_TO_REPEAT
+  QUESTIONS_REMAIN
+  DEEPEN_KNOWLEDGE
+}
+
 type Card {
   id: ID!
   createdAt: DateTime!
@@ -50,6 +56,7 @@ type Card {
   done: Boolean!
   payload: String!
   tags: [String!]!
+  learningStatus: LearningStatus
   owner: User!
   workspace: Workspace
   column: Column
@@ -101,6 +108,7 @@ input CreateCardInput {
   columnId: ID
   payload: String
   tags: [String!]
+  learningStatus: LearningStatus
 }
 
 input UpdateCardInput {
@@ -110,6 +118,7 @@ input UpdateCardInput {
   order: Int
   payload: String
   tags: [String!]
+  learningStatus: LearningStatus
 }
 
 input CardFilter {
@@ -118,6 +127,7 @@ input CardFilter {
   workspaceId: ID
   columnId: ID
   search: String
+  learningStatus: LearningStatus
 }
 
 # Queries

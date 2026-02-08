@@ -51,6 +51,7 @@ export const WORKSPACE_QUERY = gql`
           done
           payload
           tags
+          learningStatus
         }
       }
       backlog {
@@ -66,6 +67,7 @@ export const WORKSPACE_QUERY = gql`
         done
         payload
         tags
+        learningStatus
       }
     }
   }
@@ -86,6 +88,7 @@ export const CARDS_QUERY = gql`
       done
       payload
       tags
+      learningStatus
       workspace {
         id
         title
@@ -116,6 +119,7 @@ export const CARD_QUERY = gql`
       done
       payload
       tags
+      learningStatus
     }
   }
 `;

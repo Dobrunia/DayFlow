@@ -99,14 +99,19 @@ export type Mutation = {
   __typename?: 'Mutation';
   createCard: Card;
   createColumn: Column;
+  createRoadmap: Roadmap;
+  createRoadmapNode: RoadmapNode;
   createTool: Tool;
   createWorkspace: Workspace;
   deleteCard: Scalars['Boolean']['output'];
   deleteColumn: Scalars['Boolean']['output'];
+  deleteRoadmap: Scalars['Boolean']['output'];
+  deleteRoadmapNode: Scalars['Boolean']['output'];
   deleteTool: Scalars['Boolean']['output'];
   deleteWorkspace: Scalars['Boolean']['output'];
   moveCard: Card;
   reorderColumns: Array<Column>;
+  reorderRoadmapNodes: Array<RoadmapNode>;
   signIn: AuthPayload;
   signOut: Scalars['Boolean']['output'];
   signUp: AuthPayload;
@@ -114,6 +119,7 @@ export type Mutation = {
   updateCard: Card;
   updateColumn: Column;
   updateProfile: User;
+  updateRoadmapNode: RoadmapNode;
   updateTool: Tool;
   updateWorkspace: Workspace;
 };
@@ -127,6 +133,20 @@ export type MutationCreateCardArgs = {
 export type MutationCreateColumnArgs = {
   title: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateRoadmapArgs = {
+  sourceText?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateRoadmapNodeArgs = {
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  roadmapId: Scalars['ID']['input'];
+  title: Scalars['String']['input'];
 };
 
 
@@ -146,6 +166,16 @@ export type MutationDeleteCardArgs = {
 
 
 export type MutationDeleteColumnArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteRoadmapArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteRoadmapNodeArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -170,6 +200,13 @@ export type MutationMoveCardArgs = {
 export type MutationReorderColumnsArgs = {
   columnIds: Array<Scalars['ID']['input']>;
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationReorderRoadmapNodesArgs = {
+  nodeIds: Array<Scalars['ID']['input']>;
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  roadmapId: Scalars['ID']['input'];
 };
 
 
@@ -208,6 +245,13 @@ export type MutationUpdateProfileArgs = {
 };
 
 
+export type MutationUpdateRoadmapNodeArgs = {
+  done?: InputMaybe<Scalars['Boolean']['input']>;
+  id: Scalars['ID']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type MutationUpdateToolArgs = {
   id: Scalars['ID']['input'];
   input: UpdateToolInput;
@@ -230,6 +274,8 @@ export type Query = {
   cardsCount: Scalars['Int']['output'];
   me?: Maybe<User>;
   myWorkspaces: Array<Workspace>;
+  /** Роадмап воркспейса (один на воркспейс). */
+  roadmap?: Maybe<Roadmap>;
   /** Инструменты пользователя (хаб: workspaceId = null). */
   tools: Array<Tool>;
   /** Публичная статистика пользователя по id (любой авторизованный может запросить). */
@@ -256,6 +302,11 @@ export type QueryCardsCountArgs = {
 };
 
 
+export type QueryRoadmapArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type QueryToolsArgs = {
   workspaceId?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -268,6 +319,31 @@ export type QueryUserStatsArgs = {
 
 export type QueryWorkspaceArgs = {
   id: Scalars['ID']['input'];
+};
+
+export type Roadmap = {
+  __typename?: 'Roadmap';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  nodes: Array<RoadmapNode>;
+  ownerId: Scalars['ID']['output'];
+  sourceText?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+export type RoadmapNode = {
+  __typename?: 'RoadmapNode';
+  children: Array<RoadmapNode>;
+  createdAt: Scalars['DateTime']['output'];
+  done: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  order: Scalars['Int']['output'];
+  parentId?: Maybe<Scalars['ID']['output']>;
+  roadmapId: Scalars['ID']['output'];
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type Tool = {
@@ -342,6 +418,8 @@ export type Workspace = {
   id: Scalars['ID']['output'];
   owner: User;
   pinned: Scalars['Boolean']['output'];
+  /** Роадмап воркспейса (один на воркспейс). */
+  roadmap?: Maybe<Roadmap>;
   title: Scalars['String']['output'];
   /** Инструменты воркспейса. */
   tools: Array<Tool>;
@@ -501,6 +579,56 @@ export type DeleteToolMutationVariables = Exact<{
 
 export type DeleteToolMutation = { __typename?: 'Mutation', deleteTool: boolean };
 
+export type CreateRoadmapMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  title: Scalars['String']['input'];
+  sourceText?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type CreateRoadmapMutation = { __typename?: 'Mutation', createRoadmap: { __typename?: 'Roadmap', id: string, createdAt: any, updatedAt: any, title: string, sourceText?: string | null, workspaceId: string } };
+
+export type DeleteRoadmapMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteRoadmapMutation = { __typename?: 'Mutation', deleteRoadmap: boolean };
+
+export type CreateRoadmapNodeMutationVariables = Exact<{
+  roadmapId: Scalars['ID']['input'];
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  title: Scalars['String']['input'];
+}>;
+
+
+export type CreateRoadmapNodeMutation = { __typename?: 'Mutation', createRoadmapNode: { __typename?: 'RoadmapNode', id: string, roadmapId: string, parentId?: string | null, order: number, title: string, done: boolean } };
+
+export type UpdateRoadmapNodeMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+  done?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type UpdateRoadmapNodeMutation = { __typename?: 'Mutation', updateRoadmapNode: { __typename?: 'RoadmapNode', id: string, title: string, done: boolean } };
+
+export type DeleteRoadmapNodeMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteRoadmapNodeMutation = { __typename?: 'Mutation', deleteRoadmapNode: boolean };
+
+export type ReorderRoadmapNodesMutationVariables = Exact<{
+  roadmapId: Scalars['ID']['input'];
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  nodeIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type ReorderRoadmapNodesMutation = { __typename?: 'Mutation', reorderRoadmapNodes: Array<{ __typename?: 'RoadmapNode', id: string, order: number }> };
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -560,3 +688,10 @@ export type AllToolsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type AllToolsQuery = { __typename?: 'Query', allTools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string>, workspace?: { __typename?: 'Workspace', id: string, title: string, icon?: string | null } | null }> };
+
+export type RoadmapQueryVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type RoadmapQuery = { __typename?: 'Query', roadmap?: { __typename?: 'Roadmap', id: string, createdAt: any, updatedAt: any, title: string, sourceText?: string | null, workspaceId: string, nodes: Array<{ __typename?: 'RoadmapNode', id: string, roadmapId: string, parentId?: string | null, order: number, title: string, done: boolean, children: Array<{ __typename?: 'RoadmapNode', id: string, roadmapId: string, parentId?: string | null, order: number, title: string, done: boolean, children: Array<{ __typename?: 'RoadmapNode', id: string, roadmapId: string, parentId?: string | null, order: number, title: string, done: boolean, children: Array<{ __typename?: 'RoadmapNode', id: string, roadmapId: string, parentId?: string | null, order: number, title: string, done: boolean }> }> }> }> } | null };

@@ -125,5 +125,11 @@ export const workspaceResolvers = {
         orderBy: { createdAt: 'desc' },
       });
     },
+    roadmap: async (parent: { id: string }, _: unknown, context: Context) => {
+      if (!context.user) return null;
+      return context.prisma.roadmap.findUnique({
+        where: { workspaceId: parent.id },
+      });
+    },
   },
 };

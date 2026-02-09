@@ -10,6 +10,8 @@ export type {
   Workspace,
   Column,
   Tool,
+  Roadmap,
+  RoadmapNode,
   CreateCardInput,
   UpdateCardInput,
   CardFilter,

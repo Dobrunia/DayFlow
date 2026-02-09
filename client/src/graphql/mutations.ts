@@ -205,3 +205,62 @@ export const DELETE_TOOL_MUTATION = gql`
     deleteTool(id: $id)
   }
 `;
+
+// Roadmap
+
+export const CREATE_ROADMAP_MUTATION = gql`
+  mutation CreateRoadmap($workspaceId: ID!, $title: String!, $sourceText: String) {
+    createRoadmap(workspaceId: $workspaceId, title: $title, sourceText: $sourceText) {
+      id
+      createdAt
+      updatedAt
+      title
+      sourceText
+      workspaceId
+    }
+  }
+`;
+
+export const DELETE_ROADMAP_MUTATION = gql`
+  mutation DeleteRoadmap($id: ID!) {
+    deleteRoadmap(id: $id)
+  }
+`;
+
+export const CREATE_ROADMAP_NODE_MUTATION = gql`
+  mutation CreateRoadmapNode($roadmapId: ID!, $parentId: ID, $title: String!) {
+    createRoadmapNode(roadmapId: $roadmapId, parentId: $parentId, title: $title) {
+      id
+      roadmapId
+      parentId
+      order
+      title
+      done
+    }
+  }
+`;
+
+export const UPDATE_ROADMAP_NODE_MUTATION = gql`
+  mutation UpdateRoadmapNode($id: ID!, $title: String, $done: Boolean) {
+    updateRoadmapNode(id: $id, title: $title, done: $done) {
+      id
+      title
+      done
+    }
+  }
+`;
+
+export const DELETE_ROADMAP_NODE_MUTATION = gql`
+  mutation DeleteRoadmapNode($id: ID!) {
+    deleteRoadmapNode(id: $id)
+  }
+`;
+
+export const REORDER_ROADMAP_NODES_MUTATION = gql`
+  mutation ReorderRoadmapNodes($roadmapId: ID!, $parentId: ID, $nodeIds: [ID!]!) {
+    reorderRoadmapNodes(roadmapId: $roadmapId, parentId: $parentId, nodeIds: $nodeIds) {
+      id
+      order
+    }
+  }
+`;

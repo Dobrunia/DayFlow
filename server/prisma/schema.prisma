@@ -14,10 +14,11 @@ model User {
   avatarUrl    String?   // null = нет аватара
   createdAt    DateTime  @default(now())
 
-  sessions Session[]
+  sessions   Session[]
   workspaces Workspace[]
   cards      Card[]
   tools      Tool[]
+  roadmaps   Roadmap[]
 }
 
 model Session {
@@ -40,10 +41,11 @@ model Workspace {
   updatedAt   DateTime @updatedAt
   ownerId     String
 
-  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  columns Column[]
-  cards   Card[]
-  tools   Tool[]
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  columns  Column[]
+  cards    Card[]
+  tools    Tool[]
+  roadmap Roadmap?
 
   @@index([ownerId])
 }
@@ -111,6 +113,45 @@ model Tool {
 
   @@index([ownerId])
   @@index([workspaceId])
+}
+
+model Roadmap {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId     String
+  workspaceId String   @unique
+
+  title       String
+  sourceText  String?  @db.LongText
+
+  owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  nodes     RoadmapNode[]
+
+  @@index([ownerId])
+}
+
+model RoadmapNode {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roadmapId String
+  parentId  String?  // null => root node
+
+  order     Int      @default(0)
+  title     String
+  done      Boolean  @default(false)
+
+  roadmap  Roadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  parent   RoadmapNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children RoadmapNode[] @relation("NodeTree")
+
+  @@index([roadmapId])
+  @@index([parentId])
+  @@index([roadmapId, parentId, order])
 }
 
 enum CardType {

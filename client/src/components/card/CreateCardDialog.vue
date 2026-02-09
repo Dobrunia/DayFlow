@@ -425,26 +425,32 @@ async function handleSubmit() {
               </div>
 
               <!-- Learning Status -->
-              <div v-if="isEditMode">
-                <label class="block text-sm font-medium mb-2">Статус обучения</label>
-                <div class="flex flex-col gap-1 bg-fg/10 rounded-[var(--r)] p-1">
+              <div v-if="isEditMode" role="radiogroup" aria-label="Статус обучения">
+                <p class="block text-sm font-medium mb-2">Статус обучения</p>
+                <div class="flex flex-col gap-0.5">
                   <button
                     type="button"
-                    class="mode-tab w-full justify-start px-3 py-2"
-                    :class="form.learningStatus.value === null && 'active'"
+                    class="flex items-center gap-2 px-3 py-2 rounded-[var(--r)] text-sm text-left transition-colors"
+                    :class="form.learningStatus.value === null ? 'bg-fg/10 text-fg font-medium' : 'hover:bg-fg/5 text-muted'"
                     @click="form.learningStatus.value = null"
                   >
-                    <span>Нет</span>
+                    <span class="w-4 h-4 rounded-full border-2 shrink-0 flex-center" :class="form.learningStatus.value === null ? 'border-primary bg-primary' : 'border-fg/20'">
+                      <span v-if="form.learningStatus.value === null" class="i-lucide-check text-[10px] text-white" />
+                    </span>
+                    <span>Обычная</span>
                   </button>
                   <button
                     v-for="s in learningStatuses"
                     :key="s.value"
                     type="button"
-                    class="mode-tab w-full justify-start px-3 py-2"
-                    :class="form.learningStatus.value === s.value && 'active'"
+                    class="flex items-center gap-2 px-3 py-2 rounded-[var(--r)] text-sm text-left transition-colors"
+                    :class="form.learningStatus.value === s.value ? 'bg-fg/10 text-fg font-medium' : 'hover:bg-fg/5 text-muted'"
                     @click="form.learningStatus.value = s.value"
                   >
-                    <span :class="s.icon" />
+                    <span class="w-4 h-4 rounded-full border-2 shrink-0 flex-center" :class="form.learningStatus.value === s.value ? 'border-primary bg-primary' : 'border-fg/20'">
+                      <span v-if="form.learningStatus.value === s.value" class="i-lucide-check text-[10px] text-white" />
+                    </span>
+                    <span :class="[s.icon, s.color]" />
                     <span>{{ s.label }}</span>
                   </button>
                 </div>

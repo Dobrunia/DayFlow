@@ -36,7 +36,14 @@ const cardActions = useCardActions(toRef(props, 'card'), {
   onDeleted: (cardId) => emit('deleted', cardId),
 });
 
-const { isEditing: isEditingTitle, editTitle, inputRef: titleInputRef, startEdit: startEditTitle, saveEdit: saveEditTitle, cancelEdit: cancelEditTitle } = useInlineEdit(
+const {
+  isEditing: isEditingTitle,
+  editTitle,
+  inputRef: titleInputRef,
+  startEdit: startEditTitle,
+  saveEdit: saveEditTitle,
+  cancelEdit: cancelEditTitle,
+} = useInlineEdit(
   titleContainerRef,
   () => props.card.title ?? '',
   async (newTitle) => {
@@ -57,7 +64,7 @@ const typeIcon = computed(() => {
     case CARD_TYPES.NOTE:
       return 'i-lucide-file-text';
     case CARD_TYPES.LINK:
-      return 'i-lucide-external-link';// тут важно имонно external!!!
+      return 'i-lucide-external-link'; // тут важно имонно external!!!
     case CARD_TYPES.CHECKLIST:
       return 'i-lucide-check-square';
     default:
@@ -92,15 +99,17 @@ function handleDeleteFromDialog() {
       title="Редактировать"
       @click="showEditDialog = true"
     >
-      <span class="i-lucide-edit-2" />
+      <span class="i-lucide-pencil" />
     </button>
 
     <div
       class="card"
       :class="[
         { 'opacity-60': card.done },
-        !static && (columnId || (isBacklog && card.workspaceId != null)) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
-        isCollapsed && 'pb-2'
+        !static && (columnId || (isBacklog && card.workspaceId != null))
+          ? 'cursor-grab active:cursor-grabbing'
+          : 'cursor-default',
+        isCollapsed && 'pb-2',
       ]"
     >
       <div class="flex items-center gap-2 p-3 pb-0">
@@ -108,7 +117,11 @@ function handleDeleteFromDialog() {
           type="button"
           @click="cardActions.toggleDone()"
           class="w-4 h-4 rounded flex-center border transition-colors shrink-0"
-          :class="card.done ? 'bg-success border-success text-on-primary' : 'border-border hover:border-success'"
+          :class="
+            card.done
+              ? 'bg-success border-success text-on-primary'
+              : 'border-border hover:border-success'
+          "
         >
           <span v-if="card.done" class="i-lucide-check text-xs" />
         </button>
@@ -147,57 +160,56 @@ function handleDeleteFromDialog() {
         </div>
       </div>
 
-    <template v-if="parsed && !isCollapsed">
-      <CardNote
-        v-if="parsed.type === CARD_TYPES.NOTE"
-        :title="card.title ?? null"
-        :done="card.done"
-        :payload="parsed.payload"
-        :editable-summary="true"
-        @update-summary="cardActions.updateSummary"
-      />
-      <CardLink
-        v-else-if="parsed.type === CARD_TYPES.LINK"
-        :title="card.title ?? null"
-        :done="card.done"
-        :payload="parsed.payload"
-        :editable-summary="true"
-        @update-summary="cardActions.updateSummary"
-      />
-      <CardChecklist
-        v-else-if="parsed.type === CARD_TYPES.CHECKLIST"
-        :title="card.title ?? null"
-        :done="card.done"
-        :payload="parsed.payload"
-        :editable-summary="true"
-        @toggle-item="cardActions.toggleChecklistItem"
-        @update-summary="cardActions.updateSummary"
-      />
-    </template>
+      <template v-if="parsed && !isCollapsed">
+        <CardNote
+          v-if="parsed.type === CARD_TYPES.NOTE"
+          :title="card.title ?? null"
+          :done="card.done"
+          :payload="parsed.payload"
+          :editable-summary="true"
+          @update-summary="cardActions.updateSummary"
+        />
+        <CardLink
+          v-else-if="parsed.type === CARD_TYPES.LINK"
+          :title="card.title ?? null"
+          :done="card.done"
+          :payload="parsed.payload"
+          :editable-summary="true"
+          @update-summary="cardActions.updateSummary"
+        />
+        <CardChecklist
+          v-else-if="parsed.type === CARD_TYPES.CHECKLIST"
+          :title="card.title ?? null"
+          :done="card.done"
+          :payload="parsed.payload"
+          :editable-summary="true"
+          @toggle-item="cardActions.toggleChecklistItem"
+          @update-summary="cardActions.updateSummary"
+        />
+      </template>
 
-    <div v-if="linkUrl && !isCollapsed" class="flex items-center gap-2 px-3 pb-2 pt-1">
-      <a
-        :href="linkUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-xs text-primary hover:underline flex items-center gap-1"
-        title="Перейти по ссылке"
-      >
-        <span>Перейти</span>
-        <span :class="typeIcon" class="shrink-0" />
-      </a>
-    </div>
+      <div v-if="linkUrl && !isCollapsed" class="flex items-center gap-2 px-3 pb-2 pt-1">
+        <a
+          :href="linkUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-xs text-primary hover:underline flex items-center gap-1"
+          title="Перейти по ссылке"
+        >
+          <span>Перейти</span>
+          <span :class="typeIcon" class="shrink-0" />
+        </a>
+      </div>
 
-    <div v-if="isCollapsed" class="px-3 pt-0 text-center">
-      <button
-        type="button"
-        @click="isCollapsed = false"
-        class="text-xs text-muted hover:text-fg transition-colors w-full py-1 border-t border-border mt-2"
-      >
-        Развернуть
-      </button>
-    </div>
-
+      <div v-if="isCollapsed" class="px-3 pt-0 text-center">
+        <button
+          type="button"
+          @click="isCollapsed = false"
+          class="text-xs text-muted hover:text-fg transition-colors w-full py-1 border-t border-border mt-2"
+        >
+          Развернуть
+        </button>
+      </div>
     </div>
 
     <CreateCardDialog

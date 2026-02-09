@@ -23,6 +23,8 @@ type Workspace {
   backlog: [Card!]!
   """Инструменты воркспейса."""
   tools: [Tool!]!
+  """Роадмап воркспейса (один на воркспейс)."""
+  roadmap: Roadmap
 }
 
 type Column {
@@ -78,6 +80,29 @@ type Tool {
   tags: [String!]!
   owner: User!
   workspace: Workspace
+}
+
+type Roadmap {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  ownerId: ID!
+  workspaceId: ID!
+  title: String!
+  sourceText: String
+  nodes: [RoadmapNode!]!
+}
+
+type RoadmapNode {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  roadmapId: ID!
+  parentId: ID
+  order: Int!
+  title: String!
+  done: Boolean!
+  children: [RoadmapNode!]!
 }
 
 type AuthPayload {
@@ -182,6 +207,9 @@ type Query {
   tools(workspaceId: ID): [Tool!]!
   """Все инструменты пользователя (все воркспейсы + хаб)."""
   allTools: [Tool!]!
+
+  """Роадмап воркспейса (один на воркспейс)."""
+  roadmap(workspaceId: ID!): Roadmap
 }
 
 # Mutations
@@ -215,4 +243,12 @@ type Mutation {
   createTool(input: CreateToolInput!): Tool!
   updateTool(id: ID!, input: UpdateToolInput!): Tool!
   deleteTool(id: ID!): Boolean!
+
+  # Roadmap
+  createRoadmap(workspaceId: ID!, title: String!, sourceText: String): Roadmap!
+  deleteRoadmap(id: ID!): Boolean!
+  createRoadmapNode(roadmapId: ID!, parentId: ID, title: String!): RoadmapNode!
+  updateRoadmapNode(id: ID!, title: String, done: Boolean): RoadmapNode!
+  deleteRoadmapNode(id: ID!): Boolean!
+  reorderRoadmapNodes(roadmapId: ID!, parentId: ID, nodeIds: [ID!]!): [RoadmapNode!]!
 }

@@ -16,9 +16,9 @@ export default defineConfig({
       scale: 1,
       warn: true,
       extraProperties: {
-        'display': 'block',
-        'width': '1.2em',
-        'height': '1.2em',
+        display: 'block',
+        width: '1.2em',
+        height: '1.2em',
         'flex-shrink': '0',
       },
       collections: {
@@ -203,7 +203,6 @@ export default defineConfig({
     'i-lucide-x',
     'i-lucide-check',
     'i-lucide-trash-2',
-    'i-lucide-edit-2',
     'i-lucide-log-out',
     'i-lucide-user',
     'i-lucide-folder',
@@ -226,6 +225,17 @@ export default defineConfig({
     'text-ls-repeat',
     'text-ls-questions',
     'text-ls-deepen',
+    // workspace layout & roadmap
+    'i-lucide-columns-3',
+    'i-lucide-map',
+    'i-lucide-clipboard-paste',
+    'i-lucide-sparkles',
+    'i-lucide-pencil',
+    'i-lucide-copy',
+    'i-lucide-download',
+    'i-lucide-chevron-right',
+    'i-lucide-box',
+    'i-lucide-layout-grid',
   ],
 });
 // Правило, которое остановит рост “100 видов одного”
@@ -261,7 +271,6 @@ export default defineConfig({
 //   'btn-delete': 'btn-danger',
 // }
 
-
 // Использование:
 
 // <button class="btn-delete">Удалить</button>
@@ -277,7 +286,6 @@ export default defineConfig({
 // → ты меняешь один shortcut
 
 // 'btn-delete': 'btn-ghost text-danger hover:bg-danger/10',
-
 
 // и всё приложение обновилось.
 
@@ -296,18 +304,15 @@ export default defineConfig({
 // 1. Не хардкодить в шаблонах
 // <button class="btn bg-danger text-white hover:bg-danger/90">
 
-
 // ❌ через месяц таких будет 12 разных
 
 // 2. Не пихать “удаление” в базовый btn
 // btn: '... hover:bg-danger'
 
-
 // ❌ разрушает систему
 
 // 3. Не делать page-specific shortcut
 // 'delete-task-btn': '...'
-
 
 // ❌ завтра появится delete-note, delete-workspace…
 
@@ -339,7 +344,6 @@ export default defineConfig({
 // icon-btn-edit
 // icon-btn-close
 
-
 // Если их становится 15+ — значит роли размылись.
 
 // Если хочешь жёсткую дисциплину (pro-уровень)
@@ -353,6 +357,5 @@ export default defineConfig({
 
 // <!-- ✅ -->
 // <button class="btn-delete">Удалить</button>
-
 
 // Это очень хорошо держит дизайн в узде.

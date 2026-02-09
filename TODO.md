@@ -22,7 +22,6 @@
 
 ## На далекое будущее
 
-- roadmap
 - загрузка фото из буфера в виде карточки (яндекс диск)
 - AI-саммари — автоматическое резюме по карточке
   - AI-саммари конкретно по ссылке пишет в конспект (карточка типа ссылка) кнопка получить краткую выжимку
@@ -39,47 +38,4 @@
 
 ### брейншторм с gpt
 
-
 ### Разбор конкретной фичи
-
-Roadmap
-
-- вставляется текстом
-- есть готовый промпт (который можно скопировать и llm выдаст текст готовый к вставке) (на фронте только)
-- можно отмечать любую ноду как выполненую
-- можно удалять ноду (дочерние удаляются каскадом)
-- можно редактировать - открывается окно с текстом
-
-Вот неполная дб схема, думаю эти поля будут нужны
-model Roadmap {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  ownerId     String
-  workspaceId String - думаю лучше сделать обязательным тк Roadmap жестко привязан к workspace
-
-  title       String
-
-  // Исходный текст, который пользователь вставил (полезно хранить)
-  sourceText  String?  @db.LongText
-  nodes RoadmapNode[]
-}
-
-model RoadmapNode {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  roadmapId String
-  parentId  String?   // null =>  одна из корневых нод
-
-  // порядок среди siblings (детей одного parentId)
-  order     Int @default(0)
-
-  title     String
-  done      Boolean  @default(false)
-}
-
-в UI тк Roadmap жестко прявязан к воркспейсу
-давай в воркспейсе добавим новый вид отображения (Колонки/Дорожная карта) будем использовать стили mode-tabs. А сами кнопки находиться будут в той строке где сейчас описание только справа. Думаю стандартный роут /workspace/:id показывает колонки а например /workspace/:id/roadmap уже новый вью

@@ -193,3 +193,48 @@ export const ALL_TOOLS_QUERY = gql`
     }
   }
 `;
+
+export const ROADMAP_QUERY = gql`
+  query Roadmap($workspaceId: ID!) {
+    roadmap(workspaceId: $workspaceId) {
+      id
+      createdAt
+      updatedAt
+      title
+      sourceText
+      workspaceId
+      nodes {
+        id
+        roadmapId
+        parentId
+        order
+        title
+        done
+        children {
+          id
+          roadmapId
+          parentId
+          order
+          title
+          done
+          children {
+            id
+            roadmapId
+            parentId
+            order
+            title
+            done
+            children {
+              id
+              roadmapId
+              parentId
+              order
+              title
+              done
+            }
+          }
+        }
+      }
+    }
+  }
+`;

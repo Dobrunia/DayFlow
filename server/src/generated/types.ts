@@ -104,14 +104,19 @@ export type Mutation = {
   __typename?: 'Mutation';
   createCard: Card;
   createColumn: Column;
+  createRoadmap: Roadmap;
+  createRoadmapNode: RoadmapNode;
   createTool: Tool;
   createWorkspace: Workspace;
   deleteCard: Scalars['Boolean']['output'];
   deleteColumn: Scalars['Boolean']['output'];
+  deleteRoadmap: Scalars['Boolean']['output'];
+  deleteRoadmapNode: Scalars['Boolean']['output'];
   deleteTool: Scalars['Boolean']['output'];
   deleteWorkspace: Scalars['Boolean']['output'];
   moveCard: Card;
   reorderColumns: Array<Column>;
+  reorderRoadmapNodes: Array<RoadmapNode>;
   signIn: AuthPayload;
   signOut: Scalars['Boolean']['output'];
   signUp: AuthPayload;
@@ -119,6 +124,7 @@ export type Mutation = {
   updateCard: Card;
   updateColumn: Column;
   updateProfile: User;
+  updateRoadmapNode: RoadmapNode;
   updateTool: Tool;
   updateWorkspace: Workspace;
 };
@@ -132,6 +138,20 @@ export type MutationCreateCardArgs = {
 export type MutationCreateColumnArgs = {
   title: Scalars['String']['input'];
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateRoadmapArgs = {
+  sourceText?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateRoadmapNodeArgs = {
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  roadmapId: Scalars['ID']['input'];
+  title: Scalars['String']['input'];
 };
 
 
@@ -151,6 +171,16 @@ export type MutationDeleteCardArgs = {
 
 
 export type MutationDeleteColumnArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteRoadmapArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteRoadmapNodeArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -175,6 +205,13 @@ export type MutationMoveCardArgs = {
 export type MutationReorderColumnsArgs = {
   columnIds: Array<Scalars['ID']['input']>;
   workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationReorderRoadmapNodesArgs = {
+  nodeIds: Array<Scalars['ID']['input']>;
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  roadmapId: Scalars['ID']['input'];
 };
 
 
@@ -213,6 +250,13 @@ export type MutationUpdateProfileArgs = {
 };
 
 
+export type MutationUpdateRoadmapNodeArgs = {
+  done?: InputMaybe<Scalars['Boolean']['input']>;
+  id: Scalars['ID']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type MutationUpdateToolArgs = {
   id: Scalars['ID']['input'];
   input: UpdateToolInput;
@@ -235,6 +279,8 @@ export type Query = {
   cardsCount: Scalars['Int']['output'];
   me?: Maybe<User>;
   myWorkspaces: Array<Workspace>;
+  /** Роадмап воркспейса (один на воркспейс). */
+  roadmap?: Maybe<Roadmap>;
   /** Инструменты пользователя (хаб: workspaceId = null). */
   tools: Array<Tool>;
   /** Публичная статистика пользователя по id (любой авторизованный может запросить). */
@@ -261,6 +307,11 @@ export type QueryCardsCountArgs = {
 };
 
 
+export type QueryRoadmapArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type QueryToolsArgs = {
   workspaceId?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -273,6 +324,31 @@ export type QueryUserStatsArgs = {
 
 export type QueryWorkspaceArgs = {
   id: Scalars['ID']['input'];
+};
+
+export type Roadmap = {
+  __typename?: 'Roadmap';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  nodes: Array<RoadmapNode>;
+  ownerId: Scalars['ID']['output'];
+  sourceText?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  workspaceId: Scalars['ID']['output'];
+};
+
+export type RoadmapNode = {
+  __typename?: 'RoadmapNode';
+  children: Array<RoadmapNode>;
+  createdAt: Scalars['DateTime']['output'];
+  done: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  order: Scalars['Int']['output'];
+  parentId?: Maybe<Scalars['ID']['output']>;
+  roadmapId: Scalars['ID']['output'];
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type Tool = {
@@ -347,6 +423,8 @@ export type Workspace = {
   id: Scalars['ID']['output'];
   owner: User;
   pinned: Scalars['Boolean']['output'];
+  /** Роадмап воркспейса (один на воркспейс). */
+  roadmap?: Maybe<Roadmap>;
   title: Scalars['String']['output'];
   /** Инструменты воркспейса. */
   tools: Array<Tool>;
@@ -453,6 +531,8 @@ export type ResolversTypes = ResolversObject<{
   LearningStatus: LearningStatus;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
+  Roadmap: ResolverTypeWrapper<Roadmap>;
+  RoadmapNode: ResolverTypeWrapper<RoadmapNode>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Tool: ResolverTypeWrapper<Omit<Tool, 'owner' | 'workspace'> & { owner: ResolversTypes['User'], workspace?: Maybe<ResolversTypes['Workspace']> }>;
   UpdateCardInput: UpdateCardInput;
@@ -479,6 +559,8 @@ export type ResolversParentTypes = ResolversObject<{
   Int: Scalars['Int']['output'];
   Mutation: Record<PropertyKey, never>;
   Query: Record<PropertyKey, never>;
+  Roadmap: Roadmap;
+  RoadmapNode: RoadmapNode;
   String: Scalars['String']['output'];
   Tool: Omit<Tool, 'owner' | 'workspace'> & { owner: ResolversParentTypes['User'], workspace?: Maybe<ResolversParentTypes['Workspace']> };
   UpdateCardInput: UpdateCardInput;
@@ -530,14 +612,19 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
 export type MutationResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
   createCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationCreateCardArgs, 'input'>>;
   createColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationCreateColumnArgs, 'title' | 'workspaceId'>>;
+  createRoadmap?: Resolver<ResolversTypes['Roadmap'], ParentType, ContextType, RequireFields<MutationCreateRoadmapArgs, 'title' | 'workspaceId'>>;
+  createRoadmapNode?: Resolver<ResolversTypes['RoadmapNode'], ParentType, ContextType, RequireFields<MutationCreateRoadmapNodeArgs, 'roadmapId' | 'title'>>;
   createTool?: Resolver<ResolversTypes['Tool'], ParentType, ContextType, RequireFields<MutationCreateToolArgs, 'input'>>;
   createWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationCreateWorkspaceArgs, 'input'>>;
   deleteCard?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCardArgs, 'id'>>;
   deleteColumn?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteColumnArgs, 'id'>>;
+  deleteRoadmap?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteRoadmapArgs, 'id'>>;
+  deleteRoadmapNode?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteRoadmapNodeArgs, 'id'>>;
   deleteTool?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteToolArgs, 'id'>>;
   deleteWorkspace?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteWorkspaceArgs, 'id'>>;
   moveCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationMoveCardArgs, 'id' | 'order'>>;
   reorderColumns?: Resolver<Array<ResolversTypes['Column']>, ParentType, ContextType, RequireFields<MutationReorderColumnsArgs, 'columnIds' | 'workspaceId'>>;
+  reorderRoadmapNodes?: Resolver<Array<ResolversTypes['RoadmapNode']>, ParentType, ContextType, RequireFields<MutationReorderRoadmapNodesArgs, 'nodeIds' | 'roadmapId'>>;
   signIn?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignInArgs, 'email' | 'password'>>;
   signOut?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   signUp?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'email' | 'password'>>;
@@ -545,6 +632,7 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
   updateCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationUpdateCardArgs, 'id' | 'input'>>;
   updateColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationUpdateColumnArgs, 'id'>>;
   updateProfile?: Resolver<ResolversTypes['User'], ParentType, ContextType, Partial<MutationUpdateProfileArgs>>;
+  updateRoadmapNode?: Resolver<ResolversTypes['RoadmapNode'], ParentType, ContextType, RequireFields<MutationUpdateRoadmapNodeArgs, 'id'>>;
   updateTool?: Resolver<ResolversTypes['Tool'], ParentType, ContextType, RequireFields<MutationUpdateToolArgs, 'id' | 'input'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'input'>>;
 }>;
@@ -556,9 +644,33 @@ export type QueryResolvers<ContextType = Context, ParentType extends ResolversPa
   cardsCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, Partial<QueryCardsCountArgs>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   myWorkspaces?: Resolver<Array<ResolversTypes['Workspace']>, ParentType, ContextType>;
+  roadmap?: Resolver<Maybe<ResolversTypes['Roadmap']>, ParentType, ContextType, RequireFields<QueryRoadmapArgs, 'workspaceId'>>;
   tools?: Resolver<Array<ResolversTypes['Tool']>, ParentType, ContextType, Partial<QueryToolsArgs>>;
   userStats?: Resolver<Maybe<ResolversTypes['UserStats']>, ParentType, ContextType, RequireFields<QueryUserStatsArgs, 'userId'>>;
   workspace?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceArgs, 'id'>>;
+}>;
+
+export type RoadmapResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Roadmap'] = ResolversParentTypes['Roadmap']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  nodes?: Resolver<Array<ResolversTypes['RoadmapNode']>, ParentType, ContextType>;
+  ownerId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  sourceText?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  workspaceId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+}>;
+
+export type RoadmapNodeResolvers<ContextType = Context, ParentType extends ResolversParentTypes['RoadmapNode'] = ResolversParentTypes['RoadmapNode']> = ResolversObject<{
+  children?: Resolver<Array<ResolversTypes['RoadmapNode']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  done?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  order?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  parentId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  roadmapId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
 }>;
 
 export type ToolResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Tool'] = ResolversParentTypes['Tool']> = ResolversObject<{
@@ -601,6 +713,7 @@ export type WorkspaceResolvers<ContextType = Context, ParentType extends Resolve
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   owner?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   pinned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  roadmap?: Resolver<Maybe<ResolversTypes['Roadmap']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tools?: Resolver<Array<ResolversTypes['Tool']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
@@ -622,6 +735,8 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Roadmap?: RoadmapResolvers<ContextType>;
+  RoadmapNode?: RoadmapNodeResolvers<ContextType>;
   Tool?: ToolResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   UserStats?: UserStatsResolvers<ContextType>;

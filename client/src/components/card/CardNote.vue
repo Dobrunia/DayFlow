@@ -20,7 +20,9 @@ function copyContent() {
   navigator.clipboard.writeText(props.payload.content ?? '').then(() => {
     copied.value = true;
     toast.success('Текст скопирован');
-    setTimeout(() => { copied.value = false; }, 2000);
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
   });
 }
 
@@ -57,14 +59,8 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
     <div v-if="payload.content" class="mt-2">
       <div class="flex items-start gap-1">
         <div class="flex-1 min-w-0">
-          <p
-            class="text-xs text-muted whitespace-pre-wrap line-clamp-3"
-            v-html="contentHtml"
-          />
-          <p
-            v-if="hasLongContent"
-            class="text-xs text-muted mt-0.5"
-          >
+          <p class="text-xs text-muted whitespace-pre-wrap line-clamp-3" v-html="contentHtml" />
+          <p v-if="hasLongContent" class="text-xs text-muted mt-0.5">
             <span class="opacity-80">… </span><span class="font-medium">ещё</span>
           </p>
         </div>
@@ -87,9 +83,7 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
           class="text-xs text-muted/80 leading-5 max-h-[200px] overflow-y-auto scrollbar-hide markdown-body"
           v-html="summaryHtml"
         />
-        <p v-else class="text-xs text-muted/50 italic leading-5">
-          Конспект...
-        </p>
+        <p v-else class="text-xs text-muted/50 italic leading-5">Конспект...</p>
         <p v-if="payload.summary && summaryOverflow" class="text-xs text-muted mt-0.5">
           <span class="opacity-80">… </span><span class="font-medium">ещё</span>
         </p>
@@ -100,12 +94,15 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
         class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
         title="Редактировать конспект"
       >
-        <span class="i-lucide-edit-2" />
+        <span class="i-lucide-pencil" />
       </button>
     </div>
     <template v-else-if="payload.summary">
       <div class="mt-3 pt-2 border-t border-border/50">
-        <div class="text-xs text-muted/80 pl-2 border-l-2 border-primary/40 max-h-[400px] overflow-y-auto scrollbar-hide markdown-body" v-html="summaryHtml"></div>
+        <div
+          class="text-xs text-muted/80 pl-2 border-l-2 border-primary/40 max-h-[400px] overflow-y-auto scrollbar-hide markdown-body"
+          v-html="summaryHtml"
+        ></div>
       </div>
     </template>
 
@@ -135,10 +132,7 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
               </DialogClose>
             </div>
           </div>
-          <div
-            class="text-sm text-fg whitespace-pre-wrap break-words mt-2"
-            v-html="contentHtml"
-          />
+          <div class="text-sm text-fg whitespace-pre-wrap break-words mt-2" v-html="contentHtml" />
         </DialogContent>
       </DialogPortal>
     </DialogRoot>

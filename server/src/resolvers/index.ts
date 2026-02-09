@@ -4,6 +4,7 @@ import { columnResolvers } from './column.js';
 import { cardResolvers } from './card.js';
 import { toolResolvers } from './tool.js';
 import { userStatsResolvers } from './user-stats.js';
+import { roadmapResolvers } from './roadmap.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import type { Context } from '../lib/types.js';
 
@@ -16,6 +17,7 @@ export const resolvers = {
     ...cardResolvers.Query,
     ...userStatsResolvers.Query,
     ...toolResolvers.Query,
+    ...roadmapResolvers.Query,
   },
 
   Mutation: {
@@ -24,6 +26,7 @@ export const resolvers = {
     ...columnResolvers.Mutation,
     ...cardResolvers.Mutation,
     ...toolResolvers.Mutation,
+    ...roadmapResolvers.Mutation,
   },
 
   User: {
@@ -38,4 +41,6 @@ export const resolvers = {
   Column: columnResolvers.Column,
   Card: cardResolvers.Card,
   Tool: toolResolvers.Tool,
+  Roadmap: roadmapResolvers.Roadmap,
+  RoadmapNode: roadmapResolvers.RoadmapNode,
 };

@@ -44,17 +44,17 @@ const hasMore = computed(() => items.value.length > showLimit);
 
 <template>
   <div class="p-3 space-y-2">
-    <div
-      v-for="(item, index) in visibleItems"
-      :key="item.id"
-      class="flex items-center gap-2"
-    >
+    <div v-for="(item, index) in visibleItems" :key="item.id" class="flex items-center gap-2">
       <button
         v-if="!disabled"
         type="button"
         @click="emit('toggleItem', index)"
         class="w-3.5 h-3.5 rounded flex-center border transition-colors shrink-0"
-        :class="item.done ? 'bg-success border-success text-on-primary' : 'border-border hover:border-success'"
+        :class="
+          item.done
+            ? 'bg-success border-success text-on-primary'
+            : 'border-border hover:border-success'
+        "
       >
         <span v-if="item.done" class="i-lucide-check text-[10px]" />
       </button>
@@ -102,9 +102,7 @@ const hasMore = computed(() => items.value.length > showLimit);
           class="text-xs text-muted/80 max-h-[200px] overflow-y-auto scrollbar-hide markdown-body"
           v-html="summaryHtml"
         />
-        <p v-else class="text-xs text-muted/50 italic">
-          Конспект...
-        </p>
+        <p v-else class="text-xs text-muted/50 italic">Конспект...</p>
       </div>
       <button
         type="button"
@@ -112,12 +110,15 @@ const hasMore = computed(() => items.value.length > showLimit);
         class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
         title="Редактировать конспект"
       >
-        <span class="i-lucide-edit-2" />
+        <span class="i-lucide-pencil" />
       </button>
     </div>
     <template v-else-if="payload.summary">
       <div class="mt-3 pt-2 border-t border-border/50">
-        <div class="text-xs text-muted/80 pl-2 border-l-2 border-primary/40 max-h-[400px] overflow-y-auto scrollbar-hide markdown-body" v-html="summaryHtml"></div>
+        <div
+          class="text-xs text-muted/80 pl-2 border-l-2 border-primary/40 max-h-[400px] overflow-y-auto scrollbar-hide markdown-body"
+          v-html="summaryHtml"
+        ></div>
       </div>
     </template>
 

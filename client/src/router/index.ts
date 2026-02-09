@@ -36,9 +36,24 @@ const router = createRouter({
     },
     {
       path: '/workspace/:id',
-      name: 'workspace',
-      component: () => import('@/views/WorkspaceView.vue'),
+      component: () => import('@/views/workspace/WorkspaceLayout.vue'),
       meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          redirect: (to) => ({ name: 'workspace-board', params: to.params }),
+        },
+        {
+          path: 'board',
+          name: 'workspace-board',
+          component: () => import('@/views/workspace/BoardView.vue'),
+        },
+        {
+          path: 'roadmap',
+          name: 'workspace-roadmap',
+          component: () => import('@/views/workspace/RoadmapView.vue'),
+        },
+      ],
     },
     {
       path: '/profile',

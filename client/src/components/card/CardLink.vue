@@ -30,9 +30,7 @@ const summaryHtml = computed(() => renderMarkdown(props.payload.summary ?? ''));
           class="text-xs text-muted/80 max-h-[200px] overflow-y-auto scrollbar-hide markdown-body"
           v-html="summaryHtml"
         />
-        <p v-else class="text-xs text-muted/50 italic">
-          Конспект...
-        </p>
+        <p v-else class="text-xs text-muted/50 italic">Конспект...</p>
       </div>
       <button
         type="button"
@@ -40,11 +38,14 @@ const summaryHtml = computed(() => renderMarkdown(props.payload.summary ?? ''));
         class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
         title="Редактировать конспект"
       >
-        <span class="i-lucide-edit-2" />
+        <span class="i-lucide-pencil" />
       </button>
     </div>
     <template v-else-if="payload.summary">
-      <div class="text-xs text-muted/80 mt-2 pl-2 border-l-2 border-primary/40 max-h-[400px] overflow-y-auto scrollbar-hide markdown-body" v-html="summaryHtml"></div>
+      <div
+        class="text-xs text-muted/80 mt-2 pl-2 border-l-2 border-primary/40 max-h-[400px] overflow-y-auto scrollbar-hide markdown-body"
+        v-html="summaryHtml"
+      ></div>
     </template>
     <template v-else>
       <p class="text-xs text-muted/50 italic mt-2 pl-2 border-l-2 border-primary/40">Конспект...</p>

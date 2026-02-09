@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, ref, watch, nextTick, provide } from 'vue';
+import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
-import { LIMITS } from 'dayflow-shared';
 import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
-import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
 import ToolboxPanel from '@/components/toolbox/ToolboxPanel.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
-import type { Column } from '@/graphql/types';
 import {
   DialogRoot,
   DialogPortal,
@@ -22,51 +19,41 @@ const route = useRoute();
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
 
-const columnsContainer = ref<HTMLElement | null>(null);
-
-function handleWheel(e: WheelEvent) {
-  const target = e.target as HTMLElement;
-  // Если курсор внутри вертикально скроллящегося контейнера — не перехватываем
-  const scrollableParent = target.closest('.overflow-y-auto, .overflow-auto');
-  if (scrollableParent && scrollableParent !== columnsContainer.value) return;
-
-  if (!columnsContainer.value || e.deltaY === 0) return;
-  e.preventDefault();
-  columnsContainer.value.scrollLeft += e.deltaY;
-}
-
 const isEditing = ref(false);
 const editTitle = ref('');
-const showSummariesModal = ref(false);
 const showEditModal = ref(false);
-const showToolbox = ref(false);
 const editModalTitle = ref('');
 const editModalDescription = ref('');
 const editModalLoading = ref(false);
-const cardSearch = ref('');
 const titleInputRef = ref<HTMLInputElement | null>(null);
+
+// Board-specific state (lives here so search stays in the original header)
+const cardSearch = ref('');
+const showSummariesModal = ref(false);
+const showToolbox = ref(false);
+
+// Provide cardSearch to child routes (WorkspaceView needs it)
+provide('cardSearch', cardSearch);
 
 const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
+const loading = computed(() => workspaceStore.loading);
 const columns = computed(() => workspace.value?.columns ?? []);
 const backlogCards = computed(() => workspace.value?.backlog ?? []);
 const tools = computed(() => workspace.value?.tools ?? []);
 
-const backlogColumn = computed(() => ({
-  id: 'backlog',
-  title: 'Беклог',
-  order: -1,
-  cards: [] as never[],
-} as unknown as Column));
+const currentMode = computed(() => {
+  const name = route.name as string;
+  if (name === 'workspace-roadmap') return 'roadmap';
+  return 'board';
+});
 
-const loading = computed(() => workspaceStore.loading);
+const isBoardRoute = computed(() => currentMode.value === 'board');
 
 watch(
   workspaceId,
   (id) => {
-    if (id) {
-      workspaceStore.fetchWorkspace(id);
-    }
+    if (id) workspaceStore.fetchWorkspace(id);
   },
   { immediate: true }
 );
@@ -84,20 +71,9 @@ async function saveTitle() {
     isEditing.value = false;
     return;
   }
-
   try {
     await workspaceStore.updateWorkspace(workspace.value.id, { title: editTitle.value.trim() });
     isEditing.value = false;
-  } catch (e) {
-    toast.error(getGraphQLErrorMessage(e));
-  }
-}
-
-async function addColumn() {
-  if (!workspace.value) return;
-
-  try {
-    await workspaceStore.createColumn(workspace.value.id, 'Новая колонка');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -126,7 +102,6 @@ async function saveWorkspaceEdit() {
     toast.error('Введите название воркспейса');
     return;
   }
-
   try {
     editModalLoading.value = true;
     await workspaceStore.updateWorkspace(workspace.value.id, {
@@ -144,10 +119,8 @@ async function saveWorkspaceEdit() {
 
 async function deleteWorkspace() {
   if (!workspace.value) return;
-
   const wsTitle = workspace.value.title;
   showEditModal.value = false;
-
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
     router.push('/');
@@ -163,9 +136,7 @@ async function deleteWorkspace() {
                 router.push(`/workspace/${newId}`);
               }
             })
-            .catch((e) => {
-              toast.error(getGraphQLErrorMessage(e));
-            });
+            .catch((e) => toast.error(getGraphQLErrorMessage(e)));
         },
       },
     });
@@ -174,56 +145,39 @@ async function deleteWorkspace() {
   }
 }
 
-// Собираем все конспекты из карточек воркспейса
+// Summaries (board-specific but in header)
 const allSummaries = computed(() => {
   if (!workspace.value) return [];
-
   const summaries: { cardTitle: string; columnTitle: string; summary: string }[] = [];
-
-  // Беклог
   for (const card of backlogCards.value) {
     const payload =
       typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
     const summary = (payload as { summary?: string })?.summary?.trim();
-    if (summary) {
-      summaries.push({
-        cardTitle: card.title || '(без названия)',
-        columnTitle: 'Беклог',
-        summary,
-      });
-    }
+    if (summary)
+      summaries.push({ cardTitle: card.title || '(без названия)', columnTitle: 'Беклог', summary });
   }
-
-  // Колонки
   for (const col of columns.value) {
     for (const card of col.cards ?? []) {
       const payload =
         typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
       const summary = (payload as { summary?: string })?.summary?.trim();
-      if (summary) {
+      if (summary)
         summaries.push({
           cardTitle: card.title || '(без названия)',
           columnTitle: col.title,
           summary,
         });
-      }
     }
   }
-
   return summaries;
 });
 
 const summariesText = computed(() => {
   if (!workspace.value) return '';
-
   let text = `# ${workspace.value.title}\n\n`;
-
   for (const item of allSummaries.value) {
-    text += `## ${item.cardTitle}\n`;
-    text += `> ${item.columnTitle}\n\n`;
-    text += `${item.summary}\n\n---\n\n`;
+    text += `## ${item.cardTitle}\n> ${item.columnTitle}\n\n${item.summary}\n\n---\n\n`;
   }
-
   return text.trim();
 });
 
@@ -236,7 +190,6 @@ function copySummaries() {
 
 function downloadSummaries() {
   if (!workspace.value) return;
-
   const blob = new Blob([summariesText.value], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -246,7 +199,6 @@ function downloadSummaries() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-
   toast.success('Файл скачан');
 }
 </script>
@@ -260,7 +212,7 @@ function downloadSummaries() {
 
     <!-- Workspace Content -->
     <template v-else-if="workspace">
-      <!-- Header -->
+      <!-- Original Header (untouched) -->
       <div class="flex-shrink-0 px-6 py-2">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 shrink-0">
@@ -270,15 +222,12 @@ function downloadSummaries() {
               class="inline-flex items-center gap-1 text-link hover:underline underline-offset-3"
             >
               <span class="i-lucide-arrow-left" />
-              <span>Назад</span>
+              <span>Воркспейсы</span>
             </RouterLink>
 
             <!-- Workspace icon (click to change) -->
             <div class="relative shrink-0">
-              <EmojiPickerPopover
-                :model-value="workspace.icon || ''"
-                @update:model-value="setIcon"
-              >
+              <EmojiPickerPopover :model-value="workspace.icon || ''" @update:model-value="setIcon">
                 <button
                   type="button"
                   class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
@@ -312,95 +261,94 @@ function downloadSummaries() {
             </h1>
           </div>
 
-          <!-- Search + Actions -->
+          <!-- Search + Actions (same as original) -->
           <div class="flex items-center gap-3">
-            <div class="relative">
-              <span
-                class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-muted text-sm pointer-events-none"
-              />
-              <input
-                v-model="cardSearch"
-                type="text"
-                placeholder="Поиск карточек..."
-                class="input pl-8 pr-8 h-9 w-48 text-sm"
-              />
+            <template v-if="isBoardRoute">
+              <div class="relative">
+                <span
+                  class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-muted text-sm pointer-events-none"
+                />
+                <input
+                  v-model="cardSearch"
+                  type="text"
+                  placeholder="Поиск карточек..."
+                  class="input pl-8 pr-8 h-9 w-48 text-sm"
+                />
+                <button
+                  v-if="cardSearch"
+                  type="button"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-fg"
+                  @click="cardSearch = ''"
+                >
+                  <span class="i-lucide-x text-sm" />
+                </button>
+              </div>
               <button
-                v-if="cardSearch"
-                type="button"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-fg"
-                @click="cardSearch = ''"
+                v-if="allSummaries.length > 0"
+                @click="showSummariesModal = true"
+                class="btn-ghost"
+                title="Все конспекты"
               >
-                <span class="i-lucide-x text-sm" />
+                <span class="i-lucide-book-open" />
+                Конспекты
               </button>
-            </div>
-            <button
-              v-if="allSummaries.length > 0"
-              @click="showSummariesModal = true"
-              class="btn-ghost"
-              title="Все конспекты"
-            >
-              <span class="i-lucide-book-open" />
-              Конспекты
-            </button>
 
-            <button
-              @click.stop="showToolbox = !showToolbox"
-              @mousedown.stop
-              class="icon-btn-ghost"
-              :class="{ 'text-primary bg-primary/10': showToolbox }"
-              title="Инструменты"
-            >
-              <span class="i-lucide-box" />
-            </button>
+              <button
+                @click.stop="showToolbox = !showToolbox"
+                @mousedown.stop
+                class="btn-ghost"
+                :class="{ 'text-primary bg-primary/10': showToolbox }"
+                title="Инструменты"
+              >
+                <span class="i-lucide-box" />
+              </button>
+            </template>
 
-            <button @click="openEditModal" class="icon-btn-edit" title="Редактировать воркспейс">
-              <span class="i-lucide-edit-2" />
+            <button @click="openEditModal" class="btn-ghost" title="Редактировать воркспейс">
+              <span class="i-lucide-pencil" />
             </button>
           </div>
         </div>
 
-        <!-- Description -->
-        <p v-if="workspace.description" class="page-desc mt-2">
-          {{ workspace.description }}
-        </p>
-      </div>
+        <!-- Sub-header: Description (left) + Mode tabs (right) -->
+        <div class="flex items-center gap-4 mt-2">
+          <p v-if="workspace.description" class="page-desc flex-1 min-w-0 truncate">
+            {{ workspace.description }}
+          </p>
+          <span v-else class="flex-1" />
 
-      <!-- Backlog + Columns -->
-      <div
-        ref="columnsContainer"
-        class="flex-1 overflow-x-auto overflow-y-hidden workspace-scroll"
-        @wheel="handleWheel"
-      >
-        <div class="h-full flex gap-4 px-6 pb-6" style="min-width: max-content">
-          <WorkspaceColumn
-            :column="backlogColumn"
-            :workspace-id="workspace.id"
-            :backlog-cards="backlogCards"
-            :is-backlog-column="true"
-            :search-query="cardSearch"
-          />
-
-          <WorkspaceColumn
-            v-for="(column, idx) in columns"
-            :key="column.id"
-            :is-first="idx === 0"
-            :is-last="idx === columns.length - 1"
-            :column="column"
-            :workspace-id="workspace.id"
-            :search-query="cardSearch"
-          />
-
-          <!-- Add Column Button -->
-          <button
-            v-if="columns.length < LIMITS.MAX_COLUMNS_PER_WORKSPACE"
-            @click="addColumn"
-            class="shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-[var(--r)] flex-center flex-col gap-2 text-muted hover:text-fg hover:border-fg/30 transition-colors"
-          >
-            <span class="i-lucide-plus text-xl" />
-            <span class="text-sm">Добавить колонку</span>
-          </button>
+          <div class="mode-tabs shrink-0">
+            <RouterLink
+              :to="`/workspace/${workspaceId}/board`"
+              class="mode-tab"
+              active-class="active"
+            >
+              <span class="i-lucide-columns-3 text-sm" />
+              Доска
+            </RouterLink>
+            <RouterLink
+              :to="`/workspace/${workspaceId}/roadmap`"
+              class="mode-tab"
+              active-class="active"
+            >
+              <span class="i-lucide-map text-sm" />
+              Роадмап
+            </RouterLink>
+          </div>
         </div>
       </div>
+
+      <!-- Child route content -->
+      <RouterView />
+
+      <!-- Toolbox Panel (board only) -->
+      <ToolboxPanel
+        v-if="isBoardRoute"
+        :is-open="showToolbox"
+        :workspace-id="workspace.id"
+        :tools="tools"
+        @close="showToolbox = false"
+      />
     </template>
 
     <!-- Not Found -->
@@ -409,14 +357,6 @@ function downloadSummaries() {
       <p class="text-muted">Воркспейс не найден</p>
       <RouterLink to="/" class="btn-primary">На главную</RouterLink>
     </div>
-
-    <!-- Toolbox Panel -->
-    <ToolboxPanel
-      :is-open="showToolbox"
-      :workspace-id="workspace?.id"
-      :tools="tools"
-      @close="showToolbox = false"
-    />
 
     <!-- Summaries Modal -->
     <DialogRoot v-model:open="showSummariesModal">
@@ -518,30 +458,3 @@ function downloadSummaries() {
     </DialogRoot>
   </div>
 </template>
-
-<style scoped>
-/* Видимый горизонтальный скроллбар для колонок */
-.workspace-scroll::-webkit-scrollbar {
-  height: 10px;
-}
-
-.workspace-scroll::-webkit-scrollbar-track {
-  background: rgb(var(--fg) / 0.05);
-  border-radius: 5px;
-  margin: 0 24px;
-}
-
-.workspace-scroll::-webkit-scrollbar-thumb {
-  background: rgb(var(--fg) / 0.2);
-  border-radius: 5px;
-}
-
-.workspace-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--fg) / 0.3);
-}
-
-.workspace-scroll {
-  scrollbar-width: auto;
-  scrollbar-color: rgb(var(--fg) / 0.2) rgb(var(--fg) / 0.05);
-}
-</style>

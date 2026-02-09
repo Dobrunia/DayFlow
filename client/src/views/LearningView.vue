@@ -6,6 +6,7 @@ import { CARDS_QUERY } from '@/graphql/queries';
 import type { CardGql, LearningStatus } from '@/graphql/types';
 import { LEARNING_STATUS_META } from '@/lib/constants';
 import CardItem from '@/components/card/CardItem.vue';
+import { useCardGrouping } from '@/composables/useCardGrouping';
 
 const route = useRoute();
 const status = computed(() => route.meta.status as LearningStatus);
@@ -31,22 +32,7 @@ watch([cards, loading], ([c, l]) => {
   if (c.length || !l) initialLoaded.value = true;
 });
 
-const hubCards = computed(() => cards.value.filter((c: CardGql) => !c.workspaceId));
-
-const workspaceCards = computed(() => {
-  const map = new Map<string, { workspace: NonNullable<CardGql['workspace']>, cards: CardGql[] }>();
-  
-  cards.value.forEach((c: CardGql) => {
-    if (c.workspaceId && c.workspace) {
-      if (!map.has(c.workspaceId)) {
-        map.set(c.workspaceId, { workspace: c.workspace, cards: [] });
-      }
-      map.get(c.workspaceId)!.cards.push(c);
-    }
-  });
-  
-  return Array.from(map.values()).sort((a, b) => a.workspace.title.localeCompare(b.workspace.title));
-});
+const { hubCards, workspaceCards } = useCardGrouping(cards);
 
 function onCardUpdated() {
   // If learning status changed, the card might disappear from this list.

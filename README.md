@@ -1,6 +1,6 @@
 # DayFlow
 
-Персональный органайзер знаний: воркспейсы, карточки (заметки, ссылки, чеклисты), трекинг прогресса.
+Персональный органайзер знаний: воркспейсы, карточки (заметки, ссылки, чеклисты), инструменты, трекинг обучения и прогресса.
 
 ## Стек
 
@@ -13,31 +13,57 @@
 - **Воркспейсы** — доски для тем/проектов с колонками и беклогом
 - **Карточки** — три типа: заметка, ссылка (с превью), чеклист
 - **Хаб (библиотека)** — все карточки пользователя без привязки к воркспейсу
+- **Инструменты** — ссылки/ресурсы, привязанные к воркспейсу или хабу; поиск по названию и тегам
+- **Теги** — фильтрация и навигация по тегам карточек
+- **Обучение** — три статуса: «повторить», «остались вопросы», «углубить»; отдельные вью с группировкой по воркспейсам
 - **Drag & Drop** — перетаскивание карточек между колонками
 - **Поиск** — по заголовкам и тегам (Ctrl+K — быстрое добавление)
+- **Скрытие выполненных** — кнопка-глазик в колонке, состояние хранится в БД
+- **Сворачивание секций** — в обучении и инструментах секции по воркспейсам сворачиваются
 - **Статистика** — публичная страница `/user/:id` с прогрессом по воркспейсам
-- **Темы** — светлая / тёмная (localStorage)
+- **7 тем оформления** — Light, Dark, Old Money, Nord, Solarized Dark, Full Moon, Old Money 2
 - **Авторизация** — email + пароль, httpOnly cookie сессия
 
-<!-- ## Структура -->
+## Структура
 
 ```
 ├── client/          # Vue 3 SPA
 │   ├── src/
-│   │   ├── components/   # card/, common/, workspace/
-│   │   ├── views/        # Home, Auth, Library, Workspace, Profile, UserStats
+│   │   ├── components/   # card/, common/, workspace/, toolbox/
+│   │   ├── views/        # Home, Auth, Library, Workspace, Profile,
+│   │   │                 # UserStats, Tags, Tools, Learning
+│   │   ├── composables/  # useCardActions, useCardForm, useInlineEdit
 │   │   ├── stores/       # Pinia: auth, workspace, cards, theme
 │   │   ├── graphql/      # queries, mutations, types
-│   │   └── lib/          # apollo, utils
+│   │   └── lib/          # apollo, graphql-error, constants, utils
 │   └── public/
 ├── server/          # GraphQL API
 │   ├── src/
-│   │   ├── resolvers/    # auth, workspace, column, card, user-stats
+│   │   ├── resolvers/    # auth, workspace, column, card, tool, user-stats
 │   │   ├── schema/       # schema.graphql
-│   │   └── lib/          # prisma, auth, context, errors
+│   │   └── lib/          # prisma, auth, context, errors, constants
 │   └── prisma/           # schema.prisma
-└── shared/          # Общие типы и схемы (Zod)
+└── shared/          # Общие типы и ErrorCodes (dayflow-shared)
 ```
+
+## Модели данных
+
+| Модель | Описание |
+|--------|----------|
+| **User** | email, пароль (argon2), аватар |
+| **Session** | httpOnly cookie сессии |
+| **Workspace** | доска с колонками, карточками и инструментами; пин |
+| **Column** | колонка воркспейса; порядок, скрытие выполненных |
+| **Card** | заметка / ссылка / чеклист; теги, статус обучения, порядок |
+| **Tool** | инструмент (ссылка + описание + иконка + теги) |
+
+## Обработка ошибок
+
+- Сервер: все ошибки создаются через `lib/errors.ts` → `UnauthenticatedError`, `NotFoundError`, `ForbiddenError`, `BadRequestError`, `InternalError`, `RateLimitExceededError`
+- Общие коды ошибок в `shared/types.ts` → `ErrorCodes`
+- Клиент: `lib/graphql-error.ts` → `getGraphQLErrorMessage()` извлекает код и человекочитаемое сообщение
+- Все ошибки показываются через `toast.error()` с русскоязычными сообщениями
+- В production неожиданные ошибки не утекают — отдаётся generic «Ошибка сервера»
 
 ## Локальная разработка
 

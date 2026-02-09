@@ -70,7 +70,7 @@ export const workspaceResolvers = {
         throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
       }
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
-      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
+      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Рабочее пространство не найдено');
       const data: { title?: string; description?: string | null; icon?: string | null } = {};
       if (input.title != null) data.title = input.title;
       if (input.description !== undefined) data.description = input.description ?? null;
@@ -81,7 +81,7 @@ export const workspaceResolvers = {
     deleteWorkspace: async (_: unknown, { id }: MutationDeleteWorkspaceArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
-      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
+      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Рабочее пространство не найдено');
       await context.prisma.workspace.delete({ where: { id } });
       return true;
     },
@@ -89,7 +89,7 @@ export const workspaceResolvers = {
     toggleWorkspacePinned: async (_: unknown, { id }: MutationToggleWorkspacePinnedArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
-      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
+      if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Рабочее пространство не найдено');
       return context.prisma.workspace.update({
         where: { id },
         data: { pinned: !workspace.pinned },

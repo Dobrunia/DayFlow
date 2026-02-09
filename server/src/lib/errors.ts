@@ -7,7 +7,7 @@ function createError(code: ErrorCode, message: string, extensions?: Record<strin
   });
 }
 
-export function UnauthenticatedError(message = 'Not authenticated'): GraphQLError {
+export function UnauthenticatedError(message = 'Нужно войти в аккаунт'): GraphQLError {
   return createError(ErrorCodes.UNAUTHENTICATED, message);
 }
 
@@ -23,7 +23,7 @@ export function BadRequestError(message: string): GraphQLError {
   return createError(ErrorCodes.BAD_REQUEST, message);
 }
 
-export function InternalError(message = 'Something went wrong'): GraphQLError {
+export function InternalError(message = 'Ошибка сервера'): GraphQLError {
   return createError(ErrorCodes.INTERNAL, message);
 }
 
@@ -40,7 +40,7 @@ export function toGraphQLError(err: unknown): GraphQLError {
   }
   const isProd = process.env.NODE_ENV === 'production';
   const message =
-    isProd ? 'Something went wrong' : (err instanceof Error ? err.message : 'Unknown error');
+    isProd ? 'Ошибка сервера' : (err instanceof Error ? err.message : 'Unknown error');
   return createError(ErrorCodes.INTERNAL, message);
 }
 

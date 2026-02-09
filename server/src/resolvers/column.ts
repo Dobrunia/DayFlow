@@ -28,7 +28,7 @@ export const columnResolvers = {
       });
 
       if (!workspace || workspace.ownerId !== context.user.id) {
-        throw NotFoundError('Workspace not found');
+        throw NotFoundError('Рабочее пространство не найдено');
       }
 
       // Check column limit
@@ -74,7 +74,7 @@ export const columnResolvers = {
       });
 
       if (!column || column.workspace.ownerId !== context.user.id) {
-        throw NotFoundError('Column not found');
+        throw NotFoundError('Колонка не найдена');
       }
 
       const data: { title?: string; hideCompleted?: boolean } = {};
@@ -98,7 +98,7 @@ export const columnResolvers = {
       });
 
       if (!column || column.workspace.ownerId !== context.user.id) {
-        throw NotFoundError('Column not found');
+        throw NotFoundError('Колонка не найдена');
       }
 
       await context.prisma.column.delete({
@@ -123,7 +123,7 @@ export const columnResolvers = {
       });
 
       if (!workspace || workspace.ownerId !== context.user.id) {
-        throw NotFoundError('Workspace not found');
+        throw NotFoundError('Рабочее пространство не найдено');
       }
 
       // Update order for each column

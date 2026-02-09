@@ -42,8 +42,8 @@ export const toolResolvers = {
         const workspace = await context.prisma.workspace.findUnique({
           where: { id: input.workspaceId },
         });
-        if (!workspace) throw NotFoundError('Workspace not found');
-        if (workspace.ownerId !== context.user.id) throw ForbiddenError('Not authorized');
+        if (!workspace) throw NotFoundError('Рабочее пространство не найдено');
+        if (workspace.ownerId !== context.user.id) throw ForbiddenError('Нет доступа');
       }
 
       // Check tool limit
@@ -75,8 +75,8 @@ export const toolResolvers = {
       if (!context.user) throw UnauthenticatedError();
 
       const tool = await context.prisma.tool.findUnique({ where: { id } });
-      if (!tool) throw NotFoundError('Tool not found');
-      if (tool.ownerId !== context.user.id) throw ForbiddenError('Not authorized');
+      if (!tool) throw NotFoundError('Инструмент не найден');
+      if (tool.ownerId !== context.user.id) throw ForbiddenError('Нет доступа');
 
       const data: Prisma.ToolUpdateInput = {};
       if (input.title !== undefined) data.title = input.title ?? undefined;
@@ -95,8 +95,8 @@ export const toolResolvers = {
       if (!context.user) throw UnauthenticatedError();
 
       const tool = await context.prisma.tool.findUnique({ where: { id } });
-      if (!tool) throw NotFoundError('Tool not found');
-      if (tool.ownerId !== context.user.id) throw ForbiddenError('Not authorized');
+      if (!tool) throw NotFoundError('Инструмент не найден');
+      if (tool.ownerId !== context.user.id) throw ForbiddenError('Нет доступа');
 
       await context.prisma.tool.delete({ where: { id } });
       return true;

@@ -20,10 +20,10 @@ export const authResolvers = {
     ) => {
       // Validate email
       if (!email || !email.includes('@')) {
-        throw BadRequestError('Invalid email address');
+        throw BadRequestError('Неверный адрес электронной почты');
       }
       if (!password || password.length < 6) {
-        throw BadRequestError('Password must be at least 6 characters');
+        throw BadRequestError('Пароль должен содержать минимум 6 символов');
       }
 
       // Check if user exists
@@ -32,7 +32,7 @@ export const authResolvers = {
       });
 
       if (existing) {
-        throw BadRequestError('User with this email already exists');
+        throw BadRequestError('Этот email уже используется');
       }
 
       // Create user
@@ -60,11 +60,11 @@ export const authResolvers = {
       });
 
       if (!user) {
-        throw BadRequestError('Invalid email or password');
+        throw BadRequestError('Неверный email или пароль');
       }
       const validPassword = await verify(user.passwordHash, password);
       if (!validPassword) {
-        throw BadRequestError('Invalid email or password');
+        throw BadRequestError('Неверный email или пароль');
       }
 
       // Create session

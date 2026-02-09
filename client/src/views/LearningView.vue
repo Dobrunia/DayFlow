@@ -4,19 +4,16 @@ import { useRoute } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
 import { CARDS_QUERY } from '@/graphql/queries';
 import type { CardGql, LearningStatus } from '@/graphql/types';
+import { LEARNING_STATUS_META } from '@/lib/constants';
 import CardItem from '@/components/card/CardItem.vue';
+import { useCardGrouping } from '@/composables/useCardGrouping';
 
 const route = useRoute();
 const status = computed(() => route.meta.status as LearningStatus);
 const initialLoaded = ref(false);
 
-const titles: Record<string, string> = {
-  WANT_TO_REPEAT: 'Хочу повторить',
-  QUESTIONS_REMAIN: 'Остались вопросы',
-  DEEPEN_KNOWLEDGE: 'Хочу углубить знания',
-};
-
-const pageTitle = computed(() => titles[status.value] ?? 'Обучение');
+const currentMeta = computed(() => LEARNING_STATUS_META[status.value]);
+const pageTitle = computed(() => currentMeta.value?.label ?? 'Обучение');
 
 const { result, loading, refetch } = useQuery(CARDS_QUERY, () => ({
   filter: { learningStatus: status.value },
@@ -29,28 +26,13 @@ watch(() => route.fullPath, () => {
   refetch();
 });
 
-const cards = computed(() => {
-  const c = result.value?.cards ?? [];
-  if (c.length || !loading.value) initialLoaded.value = true;
-  return c;
+const cards = computed(() => (result.value?.cards ?? []) as CardGql[]);
+
+watch([cards, loading], ([c, l]) => {
+  if (c.length || !l) initialLoaded.value = true;
 });
 
-const hubCards = computed(() => cards.value.filter((c: CardGql) => !c.workspaceId));
-
-const workspaceCards = computed(() => {
-  const map = new Map<string, { workspace: NonNullable<CardGql['workspace']>, cards: CardGql[] }>();
-  
-  cards.value.forEach((c: CardGql) => {
-    if (c.workspaceId && c.workspace) {
-      if (!map.has(c.workspaceId)) {
-        map.set(c.workspaceId, { workspace: c.workspace, cards: [] });
-      }
-      map.get(c.workspaceId)!.cards.push(c);
-    }
-  });
-  
-  return Array.from(map.values()).sort((a, b) => a.workspace.title.localeCompare(b.workspace.title));
-});
+const { hubCards, workspaceCards } = useCardGrouping(cards);
 
 function onCardUpdated() {
   // If learning status changed, the card might disappear from this list.
@@ -66,9 +48,7 @@ function onCardDeleted() {
 <template>
   <div class="page-container max-w-5xl mx-auto py-8 px-4">
     <h1 class="text-2xl font-bold mb-6 flex items-center gap-2">
-      <span v-if="status === 'WANT_TO_REPEAT'" class="i-lucide-repeat text-orange-500" />
-      <span v-else-if="status === 'QUESTIONS_REMAIN'" class="i-lucide-help-circle text-red-500" />
-      <span v-else-if="status === 'DEEPEN_KNOWLEDGE'" class="i-lucide-book-open text-blue-500" />
+      <span v-if="currentMeta" :class="[currentMeta.icon, currentMeta.color]" />
       {{ pageTitle }}
     </h1>
 

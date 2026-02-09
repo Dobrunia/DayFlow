@@ -20,8 +20,7 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
-      "dayflow-shared": ["../shared/dist/index.d.ts"],
-      "dayflow-shared/backend": ["../shared/dist/backend.d.ts"]
+      "dayflow-shared": ["../shared/dist/index.d.ts"]
     }
   },
   "include": ["src/**/*"],

@@ -89,10 +89,6 @@ const deploySharedPkg = {
       types: './dist/index.d.ts',
       default: './dist/index.js',
     },
-    './backend': {
-      types: './dist/backend.d.ts',
-      default: './dist/backend.js',
-    },
   },
   // зависимости shared (если нужны рантайму) — оставляем
   dependencies: sharedPkg.dependencies ?? undefined,

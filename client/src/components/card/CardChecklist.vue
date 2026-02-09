@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, defineAsyncComponent } from 'vue';
-import type { ChecklistPayload } from 'dayflow-shared';
+import type { ChecklistPayload } from '@/lib/card-payload';
 import { renderMarkdown } from '@/lib/utils';
 
 // Lazy load editor modal (includes CodeMirror ~500kB)

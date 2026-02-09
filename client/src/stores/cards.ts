@@ -6,7 +6,7 @@ import { CARDS_QUERY, CARDS_COUNT_QUERY, CARD_QUERY } from '@/graphql/queries';
 import { CREATE_CARD_MUTATION, UPDATE_CARD_MUTATION, DELETE_CARD_MUTATION } from '@/graphql/mutations';
 import type { CardGql, CardFilter, CreateCardInput, UpdateCardInput } from '@/graphql/types';
 
-const FILTER_KEYS = ['type', 'done', 'workspaceId', 'columnId', 'search'] as const;
+const FILTER_KEYS = ['type', 'done', 'workspaceId', 'columnId', 'search', 'learningStatus'] as const;
 
 function toFilterVars(f: Partial<CardFilter>) {
   return Object.fromEntries(
@@ -21,7 +21,7 @@ export const useCardsStore = defineStore('cards', () => {
   const totalCount = ref(0);
   const loading = ref(false);
   const error = ref<string | null>(null);
-  const lastDeletedCard = ref<CardGql | null>(null);
+  const lastDeletedCard = ref<{ card: CardGql; index: number } | null>(null);
 
   const filter = ref<CardFilter>({
     type: undefined,
@@ -125,7 +125,13 @@ export const useCardsStore = defineStore('cards', () => {
     
     if (index !== -1) {
       const next = [...cards.value];
-      next[index] = { ...next[index], ...input };
+      const updated = { ...next[index] };
+      if (input.title != null) updated.title = input.title;
+      if (input.done != null) updated.done = input.done;
+      if (input.payload != null) updated.payload = input.payload;
+      if (input.tags != null) updated.tags = input.tags;
+      if (input.learningStatus !== undefined) updated.learningStatus = input.learningStatus;
+      next[index] = updated;
       cards.value = next;
     }
 
@@ -156,11 +162,11 @@ export const useCardsStore = defineStore('cards', () => {
   }
 
   async function deleteCard(id: string) {
-    // Сохраняем карточку для undo
+    // Сохраняем карточку для undo (вместе с индексом)
     const cardIndex = cards.value.findIndex((c) => c.id === id);
     const card = cardIndex !== -1 ? { ...cards.value[cardIndex] } : null;
     if (card) {
-      lastDeletedCard.value = card;
+      lastDeletedCard.value = { card, index: cardIndex };
     }
 
     // Optimistic delete
@@ -186,10 +192,11 @@ export const useCardsStore = defineStore('cards', () => {
   }
 
   async function undoDeleteCard() {
-    const card = lastDeletedCard.value;
-    if (!card) return;
+    const deleted = lastDeletedCard.value;
+    if (!deleted) return;
     lastDeletedCard.value = null;
 
+    const { card, index } = deleted;
     const input: CreateCardInput = {
       type: card.type,
       title: card.title ?? undefined,
@@ -206,7 +213,10 @@ export const useCardsStore = defineStore('cards', () => {
         variables: { input },
       });
       const newCard = data.createCard as CardGql;
-      cards.value = [newCard, ...cards.value];
+      // Вставляем на оригинальную позицию
+      const next = [...cards.value];
+      next.splice(Math.min(index, next.length), 0, newCard);
+      cards.value = next;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;

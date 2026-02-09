@@ -2,11 +2,13 @@
 import { computed, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
-import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
+import { LIMITS } from 'dayflow-shared';
+import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
 import ToolboxPanel from '@/components/toolbox/ToolboxPanel.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
+import type { Column } from '@/graphql/types';
 import {
   DialogRoot,
   DialogPortal,
@@ -35,7 +37,6 @@ function handleWheel(e: WheelEvent) {
 
 const isEditing = ref(false);
 const editTitle = ref('');
-const showIconPicker = ref(false);
 const showSummariesModal = ref(false);
 const showEditModal = ref(false);
 const showToolbox = ref(false);
@@ -56,7 +57,7 @@ const backlogColumn = computed(() => ({
   title: 'Беклог',
   order: -1,
   cards: [] as never[],
-}));
+} as unknown as Column));
 
 const loading = computed(() => workspaceStore.loading);
 
@@ -106,7 +107,6 @@ async function setIcon(emoji: string) {
   if (!workspace.value) return;
   try {
     await workspaceStore.updateWorkspace(workspace.value.id, { icon: emoji });
-    showIconPicker.value = false;
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -275,29 +275,19 @@ function downloadSummaries() {
 
             <!-- Workspace icon (click to change) -->
             <div class="relative shrink-0">
-              <button
-                type="button"
-                class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
-                title="Сменить иконку"
-                @click="showIconPicker = !showIconPicker"
-              >
-                <span v-if="workspace.icon">{{ workspace.icon }}</span>
-                <span v-else class="i-lucide-layout-grid text-base text-muted" />
-              </button>
-              <div
-                v-if="showIconPicker"
-                class="absolute top-full left-0 mt-1 p-2.5 card w-[min(352px,90vw)] grid grid-cols-8 gap-1.5 max-h-[260px] overflow-y-auto scrollbar-hide z-20"
+              <EmojiPickerPopover
+                :model-value="workspace.icon || ''"
+                @update:model-value="setIcon"
               >
                 <button
-                  v-for="emoji in WORKSPACE_EMOJIS"
-                  :key="emoji"
                   type="button"
-                  class="w-9 h-9 rounded-[var(--r)] flex-center text-xl hover:bg-fg/6 transition-colors shrink-0"
-                  @click="setIcon(emoji)"
+                  class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
+                  title="Сменить иконку"
                 >
-                  {{ emoji }}
+                  <span v-if="workspace.icon">{{ workspace.icon }}</span>
+                  <span v-else class="i-lucide-layout-grid text-base text-muted" />
                 </button>
-              </div>
+              </EmojiPickerPopover>
             </div>
           </div>
 
@@ -402,7 +392,7 @@ function downloadSummaries() {
 
           <!-- Add Column Button -->
           <button
-            v-if="columns.length < 20"
+            v-if="columns.length < LIMITS.MAX_COLUMNS_PER_WORKSPACE"
             @click="addColumn"
             class="shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-[var(--r)] flex-center flex-col gap-2 text-muted hover:text-fg hover:border-fg/30 transition-colors"
           >

@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCardsStore } from '@/stores/cards';
-import { debounce } from '@/lib/utils';
+import { debounce, getCardIcon } from '@/lib/utils';
 import type { CardGql } from '@/graphql/types';
 
 const router = useRouter();
@@ -49,14 +49,6 @@ function handleBlur() {
   }, 200);
 }
 
-function getCardIcon(type: string) {
-  const icons: Record<string, string> = {
-    NOTE: 'i-lucide-file-text',
-    LINK: 'i-lucide-link',
-    CHECKLIST: 'i-lucide-check-square',
-  };
-  return icons[type] || 'i-lucide-circle';
-}
 </script>
 
 <template>

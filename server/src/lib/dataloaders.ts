@@ -1,13 +1,11 @@
 import DataLoader from 'dataloader';
 import { prisma } from './prisma.js';
-import type { Column, Card } from '@prisma/client';
-import type { DataLoaders } from 'dayflow-shared/backend';
-
-export type { DataLoaders } from 'dayflow-shared/backend';
+import type { User, Workspace, Column, Card } from '@prisma/client';
+import type { DataLoaders } from './types.js';
 
 export function createDataLoaders(): DataLoaders {
   return {
-    userById: new DataLoader<string, import('@prisma/client').User | null>(async (ids) => {
+    userById: new DataLoader<string, User | null>(async (ids) => {
       const users = await prisma.user.findMany({
         where: { id: { in: [...ids] } },
       });
@@ -15,7 +13,7 @@ export function createDataLoaders(): DataLoaders {
       return ids.map((id) => userMap.get(id) ?? null);
     }),
 
-    workspaceById: new DataLoader<string, import('@prisma/client').Workspace | null>(async (ids) => {
+    workspaceById: new DataLoader<string, Workspace | null>(async (ids) => {
       const workspaces = await prisma.workspace.findMany({
         where: { id: { in: [...ids] } },
       });

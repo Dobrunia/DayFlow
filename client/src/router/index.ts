@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { LEARNING_STATUSES } from '@/lib/constants';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,19 +50,19 @@ const router = createRouter({
       path: '/learning/repeat',
       name: 'learning-repeat',
       component: () => import('@/views/LearningView.vue'),
-      meta: { requiresAuth: true, status: 'WANT_TO_REPEAT' },
+      meta: { requiresAuth: true, status: LEARNING_STATUSES.WANT_TO_REPEAT },
     },
     {
       path: '/learning/questions',
       name: 'learning-questions',
       component: () => import('@/views/LearningView.vue'),
-      meta: { requiresAuth: true, status: 'QUESTIONS_REMAIN' },
+      meta: { requiresAuth: true, status: LEARNING_STATUSES.QUESTIONS_REMAIN },
     },
     {
       path: '/learning/deepen',
       name: 'learning-deepen',
       component: () => import('@/views/LearningView.vue'),
-      meta: { requiresAuth: true, status: 'DEEPEN_KNOWLEDGE' },
+      meta: { requiresAuth: true, status: LEARNING_STATUSES.DEEPEN_KNOWLEDGE },
     },
   ],
 });

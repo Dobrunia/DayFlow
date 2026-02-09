@@ -4,7 +4,7 @@ import { toast } from 'vue-sonner';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import type { Tool } from '@/graphql/types';
-import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
+import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 
 const props = defineProps<{
   tool: Tool;
@@ -17,27 +17,38 @@ const isEditing = ref(false);
 const editTitle = ref('');
 const editLink = ref('');
 const editIcon = ref('');
-const showEmojiPicker = ref(false);
+const editDescription = ref('');
+const editTags = ref('');
 const updateLoading = ref(false);
+const submitted = ref(false);
 
 function startEdit() {
   editTitle.value = props.tool.title;
   editLink.value = props.tool.link || '';
   editIcon.value = props.tool.icon || '';
+  editDescription.value = props.tool.description || '';
+  editTags.value = props.tool.tags ? props.tool.tags.join(', ') : '';
   isEditing.value = true;
-  showEmojiPicker.value = false;
+  submitted.value = false;
 }
 
 async function handleUpdate() {
-  if (!editTitle.value.trim()) return;
+  submitted.value = true;
+  if (!editTitle.value.trim()) {
+    toast.error('Введите название инструмента');
+    return;
+  }
   try {
     updateLoading.value = true;
     await workspaceStore.updateTool(props.tool.id, {
         title: editTitle.value.trim(),
         link: editLink.value.trim() || undefined,
         icon: editIcon.value.trim() || undefined,
+        description: editDescription.value.trim() || undefined,
+        tags: editTags.value.split(',').map(t => t.trim()).filter(Boolean),
     });
     isEditing.value = false;
+    submitted.value = false;
     toast.success('Обновлено');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
@@ -71,11 +82,6 @@ async function handleDelete() {
     toast.error(getGraphQLErrorMessage(e));
   }
 }
-
-function selectEmoji(emoji: string) {
-  editIcon.value = emoji;
-  showEmojiPicker.value = false;
-}
 </script>
 
 <template>
@@ -85,43 +91,32 @@ function selectEmoji(emoji: string) {
       
        <!-- Icon & Title Row -->
        <div class="flex gap-2">
-           <!-- Emoji Picker Trigger -->
-           <div class="relative shrink-0">
-              <button
-                type="button"
-                class="w-9 h-9 rounded-[var(--r)] flex-center text-lg bg-surface border border-border hover:bg-fg/5 transition-colors"
-                @click="showEmojiPicker = !showEmojiPicker"
-              >
-                {{ editIcon || '🛠️' }}
-              </button>
-              
-              <!-- Emoji Picker Dropdown -->
-              <div
-                v-if="showEmojiPicker"
-                class="absolute top-full left-0 mt-1 p-2 card w-64 grid grid-cols-6 gap-1 max-h-48 overflow-y-auto scrollbar-hide z-50 shadow-lg border border-border"
-              >
-                 <button
-                  v-for="emoji in WORKSPACE_EMOJIS"
-                  :key="emoji"
-                  type="button"
-                  class="w-8 h-8 rounded flex-center text-lg hover:bg-fg/10 transition-colors"
-                  @click="selectEmoji(emoji)"
-                >
-                  {{ emoji }}
-                </button>
-              </div>
-           </div>
+           <EmojiPickerPopover v-model="editIcon" />
 
            <input
             v-model="editTitle"
             class="input flex-1 text-sm min-w-0"
-            placeholder="Название"
+            :class="submitted && !editTitle.trim() && 'border-danger!'"
+            placeholder="Название *"
             autoFocus
             @keyup.enter="handleUpdate"
           />
         </div>
 
       <input v-model="editLink" class="input w-full text-sm" placeholder="Ссылка" @keyup.enter="handleUpdate" />
+      
+      <textarea
+        v-model="editDescription"
+        placeholder="Описание"
+        class="input w-full text-sm min-h-[60px] resize-y py-2"
+      ></textarea>
+
+      <input
+        v-model="editTags"
+        placeholder="Теги (через запятую)"
+        class="input w-full text-sm"
+        @keyup.enter="handleUpdate"
+      />
       
       <div class="flex justify-between items-center mt-2">
          <button 
@@ -159,6 +154,12 @@ function selectEmoji(emoji: string) {
         <!-- Info -->
         <div class="flex-1 min-w-0">
           <h4 class="font-medium text-sm text-fg truncate leading-8" :title="tool.title">{{ tool.title }}</h4>
+          <p v-if="tool.description" class="text-xs text-muted truncate mt-1">{{ tool.description }}</p>
+           <div v-if="tool.tags?.length" class="flex flex-wrap gap-1 mt-2">
+             <span v-for="tag in tool.tags" :key="tag" class="text-[10px] px-1.5 py-0.5 rounded-full bg-fg/5 text-muted">
+               {{ tag }}
+             </span>
+           </div>
         </div>
       </div>
 

@@ -5,9 +5,8 @@ import { useWorkspaceStore } from '@/stores/workspace';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import type { Tool } from '@/graphql/types';
 import ToolItem from './ToolItem.vue';
-import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
-
-const MAX_TOOLS = 30;
+import { LIMITS } from 'dayflow-shared';
+import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 
 const props = defineProps<{
   workspaceId?: string; // If undefined, it's Hub toolbox (not implemented in view yet, but supported by backend)
@@ -25,17 +24,21 @@ const isCreating = ref(false);
 const newToolTitle = ref('');
 const newToolLink = ref('');
 const newToolIcon = ref(''); // Emoji or string
-const showEmojiPicker = ref(false);
+const newToolDescription = ref('');
+const newToolTags = ref('');
 const createLoading = ref(false);
 const pinned = ref(false);
 const panelRef = ref<HTMLElement | null>(null);
 const linkInputRef = ref<HTMLInputElement | null>(null);
+const submitted = ref(false);
 
 function handleClickOutside(event: MouseEvent) {
   if (!props.isOpen || pinned.value) return;
   
   const target = event.target as HTMLElement;
-  if (panelRef.value && !panelRef.value.contains(target)) {
+  const isInsidePortal = target.closest('[data-radix-popper-content-wrapper]');
+
+  if (panelRef.value && !panelRef.value.contains(target) && !isInsidePortal) {
     emit('close');
   }
 }
@@ -49,7 +52,11 @@ onUnmounted(() => {
 });
 
 async function handleCreate() {
-  if (!newToolTitle.value.trim()) return;
+  submitted.value = true;
+  if (!newToolTitle.value.trim()) {
+      toast.error('Введите название инструмента');
+      return;
+  }
 
   try {
     createLoading.value = true;
@@ -58,13 +65,16 @@ async function handleCreate() {
       title: newToolTitle.value.trim(),
       link: newToolLink.value.trim() || undefined,
       icon: newToolIcon.value.trim() || undefined,
-      tags: [],
+      description: newToolDescription.value.trim() || undefined,
+      tags: newToolTags.value.split(',').map(t => t.trim()).filter(Boolean),
     });
     newToolTitle.value = '';
     newToolLink.value = '';
     newToolIcon.value = '';
+    newToolDescription.value = '';
+    newToolTags.value = '';
     isCreating.value = false;
-    showEmojiPicker.value = false;
+    submitted.value = false;
     toast.success('Инструмент добавлен');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
@@ -75,13 +85,9 @@ async function handleCreate() {
 
 async function startCreating() {
   isCreating.value = true;
+  submitted.value = false;
   await nextTick();
   linkInputRef.value?.focus();
-}
-
-function selectEmoji(emoji: string) {
-  newToolIcon.value = emoji;
-  showEmojiPicker.value = false;
 }
 </script>
 
@@ -114,37 +120,13 @@ function selectEmoji(emoji: string) {
         
         <!-- Icon & Title Row -->
         <div class="flex gap-2">
-           <!-- Emoji Picker Trigger -->
-           <div class="relative shrink-0">
-              <button
-                type="button"
-                class="w-9 h-9 rounded-[var(--r)] flex-center text-lg bg-surface border border-border hover:bg-fg/5 transition-colors"
-                @click="showEmojiPicker = !showEmojiPicker"
-              >
-                {{ newToolIcon || '🛠️' }}
-              </button>
-              
-              <!-- Emoji Picker Dropdown -->
-              <div
-                v-if="showEmojiPicker"
-                class="absolute top-full left-0 mt-1 p-2 card w-64 grid grid-cols-6 gap-1 max-h-48 overflow-y-auto scrollbar-hide z-50 shadow-lg border border-border"
-              >
-                 <button
-                  v-for="emoji in WORKSPACE_EMOJIS"
-                  :key="emoji"
-                  type="button"
-                  class="w-8 h-8 rounded flex-center text-lg hover:bg-fg/10 transition-colors"
-                  @click="selectEmoji(emoji)"
-                >
-                  {{ emoji }}
-                </button>
-              </div>
-           </div>
+          <EmojiPickerPopover v-model="newToolIcon" />
 
            <input
             v-model="newToolTitle"
-            placeholder="Название"
+            placeholder="Название *"
             class="input flex-1 text-sm min-w-0"
+            :class="submitted && !newToolTitle.trim() && 'border-danger!'"
             autoFocus
             @keyup.enter="handleCreate"
           />
@@ -157,6 +139,19 @@ function selectEmoji(emoji: string) {
           class="input w-full text-sm"
           @keyup.enter="handleCreate"
         />
+
+        <textarea
+          v-model="newToolDescription"
+          placeholder="Описание"
+          class="input w-full text-sm min-h-[60px] resize-y py-2"
+        ></textarea>
+
+        <input
+          v-model="newToolTags"
+          placeholder="Теги (через запятую)"
+          class="input w-full text-sm"
+          @keyup.enter="handleCreate"
+        />
         
         <div class="flex justify-end gap-2">
           <button @click="isCreating = false" class="btn-ghost text-xs py-1">Отмена</button>
@@ -166,7 +161,7 @@ function selectEmoji(emoji: string) {
         </div>
       </div>
       <button
-        v-else-if="tools.length < MAX_TOOLS"
+        v-else-if="tools.length < LIMITS.MAX_TOOLS_PER_WORKSPACE"
         @click="startCreating"
         class="w-full py-2 border border-dashed border-border rounded-[var(--r)] text-muted text-sm hover:text-fg hover:border-fg/30 transition-colors flex-center gap-2"
       >
@@ -174,7 +169,7 @@ function selectEmoji(emoji: string) {
         Добавить инструмент
       </button>
       <div v-else class="text-center text-muted text-sm py-2">
-        Достигнут лимит ({{ MAX_TOOLS }})
+        Достигнут лимит ({{ LIMITS.MAX_TOOLS_PER_WORKSPACE }})
       </div>
 
       <!-- List -->

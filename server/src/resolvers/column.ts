@@ -1,4 +1,10 @@
-import type { Context } from '../lib/context.js';
+import type { Context } from '../lib/types.js';
+import type {
+  MutationCreateColumnArgs,
+  MutationUpdateColumnArgs,
+  MutationDeleteColumnArgs,
+  MutationReorderColumnsArgs,
+} from '../generated/types.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
 import { MAX_TITLE_LENGTH, MAX_COLUMNS_PER_WORKSPACE } from '../lib/constants.js';
 
@@ -6,7 +12,7 @@ export const columnResolvers = {
   Mutation: {
     createColumn: async (
       _: unknown,
-      { workspaceId, title }: { workspaceId: string; title: string },
+      { workspaceId, title }: MutationCreateColumnArgs,
       context: Context
     ) => {
       if (!context.user) {
@@ -52,7 +58,7 @@ export const columnResolvers = {
 
     updateColumn: async (
       _: unknown,
-      { id, title }: { id: string; title: string },
+      { id, title }: MutationUpdateColumnArgs,
       context: Context
     ) => {
       if (!context.user) {
@@ -77,7 +83,7 @@ export const columnResolvers = {
       });
     },
 
-    deleteColumn: async (_: unknown, { id }: { id: string }, context: Context) => {
+    deleteColumn: async (_: unknown, { id }: MutationDeleteColumnArgs, context: Context) => {
       if (!context.user) {
         throw UnauthenticatedError();
       }
@@ -100,7 +106,7 @@ export const columnResolvers = {
 
     reorderColumns: async (
       _: unknown,
-      { workspaceId, columnIds }: { workspaceId: string; columnIds: string[] },
+      { workspaceId, columnIds }: MutationReorderColumnsArgs,
       context: Context
     ) => {
       if (!context.user) {

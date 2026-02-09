@@ -5,8 +5,7 @@ import { cardResolvers } from './card.js';
 import { toolResolvers } from './tool.js';
 import { userStatsResolvers } from './user-stats.js';
 import { DateTimeResolver } from 'graphql-scalars';
-
-export type { CreateCardInput, UpdateCardInput, CardFilter, CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
+import type { Context } from '../lib/types.js';
 
 export const resolvers = {
   DateTime: DateTimeResolver,
@@ -28,11 +27,7 @@ export const resolvers = {
   },
 
   User: {
-    workspaces: (
-      parent: { id: string },
-      _: unknown,
-      context: { prisma: { workspace: { findMany: (arg: object) => unknown } } }
-    ) =>
+    workspaces: (parent: { id: string }, _: unknown, context: Context) =>
       context.prisma.workspace.findMany({
         where: { ownerId: parent.id },
         orderBy: { createdAt: 'desc' },

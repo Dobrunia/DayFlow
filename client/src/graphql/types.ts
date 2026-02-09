@@ -1,23 +1,32 @@
 /**
- * Re-export API types from shared. Сущности карточек и инпуты — dayflow-shared.
+ * Re-export API types from generated sources and local libs.
  */
+
+// 1. GraphQL types (codegen)
 export type {
   CardType,
-  CreateCardInput,
-  UpdateCardInput,
-  CardFilter,
-  NotePayload,
-  LinkPayload,
-  ChecklistPayload,
-  ChecklistItem,
-  CardGql,
   LearningStatus,
   User,
   Workspace,
   Column,
+  Tool,
+  CreateCardInput,
+  UpdateCardInput,
+  CardFilter,
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
-  Tool,
   CreateToolInput,
   UpdateToolInput,
-} from "dayflow-shared";
+} from "../generated/graphql";
+
+// Alias CardGql to the generated Card type
+import type { Card } from "../generated/graphql";
+export type CardGql = Card;
+
+// 2. Payload types (Zod schemas)
+export type {
+  NotePayload,
+  LinkPayload,
+  ChecklistPayload,
+  ChecklistItem,
+} from "../lib/card-payload";

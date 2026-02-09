@@ -1,15 +1,5 @@
 import { GraphQLError } from 'graphql';
-
-export const ErrorCodes = {
-  UNAUTHENTICATED: 'UNAUTHENTICATED',
-  FORBIDDEN: 'FORBIDDEN',
-  NOT_FOUND: 'NOT_FOUND',
-  BAD_REQUEST: 'BAD_REQUEST',
-  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
-  INTERNAL: 'INTERNAL',
-} as const;
-
-export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
+import { ErrorCodes, type ErrorCode } from 'dayflow-shared';
 
 function createError(code: ErrorCode, message: string, extensions?: Record<string, unknown>): GraphQLError {
   return new GraphQLError(message, {

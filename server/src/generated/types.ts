@@ -1,6 +1,6 @@
 import { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
 import { User as UserModel, Workspace as WorkspaceModel, Column as ColumnModel, Card as CardModel } from '@prisma/client';
-import { Context } from '../lib/context';
+import { Context } from '../lib/types';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -56,9 +56,9 @@ export type CardFilter = {
 };
 
 export type CardType =
-  | 'CHECKLIST'
-  | 'LINK'
-  | 'NOTE';
+  | 'checklist'
+  | 'link'
+  | 'note';
 
 export type Column = {
   __typename?: 'Column';
@@ -95,9 +95,9 @@ export type CreateWorkspaceInput = {
 };
 
 export type LearningStatus =
-  | 'DEEPEN_KNOWLEDGE'
-  | 'QUESTIONS_REMAIN'
-  | 'WANT_TO_REPEAT';
+  | 'deepen_knowledge'
+  | 'questions_remain'
+  | 'want_to_repeat';
 
 export type Mutation = {
   __typename?: 'Mutation';

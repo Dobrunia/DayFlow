@@ -80,11 +80,20 @@ function toggleCollapse(id: string) {
     <div v-else class="space-y-8">
       <!-- Hub -->
       <section v-if="hubTools.length > 0">
-        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <button
+          type="button"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          @click="toggleCollapse('hub')"
+        >
+          <span
+            class="i-lucide-chevron-right text-muted transition-transform duration-200"
+            :class="{ 'rotate-90': !collapsed.has('hub') }"
+          />
           <span class="i-lucide-inbox text-muted" />
           Хаб
-        </h2>
-        <div class="grid gap-2">
+          <span class="text-sm font-normal text-muted ml-1">({{ hubTools.length }})</span>
+        </button>
+        <div v-show="!collapsed.has('hub')" class="grid gap-2">
           <ToolItem
             v-for="tool in hubTools"
             :key="tool.id"

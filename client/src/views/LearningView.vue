@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
 import { CARDS_QUERY } from '@/graphql/queries';
@@ -43,6 +43,12 @@ function onCardUpdated() {
 function onCardDeleted() {
   refetch();
 }
+
+const collapsed = reactive(new Set<string>());
+
+function toggleCollapse(id: string) {
+  collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id);
+}
 </script>
 
 <template>
@@ -63,11 +69,20 @@ function onCardDeleted() {
     <div v-else class="space-y-8">
       <!-- Hub -->
       <section v-if="hubCards.length > 0">
-        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+        <button
+          type="button"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          @click="toggleCollapse('hub')"
+        >
+          <span
+            class="i-lucide-chevron-right text-muted transition-transform duration-200"
+            :class="{ 'rotate-90': !collapsed.has('hub') }"
+          />
           <span class="i-lucide-inbox text-muted" />
           Хаб
-        </h2>
-        <div class="grid gap-2">
+          <span class="text-sm font-normal text-muted ml-1">({{ hubCards.length }})</span>
+        </button>
+        <div v-show="!collapsed.has('hub')" class="grid gap-2">
           <CardItem
             v-for="card in hubCards"
             :key="card.id"
@@ -80,12 +95,21 @@ function onCardDeleted() {
 
       <!-- Workspaces -->
       <section v-for="wsGroup in workspaceCards" :key="wsGroup.workspace.id">
-        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-           <span v-if="wsGroup.workspace.icon" class="text-xl">{{ wsGroup.workspace.icon }}</span>
-           <span v-else class="i-lucide-layout-grid text-muted" />
-           {{ wsGroup.workspace.title }}
-        </h2>
-        <div class="grid gap-2">
+        <button
+          type="button"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          @click="toggleCollapse(wsGroup.workspace.id)"
+        >
+          <span
+            class="i-lucide-chevron-right text-muted transition-transform duration-200"
+            :class="{ 'rotate-90': !collapsed.has(wsGroup.workspace.id) }"
+          />
+          <span v-if="wsGroup.workspace.icon" class="text-xl">{{ wsGroup.workspace.icon }}</span>
+          <span v-else class="i-lucide-layout-grid text-muted" />
+          {{ wsGroup.workspace.title }}
+          <span class="text-sm font-normal text-muted ml-1">({{ wsGroup.cards.length }})</span>
+        </button>
+        <div v-show="!collapsed.has(wsGroup.workspace.id)" class="grid gap-2">
            <CardItem
             v-for="card in wsGroup.cards"
             :key="card.id"

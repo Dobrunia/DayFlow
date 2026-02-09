@@ -21,6 +21,8 @@ type Workspace {
   cards: [Card!]!
   """Карточки воркспейса без колонки (backlog)."""
   backlog: [Card!]!
+  """Инструменты воркспейса."""
+  tools: [Tool!]!
 }
 
 type Column {
@@ -60,6 +62,21 @@ type Card {
   owner: User!
   workspace: Workspace
   column: Column
+}
+
+type Tool {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  ownerId: ID!
+  workspaceId: ID
+  title: String!
+  link: String
+  description: String
+  icon: String
+  tags: [String!]!
+  owner: User!
+  workspace: Workspace
 }
 
 type AuthPayload {
@@ -130,6 +147,23 @@ input CardFilter {
   learningStatus: LearningStatus
 }
 
+input CreateToolInput {
+  workspaceId: ID
+  title: String!
+  link: String
+  description: String
+  icon: String
+  tags: [String!]
+}
+
+input UpdateToolInput {
+  title: String
+  link: String
+  description: String
+  icon: String
+  tags: [String!]
+}
+
 # Queries
 
 type Query {
@@ -143,6 +177,8 @@ type Query {
   card(id: ID!): Card
   """Публичная статистика пользователя по id (любой авторизованный может запросить)."""
   userStats(userId: ID!): UserStats
+  """Инструменты пользователя (хаб: workspaceId = null)."""
+  tools(workspaceId: ID): [Tool!]!
 }
 
 # Mutations
@@ -171,4 +207,9 @@ type Mutation {
   updateCard(id: ID!, input: UpdateCardInput!): Card!
   deleteCard(id: ID!): Boolean!
   moveCard(id: ID!, columnId: ID, order: Int!): Card!
+
+  # Tool
+  createTool(input: CreateToolInput!): Tool!
+  updateTool(id: ID!, input: UpdateToolInput!): Tool!
+  deleteTool(id: ID!): Boolean!
 }

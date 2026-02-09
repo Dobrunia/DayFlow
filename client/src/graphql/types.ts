@@ -16,4 +16,7 @@ export type {
   Column,
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
+  Tool,
+  CreateToolInput,
+  UpdateToolInput,
 } from "dayflow-shared";

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
+import ToolboxPanel from '@/components/toolbox/ToolboxPanel.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -37,6 +38,7 @@ const editTitle = ref('');
 const showIconPicker = ref(false);
 const showSummariesModal = ref(false);
 const showEditModal = ref(false);
+const showToolbox = ref(false);
 const editModalTitle = ref('');
 const editModalDescription = ref('');
 const editModalLoading = ref(false);
@@ -47,6 +49,7 @@ const workspaceId = computed(() => route.params.id as string);
 const workspace = computed(() => workspaceStore.currentWorkspace);
 const columns = computed(() => workspace.value?.columns ?? []);
 const backlogCards = computed(() => workspace.value?.backlog ?? []);
+const tools = computed(() => workspace.value?.tools ?? []);
 
 const backlogColumn = computed(() => ({
   id: 'backlog',
@@ -249,7 +252,7 @@ function downloadSummaries() {
 </script>
 
 <template>
-  <div class="h-[calc(100vh-128px)] flex flex-col">
+  <div class="h-[calc(100vh-128px)] flex flex-col relative overflow-hidden">
     <!-- Loading -->
     <div v-if="loading" class="flex-1 flex-center">
       <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
@@ -350,6 +353,16 @@ function downloadSummaries() {
               Конспекты
             </button>
 
+            <button
+              @click.stop="showToolbox = !showToolbox"
+              @mousedown.stop
+              class="icon-btn-ghost"
+              :class="{ 'text-primary bg-primary/10': showToolbox }"
+              title="Инструменты"
+            >
+              <span class="i-lucide-box" />
+            </button>
+
             <button @click="openEditModal" class="icon-btn-edit" title="Редактировать воркспейс">
               <span class="i-lucide-edit-2" />
             </button>
@@ -406,6 +419,14 @@ function downloadSummaries() {
       <p class="text-muted">Воркспейс не найден</p>
       <RouterLink to="/" class="btn-primary">На главную</RouterLink>
     </div>
+
+    <!-- Toolbox Panel -->
+    <ToolboxPanel
+      :is-open="showToolbox"
+      :workspace-id="workspace?.id"
+      :tools="tools"
+      @close="showToolbox = false"
+    />
 
     <!-- Summaries Modal -->
     <DialogRoot v-model:open="showSummariesModal">

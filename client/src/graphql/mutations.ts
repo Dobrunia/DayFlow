@@ -168,3 +168,39 @@ export const MOVE_CARD_MUTATION = gql`
     }
   }
 `;
+
+export const CREATE_TOOL_MUTATION = gql`
+  mutation CreateTool($input: CreateToolInput!) {
+    createTool(input: $input) {
+      id
+      createdAt
+      updatedAt
+      ownerId
+      workspaceId
+      title
+      link
+      description
+      icon
+      tags
+    }
+  }
+`;
+
+export const UPDATE_TOOL_MUTATION = gql`
+  mutation UpdateTool($id: ID!, $input: UpdateToolInput!) {
+    updateTool(id: $id, input: $input) {
+      id
+      title
+      link
+      description
+      icon
+      tags
+    }
+  }
+`;
+
+export const DELETE_TOOL_MUTATION = gql`
+  mutation DeleteTool($id: ID!) {
+    deleteTool(id: $id)
+  }
+`;

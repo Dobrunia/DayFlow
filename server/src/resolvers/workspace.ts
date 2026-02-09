@@ -109,5 +109,15 @@ export const workspaceResolvers = {
         orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       });
     },
+    tools: async (parent: { id: string }, _: unknown, context: Context) => {
+      if (!context.user) return [];
+      return context.prisma.tool.findMany({
+        where: {
+          workspaceId: parent.id,
+          ownerId: context.user.id,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   },
 };

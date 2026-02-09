@@ -16,6 +16,9 @@ import {
   UPDATE_CARD_MUTATION,
   DELETE_CARD_MUTATION,
   MOVE_CARD_MUTATION,
+  CREATE_TOOL_MUTATION,
+  UPDATE_TOOL_MUTATION,
+  DELETE_TOOL_MUTATION,
 } from '@/graphql/mutations';
 import type {
   Workspace,
@@ -25,6 +28,9 @@ import type {
   UpdateWorkspaceInput,
   CreateCardInput,
   UpdateCardInput,
+  CreateToolInput,
+  UpdateToolInput,
+  Tool,
 } from '@/graphql/types';
 
 /** Последнее перемещение карточки (для undo) */
@@ -561,7 +567,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         ...currentWorkspace.value,
         columns: currentWorkspace.value.columns.map((col) => ({
           ...col,
-          cards: updateInList(col.cards, input) ?? col.cards,
+          cards: updateInList(col.cards, input as unknown as Partial<CardGql>) ?? col.cards,
         })),
       };
     }
@@ -569,7 +575,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       currentWorkspace.value = {
         ...currentWorkspace.value,
         backlog:
-          updateInList(currentWorkspace.value.backlog, input) ?? currentWorkspace.value.backlog,
+          updateInList(currentWorkspace.value.backlog, input as unknown as Partial<CardGql>) ?? currentWorkspace.value.backlog,
       };
     }
 
@@ -808,6 +814,132 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     currentWorkspace.value = null;
   }
 
+  async function createTool(input: CreateToolInput) {
+    try {
+      error.value = null;
+      const { data } = await apolloClient.mutate({
+        mutation: CREATE_TOOL_MUTATION,
+        variables: { input },
+      });
+      const tool = data.createTool as Tool;
+
+      // Optimistic / Sync update
+      if (
+        currentWorkspace.value &&
+        (input.workspaceId === currentWorkspace.value.id || (!input.workspaceId && !currentWorkspace.value.id)) // !id check is tricky, usually workspace has id
+      ) {
+        // If we are in the workspace where tool is created
+        // Note: tools array might not exist on type yet if not updated, but we added it to api-types
+        const currentTools = currentWorkspace.value.tools || [];
+        currentWorkspace.value = {
+          ...currentWorkspace.value,
+          tools: [tool, ...currentTools],
+        };
+      }
+      return tool;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      throw e;
+    }
+  }
+
+  async function updateTool(id: string, input: UpdateToolInput) {
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Optimistic update
+    if (currentWorkspace.value?.tools) {
+      const index = currentWorkspace.value.tools.findIndex((t) => t.id === id);
+      if (index !== -1) {
+        const nextTools = [...currentWorkspace.value.tools];
+        nextTools[index] = { ...nextTools[index], ...input } as Tool; // cast as we might miss some required fields in input but for UI it's fine temporarily
+        currentWorkspace.value = { ...currentWorkspace.value, tools: nextTools };
+      }
+    }
+
+    try {
+      error.value = null;
+      const { data } = await apolloClient.mutate({
+        mutation: UPDATE_TOOL_MUTATION,
+        variables: { id, input },
+      });
+      
+      // Sync with server
+      if (currentWorkspace.value?.tools) {
+        const index = currentWorkspace.value.tools.findIndex((t) => t.id === id);
+        if (index !== -1) {
+          const nextTools = [...currentWorkspace.value.tools];
+          nextTools[index] = { ...nextTools[index], ...data.updateTool };
+          currentWorkspace.value = { ...currentWorkspace.value, tools: nextTools };
+        }
+      }
+      return data.updateTool;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      // Revert
+      if (oldWorkspace) currentWorkspace.value = oldWorkspace;
+      throw e;
+    }
+  }
+
+  const lastDeletedTool = ref<{ tool: Tool; workspaceId: string | null } | null>(null);
+
+  async function deleteTool(id: string) {
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Save tool for undo
+    const tool = currentWorkspace.value?.tools?.find((t) => t.id === id);
+    if (tool) {
+      lastDeletedTool.value = {
+        tool: { ...tool },
+        workspaceId: tool.workspaceId ?? currentWorkspace.value?.id ?? null,
+      };
+    }
+
+    // Optimistic delete
+    if (currentWorkspace.value?.tools) {
+      currentWorkspace.value = {
+        ...currentWorkspace.value,
+        tools: currentWorkspace.value.tools.filter((t) => t.id !== id),
+      };
+    }
+
+    try {
+      error.value = null;
+      await apolloClient.mutate({
+        mutation: DELETE_TOOL_MUTATION,
+        variables: { id },
+      });
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      // Revert
+      if (oldWorkspace) currentWorkspace.value = oldWorkspace;
+      lastDeletedTool.value = null;
+      throw e;
+    }
+  }
+
+  async function undoDeleteTool() {
+    const deleted = lastDeletedTool.value;
+    if (!deleted) return;
+    lastDeletedTool.value = null;
+
+    const { tool } = deleted;
+    try {
+      error.value = null;
+      await createTool({
+        workspaceId: tool.workspaceId ?? undefined,
+        title: tool.title,
+        link: tool.link ?? undefined,
+        description: tool.description ?? undefined,
+        icon: tool.icon ?? undefined,
+        tags: tool.tags ?? [],
+      });
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      throw e;
+    }
+  }
+
   return {
     workspaces,
     currentWorkspace,
@@ -838,5 +970,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     moveCard,
     undoLastMove,
     clearCurrentWorkspace,
+    createTool,
+    updateTool,
+    deleteTool,
+    undoDeleteTool,
+    lastDeletedTool,
   };
 });

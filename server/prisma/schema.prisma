@@ -17,6 +17,7 @@ model User {
   sessions Session[]
   workspaces Workspace[]
   cards      Card[]
+  tools      Tool[]
 }
 
 model Session {
@@ -42,6 +43,7 @@ model Workspace {
   owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   columns Column[]
   cards   Card[]
+  tools   Tool[]
 
   @@index([ownerId])
 }
@@ -87,6 +89,27 @@ model Card {
   @@index([type])
   @@index([columnId, order])
   @@index([learningStatus])
+}
+
+model Tool {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId     String
+  workspaceId String? // null => "хаб" (общий toolbox)
+
+  title       String
+  link        String?
+  description String? @db.Text
+  icon        String?
+  tags        Json    @default("[]")
+
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([workspaceId])
 }
 
 enum CardType {

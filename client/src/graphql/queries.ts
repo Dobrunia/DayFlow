@@ -34,6 +34,18 @@ export const WORKSPACE_QUERY = gql`
       icon
       createdAt
       updatedAt
+      tools {
+        id
+        createdAt
+        updatedAt
+        ownerId
+        workspaceId
+        title
+        link
+        description
+        icon
+        tags
+      }
       columns {
         id
         title
@@ -138,6 +150,23 @@ export const USER_STATS_QUERY = gql`
         totalCards
         completedCards
       }
+    }
+  }
+`;
+
+export const TOOLS_QUERY = gql`
+  query Tools($workspaceId: ID) {
+    tools(workspaceId: $workspaceId) {
+      id
+      createdAt
+      updatedAt
+      ownerId
+      workspaceId
+      title
+      link
+      description
+      icon
+      tags
     }
   }
 `;

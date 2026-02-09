@@ -23,6 +23,19 @@ export interface CardGql {
   workspace?: { id: string; title: string; icon?: string | null } | null;
 }
 
+export interface Tool {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  ownerId: string;
+  workspaceId: string | null;
+  title: string;
+  link?: string | null;
+  description?: string | null;
+  icon?: string | null;
+  tags: string[];
+}
+
 export interface User {
   id: string;
   email: string;
@@ -48,6 +61,7 @@ export interface Workspace {
   columns?: Column[];
   cards?: CardGql[];
   backlog?: CardGql[];
+  tools?: Tool[];
 }
 
 export interface CreateWorkspaceInput {
@@ -60,4 +74,21 @@ export interface UpdateWorkspaceInput {
   title?: string;
   description?: string;
   icon?: string;
+}
+
+export interface CreateToolInput {
+  workspaceId?: string;
+  title: string;
+  link?: string;
+  description?: string;
+  icon?: string;
+  tags?: string[];
+}
+
+export interface UpdateToolInput {
+  title?: string;
+  link?: string;
+  description?: string;
+  icon?: string;
+  tags?: string[];
 }

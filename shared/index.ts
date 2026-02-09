@@ -33,4 +33,7 @@ export type {
   Column,
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
+  Tool,
+  CreateToolInput,
+  UpdateToolInput,
 } from "./api-types.js";

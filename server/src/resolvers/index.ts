@@ -2,6 +2,7 @@ import { authResolvers } from './auth.js';
 import { workspaceResolvers } from './workspace.js';
 import { columnResolvers } from './column.js';
 import { cardResolvers } from './card.js';
+import { toolResolvers } from './tool.js';
 import { userStatsResolvers } from './user-stats.js';
 import { DateTimeResolver } from 'graphql-scalars';
 
@@ -15,6 +16,7 @@ export const resolvers = {
     ...workspaceResolvers.Query,
     ...cardResolvers.Query,
     ...userStatsResolvers.Query,
+    ...toolResolvers.Query,
   },
 
   Mutation: {
@@ -22,6 +24,7 @@ export const resolvers = {
     ...workspaceResolvers.Mutation,
     ...columnResolvers.Mutation,
     ...cardResolvers.Mutation,
+    ...toolResolvers.Mutation,
   },
 
   User: {
@@ -39,4 +42,5 @@ export const resolvers = {
   Workspace: workspaceResolvers.Workspace,
   Column: columnResolvers.Column,
   Card: cardResolvers.Card,
+  Tool: toolResolvers.Tool,
 };

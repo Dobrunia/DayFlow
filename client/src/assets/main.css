@@ -2,7 +2,7 @@
 :root {
   --space: 4px;
   --r: 12px;
-  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  --font: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
   --text: 14px;
   --lh: 1.5;
 
@@ -28,6 +28,11 @@
   /* blue-600, сочетается с --primary */
 
   --ring: 59 130 246;
+
+  /* learning statuses */
+  --ls-repeat: 249 115 22;   /* orange-500 */
+  --ls-questions: 239 68 68; /* red-500 */
+  --ls-deepen: 59 130 246;   /* blue-500 */
 }
 
 /* ── Dark (Obsidian) ── */
@@ -57,6 +62,11 @@
   /* #a88bfa — ссылки */
   --ring: 127 109 242;
   /* #7f6df2 — focus ring */
+
+  /* learning statuses */
+  --ls-repeat: 255 149 51;   /* warmer orange for dark bg */
+  --ls-questions: 248 113 113; /* red-400 */
+  --ls-deepen: 96 165 250;   /* blue-400 */
 
   --shadow: 0 4px 12px rgba(0, 0, 0, .5), 0 2px 4px rgba(0, 0, 0, .4);
 }
@@ -89,6 +99,11 @@
   --ring: 46 92 72;
   /* primary */
 
+  /* learning statuses */
+  --ls-repeat: 194 120 48;   /* muted amber */
+  --ls-questions: 178 56 56; /* matches --danger */
+  --ls-deepen: 46 92 72;     /* matches --primary */
+
   --shadow: 0 6px 18px rgba(18, 14, 8, .10), 0 2px 6px rgba(18, 14, 8, .08);
 }
 
@@ -120,6 +135,11 @@
   /* #81a1c1 */
   --ring: 129 161 193;
 
+  /* learning statuses */
+  --ls-repeat: 235 203 139;  /* nord aurora yellow */
+  --ls-questions: 191 97 106; /* nord aurora red */
+  --ls-deepen: 129 161 193;  /* nord frost */
+
   --shadow: 0 10px 26px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .35);
 }
 
@@ -150,6 +170,11 @@
   /* #2aa198 */
   --ring: 38 139 210;
 
+  /* learning statuses */
+  --ls-repeat: 181 137 0;    /* solarized yellow */
+  --ls-questions: 220 50 47; /* solarized red */
+  --ls-deepen: 38 139 210;   /* solarized blue */
+
   --shadow: 0 10px 26px rgba(0, 0, 0, .50), 0 2px 6px rgba(0, 0, 0, .35);
 }
 
@@ -179,6 +204,11 @@
   --link-inline: 244 208 63;
   --ring: 244 208 63;
 
+  /* learning statuses */
+  --ls-repeat: 251 191 36;   /* warm gold */
+  --ls-questions: 239 68 68; /* red-500 */
+  --ls-deepen: 96 165 250;   /* blue-400 */
+
   --shadow: 0 10px 28px rgba(0, 0, 0, .55),
     0 4px 10px rgba(0, 0, 0, .45);
 }
@@ -207,6 +237,11 @@
 
   --link-inline: 139 115 85;
   --ring: 139 115 85;
+
+  /* learning statuses */
+  --ls-repeat: 194 120 48;   /* muted amber */
+  --ls-questions: 160 103 74; /* matches --danger */
+  --ls-deepen: 139 115 85;   /* matches --primary */
 
   --shadow: 0 6px 18px rgba(32, 24, 16, .12),
     0 2px 6px rgba(32, 24, 16, .08);

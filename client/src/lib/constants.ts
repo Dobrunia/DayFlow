@@ -16,9 +16,9 @@ export type CardTypeKey = keyof typeof CARD_TYPES;
 export type LearningStatusKey = keyof typeof LEARNING_STATUSES;
 
 export const LEARNING_STATUS_META = {
-  [LEARNING_STATUSES.WANT_TO_REPEAT]: { label: 'Хочу повторить', icon: 'i-lucide-repeat', color: 'text-orange-500' },
-  [LEARNING_STATUSES.QUESTIONS_REMAIN]: { label: 'Остались вопросы', icon: 'i-lucide-help-circle', color: 'text-red-500' },
-  [LEARNING_STATUSES.DEEPEN_KNOWLEDGE]: { label: 'Хочу углубить знания', icon: 'i-lucide-book-open', color: 'text-blue-500' },
+  [LEARNING_STATUSES.WANT_TO_REPEAT]: { label: 'Хочу повторить', icon: 'i-lucide-repeat', color: 'text-ls-repeat' },
+  [LEARNING_STATUSES.QUESTIONS_REMAIN]: { label: 'Остались вопросы', icon: 'i-lucide-help-circle', color: 'text-ls-questions' },
+  [LEARNING_STATUSES.DEEPEN_KNOWLEDGE]: { label: 'Хочу углубить знания', icon: 'i-lucide-book-open', color: 'text-ls-deepen' },
 } as const;
 
 export const CARD_TYPE_META = {

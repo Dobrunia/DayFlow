@@ -45,6 +45,10 @@ export default defineConfig({
 
       link: 'rgb(var(--link-inline) / <alpha-value>)',
       ring: 'rgb(var(--ring) / <alpha-value>)',
+
+      'ls-repeat': 'rgb(var(--ls-repeat) / <alpha-value>)',
+      'ls-questions': 'rgb(var(--ls-questions) / <alpha-value>)',
+      'ls-deepen': 'rgb(var(--ls-deepen) / <alpha-value>)',
     },
   },
 
@@ -215,6 +219,13 @@ export default defineConfig({
     'i-lucide-bar-chart-2',
     'i-lucide-user-x',
     'i-lucide-share-2',
+    // learning status (dynamic from constants.ts)
+    'i-lucide-repeat',
+    'i-lucide-help-circle',
+    'i-lucide-book-open',
+    'text-ls-repeat',
+    'text-ls-questions',
+    'text-ls-deepen',
   ],
 });
 // Правило, которое остановит рост “100 видов одного”

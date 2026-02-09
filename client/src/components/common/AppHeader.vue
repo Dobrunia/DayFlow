@@ -15,9 +15,9 @@ const navLinks = [
 ];
 
 const learningLinks = [
-  { to: '/learning/repeat', label: 'Повторить', icon: 'i-lucide-repeat' },
-  { to: '/learning/questions', label: 'Вопросы', icon: 'i-lucide-help-circle' },
-  { to: '/learning/deepen', label: 'Углубить', icon: 'i-lucide-book-open' },
+  { to: '/learning/repeat', label: 'Повторить', icon: 'i-lucide-repeat', color: 'text-ls-repeat' },
+  { to: '/learning/questions', label: 'Вопросы', icon: 'i-lucide-help-circle', color: 'text-ls-questions' },
+  { to: '/learning/deepen', label: 'Углубить', icon: 'i-lucide-book-open', color: 'text-ls-deepen' },
 ];
 
 const authStore = useAuthStore();
@@ -146,7 +146,7 @@ function handleSignOut() {
             class="btn-ghost"
             active-class="bg-fg/10"
           >
-            <span :class="link.icon" />
+            <span :class="[link.icon, link.color]" />
             <span>{{ link.label }}</span>
           </RouterLink>
         </div>

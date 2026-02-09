@@ -205,7 +205,6 @@ function handleDeleteFromDialog() {
     </div>
 
     <CreateCardDialog
-      v-if="columnId || isBacklog"
       :open="showEditDialog"
       :card="card"
       :column-id="columnId"

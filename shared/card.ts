@@ -104,7 +104,7 @@ export const UpdateCardInputSchema = z.object({
   order: z.number().int().optional(),
   payload: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  learningStatus: LearningStatusEnum.optional(),
+  learningStatus: LearningStatusEnum.nullable().optional(),
 });
 export type UpdateCardInput = z.infer<typeof UpdateCardInputSchema>;
 

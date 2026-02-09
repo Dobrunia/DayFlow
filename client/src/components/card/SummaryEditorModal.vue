@@ -51,7 +51,8 @@ const renderedHtml = computed(() => {
 });
 
 const { view, create, getDoc, setDoc, setReadOnly, setDark, destroy, focus } = useCodemirror({
-  // Ctrl+Enter → save without closing
+  // Ctrl+Enter — сохранить, но НЕ закрывать модалку.
+  // Закрытие — только через кнопку «Сохранить и закрыть» (saveAndClose).
   onSave: (doc) => {
     emit('update:modelValue', doc.trim());
     toast.success('Сохранено');
@@ -114,7 +115,9 @@ function setupInteractivePreview() {
   if (!container) return;
 
   // Replace checkboxes with non-interactive divs
-  const checkboxes = container.querySelectorAll<HTMLInputElement>('.markdown-body input[type="checkbox"]');
+  const checkboxes = container.querySelectorAll<HTMLInputElement>(
+    '.markdown-body input[type="checkbox"]'
+  );
   checkboxes.forEach((cb) => {
     const isChecked = cb.checked;
     const replacement = document.createElement('div');
@@ -124,7 +127,9 @@ function setupInteractivePreview() {
   });
 
   // Add collapse/expand to headings (h2+ only, not h1)
-  const headings = container.querySelectorAll<HTMLElement>('.markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6');
+  const headings = container.querySelectorAll<HTMLElement>(
+    '.markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6'
+  );
   headings.forEach((heading, index) => {
     // Remove old icon if exists
     const oldIcon = heading.querySelector('.heading-collapse-icon');
@@ -133,7 +138,7 @@ function setupInteractivePreview() {
     const level = Number.parseInt(heading.tagName.substring(1));
     heading.dataset.headingIndex = String(index);
     heading.dataset.level = String(level);
-    
+
     // Add collapse icon
     const icon = document.createElement('span');
     icon.className = 'heading-collapse-icon';
@@ -166,7 +171,7 @@ function toggleSection(headingIndex: number) {
 
   const level = Number.parseInt(heading.dataset.level ?? '1');
   const isCollapsed = collapsedSections.value.has(headingIndex);
-  
+
   // Update icon
   const icon = heading.querySelector('.heading-collapse-icon');
   if (icon) icon.textContent = isCollapsed ? '▶' : '▼';
@@ -183,7 +188,7 @@ function applySectionCollapse(heading: HTMLElement, level: number, collapse: boo
       const siblingLevel = Number.parseInt(tagName.substring(1));
       if (siblingLevel <= level) break;
     }
-    
+
     sibling.style.display = collapse ? 'none' : '';
     sibling = sibling.nextElementSibling as HTMLElement | null;
   }
@@ -195,8 +200,13 @@ function saveAndClose() {
   emit('close');
 }
 
-// Prevent Ctrl+Z in preview mode
 function handleKeyDown(e: KeyboardEvent) {
+  // Ctrl+Enter — сохранить, НЕ закрывать. Останавливаем всплытие,
+  // чтобы родительский диалог не перехватил Enter.
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.stopPropagation();
+  }
+  // Prevent Ctrl+Z in preview mode
   if (isReadOnly.value && e.ctrlKey && e.key === 'z') {
     e.preventDefault();
     e.stopPropagation();
@@ -337,7 +347,9 @@ watch(
           <div class="hotkeys-section">
             <h4>Просмотр</h4>
             <div class="hotkey-item">
-              <span class="hotkey-desc">Кликайте на ▼/▶ возле заголовков для сворачивания секций</span>
+              <span class="hotkey-desc"
+                >Кликайте на ▼/▶ возле заголовков для сворачивания секций</span
+              >
             </div>
           </div>
         </div>
@@ -360,7 +372,9 @@ watch(
         <!-- Footer -->
         <div class="flex items-center justify-between pt-3 mt-3 border-t border-border">
           <span class="text-xs text-muted">Ctrl+Enter — сохранить</span>
-          <button type="button" class="btn-primary" @click="saveAndClose">Сохранить и закрыть</button>
+          <button type="button" class="btn-primary" @click="saveAndClose">
+            Сохранить и закрыть
+          </button>
         </div>
       </DialogContent>
     </DialogPortal>
@@ -383,7 +397,7 @@ watch(
 }
 
 /* Interactive preview */
-.markdown-interactive :deep(input[type="checkbox"]) {
+.markdown-interactive :deep(input[type='checkbox']) {
   cursor: default;
   opacity: 0.7;
   pointer-events: none;
@@ -569,7 +583,7 @@ watch(
   border: none;
   padding: 0;
   font-size: 0.9em;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* hljs syntax highlighting - base */
@@ -689,7 +703,7 @@ watch(
   padding: 0.2em 0.4em;
   font-size: 0.9em;
   color: rgb(var(--primary));
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* Links */

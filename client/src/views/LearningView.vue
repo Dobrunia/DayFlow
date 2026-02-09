@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
 import { CARDS_QUERY } from '@/graphql/queries';
@@ -8,6 +8,7 @@ import CardItem from '@/components/card/CardItem.vue';
 
 const route = useRoute();
 const status = computed(() => route.meta.status as LearningStatus);
+const initialLoaded = ref(false);
 
 const titles: Record<string, string> = {
   WANT_TO_REPEAT: 'Хочу повторить',
@@ -24,10 +25,15 @@ const { result, loading, refetch } = useQuery(CARDS_QUERY, () => ({
 }));
 
 watch(() => route.fullPath, () => {
+  initialLoaded.value = false;
   refetch();
 });
 
-const cards = computed(() => result.value?.cards ?? []);
+const cards = computed(() => {
+  const c = result.value?.cards ?? [];
+  if (c.length || !loading.value) initialLoaded.value = true;
+  return c;
+});
 
 const hubCards = computed(() => cards.value.filter((c: CardGql) => !c.workspaceId));
 
@@ -66,7 +72,7 @@ function onCardDeleted() {
       {{ pageTitle }}
     </h1>
 
-    <div v-if="loading" class="flex-center py-12">
+    <div v-if="loading && !initialLoaded" class="flex-center py-12">
       <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />
     </div>
 

@@ -170,7 +170,7 @@ watch(
         selectedWorkspaceId.value = '';
         tagsInput.value = '';
         learningStatus.value = null;
-        if (!props.columnId && props.workspaceId == null) workspaceStore.fetchWorkspaces();
+        if (!props.columnId && props.workspaceId == null && !workspaceStore.workspaces.length) workspaceStore.fetchWorkspaces();
       }
       submitted.value = false;
       nextTick(() => {
@@ -271,7 +271,7 @@ async function handleSubmit() {
 
     if (props.card) {
       const newTitle = title.value.trim() || null;
-      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: learningStatus.value ?? undefined };
+      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: learningStatus.value };
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
       emit('updated', { ...props.card, title: newTitle, payload, tags, learningStatus: learningStatus.value });

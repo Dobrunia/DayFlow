@@ -30,12 +30,15 @@ const createLoading = ref(false);
 const pinned = ref(false);
 const panelRef = ref<HTMLElement | null>(null);
 const linkInputRef = ref<HTMLInputElement | null>(null);
+const submitted = ref(false);
 
 function handleClickOutside(event: MouseEvent) {
   if (!props.isOpen || pinned.value) return;
   
   const target = event.target as HTMLElement;
-  if (panelRef.value && !panelRef.value.contains(target)) {
+  const isInsidePortal = target.closest('[data-radix-popper-content-wrapper]');
+
+  if (panelRef.value && !panelRef.value.contains(target) && !isInsidePortal) {
     emit('close');
   }
 }
@@ -49,7 +52,11 @@ onUnmounted(() => {
 });
 
 async function handleCreate() {
-  if (!newToolTitle.value.trim()) return;
+  submitted.value = true;
+  if (!newToolTitle.value.trim()) {
+      toast.error('Введите название инструмента');
+      return;
+  }
 
   try {
     createLoading.value = true;
@@ -67,6 +74,7 @@ async function handleCreate() {
     newToolDescription.value = '';
     newToolTags.value = '';
     isCreating.value = false;
+    submitted.value = false;
     toast.success('Инструмент добавлен');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
@@ -77,6 +85,7 @@ async function handleCreate() {
 
 async function startCreating() {
   isCreating.value = true;
+  submitted.value = false;
   await nextTick();
   linkInputRef.value?.focus();
 }
@@ -115,8 +124,9 @@ async function startCreating() {
 
            <input
             v-model="newToolTitle"
-            placeholder="Название"
+            placeholder="Название *"
             class="input flex-1 text-sm min-w-0"
+            :class="submitted && !newToolTitle.trim() && 'border-danger!'"
             autoFocus
             @keyup.enter="handleCreate"
           />

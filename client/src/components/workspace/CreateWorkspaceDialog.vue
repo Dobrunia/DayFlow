@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
 import { LIMITS } from 'dayflow-shared';
+import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 import {
   DialogRoot,
   DialogPortal,
@@ -36,6 +37,7 @@ const title = ref('');
 const description = ref('');
 const icon = ref<string | null>(WORKSPACE_EMOJIS[0]);
 const loading = ref(false);
+const submitted = ref(false);
 
 watch(
   () => props.open,
@@ -44,11 +46,14 @@ watch(
       title.value = '';
       description.value = '';
       icon.value = WORKSPACE_EMOJIS[0];
+      submitted.value = false;
     }
   }
 );
 
 async function handleSubmit() {
+  submitted.value = true;
+
   if (workspaceStore.workspaces.length >= LIMITS.MAX_WORKSPACES_PER_USER) {
     toast.error(`Максимум ${LIMITS.MAX_WORKSPACES_PER_USER} воркспейсов`);
     return;
@@ -95,19 +100,8 @@ async function handleSubmit() {
           <!-- Icon -->
           <div>
             <label class="block text-sm font-medium mb-1">Иконка</label>
-            <div
-              class="flex flex-wrap gap-1.5 mt-1 max-h-[200px] overflow-y-auto overflow-x-hidden p-0.5"
-            >
-              <button
-                v-for="emoji in WORKSPACE_EMOJIS"
-                :key="emoji"
-                type="button"
-                class="w-9 h-9 rounded-[var(--r)] flex-center text-xl transition-colors hover:bg-fg/6 focus:outline-none focus:ring-2 focus:ring-primary shrink-0"
-                :class="icon === emoji ? 'bg-primary/20 ring-2 ring-primary' : 'bg-fg/5'"
-                @click="icon = emoji"
-              >
-                {{ emoji }}
-              </button>
+            <div class="mt-1">
+               <EmojiPickerPopover v-model="icon" />
             </div>
           </div>
 
@@ -119,6 +113,7 @@ async function handleSubmit() {
               v-model="title"
               type="text"
               class="input"
+              :class="submitted && !title.trim() && 'border-danger!'"
               placeholder="Например: Изучение React"
               autofocus
             />

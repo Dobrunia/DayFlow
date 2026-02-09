@@ -80,7 +80,7 @@ const learningStatusInfo = computed(() => {
   return map[props.card.learningStatus];
 });
 
-const isCollapsed = ref(!!props.card.learningStatus);
+const isCollapsed = ref(!!props.card.learningStatus || props.card.done);
 
 function handleDeleteFromDialog() {
   showEditDialog.value = false;
@@ -192,7 +192,7 @@ function handleDeleteFromDialog() {
       </a>
     </div>
 
-    <div v-if="learningStatusInfo && isCollapsed" class="px-3 pt-0 text-center">
+    <div v-if="isCollapsed" class="px-3 pt-0 text-center">
       <button
         type="button"
         @click="isCollapsed = false"

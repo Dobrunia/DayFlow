@@ -22,6 +22,16 @@ export const toolResolvers = {
         orderBy: { createdAt: 'desc' },
       });
     },
+
+    allTools: async (_: unknown, __: unknown, context: Context) => {
+      if (!context.user) throw UnauthenticatedError();
+
+      return context.prisma.tool.findMany({
+        where: { ownerId: context.user.id },
+        orderBy: { createdAt: 'desc' },
+        include: { workspace: { select: { id: true, title: true, icon: true } } },
+      });
+    },
   },
 
   Mutation: {

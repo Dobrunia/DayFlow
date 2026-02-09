@@ -170,3 +170,25 @@ export const TOOLS_QUERY = gql`
     }
   }
 `;
+
+export const ALL_TOOLS_QUERY = gql`
+  query AllTools {
+    allTools {
+      id
+      createdAt
+      updatedAt
+      ownerId
+      workspaceId
+      title
+      link
+      description
+      icon
+      tags
+      workspace {
+        id
+        title
+        icon
+      }
+    }
+  }
+`;

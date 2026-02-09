@@ -12,6 +12,7 @@ const navLinks = [
   { to: '/', label: 'Воркспейсы', icon: 'i-lucide-layout-grid' },
   { to: '/library', label: 'Хаб', icon: 'i-lucide-inbox' },
   { to: '/tags', label: 'Теги', icon: 'i-lucide-hash' },
+  { to: '/tools', label: 'Инструменты', icon: 'i-lucide-box' },
 ];
 
 const learningLinks = [

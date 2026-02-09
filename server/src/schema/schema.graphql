@@ -179,6 +179,8 @@ type Query {
   userStats(userId: ID!): UserStats
   """Инструменты пользователя (хаб: workspaceId = null)."""
   tools(workspaceId: ID): [Tool!]!
+  """Все инструменты пользователя (все воркспейсы + хаб)."""
+  allTools: [Tool!]!
 }
 
 # Mutations

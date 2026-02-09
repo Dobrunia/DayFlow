@@ -224,6 +224,8 @@ export type MutationUpdateWorkspaceArgs = {
 
 export type Query = {
   __typename?: 'Query';
+  /** Все инструменты пользователя (все воркспейсы + хаб). */
+  allTools: Array<Tool>;
   card?: Maybe<Card>;
   /** Все карточки пользователя (хаб: workspaceId = null, или по фильтру). sortOrder: createdAt_DESC (по умолчанию) | createdAt_ASC */
   cards: Array<Card>;
@@ -545,6 +547,7 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
 }>;
 
 export type QueryResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  allTools?: Resolver<Array<ResolversTypes['Tool']>, ParentType, ContextType>;
   card?: Resolver<Maybe<ResolversTypes['Card']>, ParentType, ContextType, RequireFields<QueryCardArgs, 'id'>>;
   cards?: Resolver<Array<ResolversTypes['Card']>, ParentType, ContextType, Partial<QueryCardsArgs>>;
   cardsCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, Partial<QueryCardsCountArgs>>;

@@ -219,6 +219,8 @@ export type MutationUpdateWorkspaceArgs = {
 
 export type Query = {
   __typename?: 'Query';
+  /** Все инструменты пользователя (все воркспейсы + хаб). */
+  allTools: Array<Tool>;
   card?: Maybe<Card>;
   /** Все карточки пользователя (хаб: workspaceId = null, или по фильтру). sortOrder: createdAt_DESC (по умолчанию) | createdAt_ASC */
   cards: Array<Card>;
@@ -550,3 +552,8 @@ export type ToolsQueryVariables = Exact<{
 
 
 export type ToolsQuery = { __typename?: 'Query', tools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string> }> };
+
+export type AllToolsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AllToolsQuery = { __typename?: 'Query', allTools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string>, workspace?: { __typename?: 'Workspace', id: string, title: string, icon?: string | null } | null }> };

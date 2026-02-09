@@ -1,4 +1,4 @@
-import { Prisma, $Enums } from '@prisma/client';
+import { Prisma, $Enums, type Card } from '@prisma/client';
 import { 
   UnauthenticatedError, 
   NotFoundError, 
@@ -369,22 +369,22 @@ export const cardResolvers = {
   },
 
   Card: {
-    owner: async (parent: any, _: unknown, context: Context) => {
+    owner: async (parent: Card, _: unknown, context: Context) => {
       return context.loaders.userById.load(parent.ownerId);
     },
-    workspace: async (parent: any, _: unknown, context: Context) => {
+    workspace: async (parent: Card, _: unknown, context: Context) => {
       if (!parent.workspaceId) return null;
       return context.loaders.workspaceById.load(parent.workspaceId);
     },
-    column: async (parent: any, _: unknown, context: Context) => {
-      if (!parent.columnId) return null;
+    column: async (parent: Card, _: unknown, context: Context) => {
+      if (!parent.columnId || !parent.workspaceId) return null;
       const columns = await context.loaders.columnsByWorkspaceId.load(parent.workspaceId);
       return columns.find((c) => c.id === parent.columnId) || null;
     },
-    learningStatus: (parent: any) => {
+    learningStatus: (parent: Card) => {
       return (parent.learningStatus as LearningStatus) || null;
     },
-    payload: (parent: any) => {
+    payload: (parent: Card) => {
       return typeof parent.payload === 'string'
         ? parent.payload
         : JSON.stringify(parent.payload);

@@ -96,10 +96,11 @@ export const CREATE_COLUMN_MUTATION = gql`
 `;
 
 export const UPDATE_COLUMN_MUTATION = gql`
-  mutation UpdateColumn($id: ID!, $title: String!) {
-    updateColumn(id: $id, title: $title) {
+  mutation UpdateColumn($id: ID!, $title: String, $hideCompleted: Boolean) {
+    updateColumn(id: $id, title: $title, hideCompleted: $hideCompleted) {
       id
       title
+      hideCompleted
     }
   }
 `;

@@ -379,6 +379,35 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  async function toggleHideCompleted(id: string) {
+    const col = currentWorkspace.value?.columns?.find((c) => c.id === id);
+    if (!col) return;
+
+    const newVal = !col.hideCompleted;
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Optimistic update
+    if (currentWorkspace.value?.columns) {
+      const index = currentWorkspace.value.columns.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        const next = [...currentWorkspace.value.columns];
+        next[index] = { ...next[index], hideCompleted: newVal };
+        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
+      }
+    }
+
+    try {
+      await apolloClient.mutate({
+        mutation: UPDATE_COLUMN_MUTATION,
+        variables: { id, hideCompleted: newVal },
+      });
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      if (oldWorkspace) currentWorkspace.value = oldWorkspace;
+      throw e;
+    }
+  }
+
   async function deleteColumn(id: string) {
     // Сохраняем колонку для undo
     const ws = currentWorkspace.value;
@@ -978,6 +1007,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     toggleWorkspacePinned,
     createColumn,
     updateColumn,
+    toggleHideCompleted,
     deleteColumn,
     undoDeleteColumn,
     reorderColumns,

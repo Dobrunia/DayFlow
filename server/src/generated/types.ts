@@ -63,6 +63,7 @@ export type CardType =
 export type Column = {
   __typename?: 'Column';
   cards: Array<Card>;
+  hideCompleted: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   order: Scalars['Int']['output'];
   title: Scalars['String']['output'];
@@ -201,8 +202,9 @@ export type MutationUpdateCardArgs = {
 
 
 export type MutationUpdateColumnArgs = {
+  hideCompleted?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['ID']['input'];
-  title: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -514,6 +516,7 @@ export type CardResolvers<ContextType = Context, ParentType extends ResolversPar
 
 export type ColumnResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Column'] = ResolversParentTypes['Column']> = ResolversObject<{
   cards?: Resolver<Array<ResolversTypes['Card']>, ParentType, ContextType>;
+  hideCompleted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   order?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -540,7 +543,7 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
   signUp?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'email' | 'password'>>;
   toggleWorkspacePinned?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationToggleWorkspacePinnedArgs, 'id'>>;
   updateCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationUpdateCardArgs, 'id' | 'input'>>;
-  updateColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationUpdateColumnArgs, 'id' | 'title'>>;
+  updateColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationUpdateColumnArgs, 'id'>>;
   updateProfile?: Resolver<ResolversTypes['User'], ParentType, ContextType, Partial<MutationUpdateProfileArgs>>;
   updateTool?: Resolver<ResolversTypes['Tool'], ParentType, ContextType, RequireFields<MutationUpdateToolArgs, 'id' | 'input'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'input'>>;

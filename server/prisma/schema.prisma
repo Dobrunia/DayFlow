@@ -49,10 +49,11 @@ model Workspace {
 }
 
 model Column {
-  id          String @id @default(cuid())
-  title       String
-  order       Int
-  workspaceId String
+  id            String  @id @default(cuid())
+  title         String
+  order         Int
+  hideCompleted Boolean @default(false)
+  workspaceId   String
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   cards     Card[]

@@ -29,7 +29,10 @@ const props = withDefaults(
 
 const workspaceStore = useWorkspaceStore();
 const showAddCard = ref(false);
-const hideCompleted = ref(false);
+const backlogHideCompleted = ref(false);
+const hideCompleted = computed(() =>
+  props.isBacklogColumn ? backlogHideCompleted.value : (props.column.hideCompleted ?? false)
+);
 const headerRef = ref<HTMLElement | null>(null);
 const cardsListRef = ref<HTMLElement | null>(null);
 let sortable: Sortable | null = null;
@@ -198,20 +201,22 @@ async function moveRight() {
       </div>
       <h3
         v-else
-        :title="column.title"
-        class="font-medium text-fg truncate flex-1 min-w-0 leading-none"
+        class="flex items-baseline min-w-0 leading-none flex-1"
         :class="{ 'cursor-text': !isBacklog }"
-        @dblclick="!isBacklog && startEdit()"
       >
-        {{ column.title }}
-        <span class="text-xs text-muted font-normal ml-1 tabular-nums">{{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}</span>
+        <span
+          class="font-medium text-fg truncate"
+          :title="column.title"
+          @dblclick="!isBacklog && startEdit()"
+        >{{ column.title }}</span>
+        <span class="text-xs text-muted font-normal ml-1 tabular-nums shrink-0">{{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}<template v-if="hideCompleted || searchQuery">/{{ isBacklog ? (backlogCards ?? []).length : cards.length }}</template></span>
       </h3>
 
       <div class="flex items-center gap-0.5 shrink-0 leading-none">
         <button
           v-if="completedCount > 0"
           type="button"
-          @click="hideCompleted = !hideCompleted"
+          @click="isBacklog ? (backlogHideCompleted = !backlogHideCompleted) : workspaceStore.toggleHideCompleted(column.id)"
           class="icon-btn-ghost"
           :class="{ 'text-primary': hideCompleted }"
           :title="hideCompleted ? `Показать выполненные (${completedCount})` : 'Скрыть выполненные'"

@@ -58,7 +58,7 @@ export const columnResolvers = {
 
     updateColumn: async (
       _: unknown,
-      { id, title }: MutationUpdateColumnArgs,
+      { id, title, hideCompleted }: MutationUpdateColumnArgs,
       context: Context
     ) => {
       if (!context.user) {
@@ -77,9 +77,13 @@ export const columnResolvers = {
         throw NotFoundError('Column not found');
       }
 
+      const data: { title?: string; hideCompleted?: boolean } = {};
+      if (title !== undefined && title !== null) data.title = title;
+      if (hideCompleted !== undefined && hideCompleted !== null) data.hideCompleted = hideCompleted;
+
       return context.prisma.column.update({
         where: { id },
-        data: { title },
+        data,
       });
     },
 

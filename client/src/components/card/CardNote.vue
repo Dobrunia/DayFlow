@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted, defineAsyncComponent } from 'vue';
-import type { NotePayload } from 'dayflow-shared';
+import type { NotePayload } from '@/lib/card-payload';
 import { linkify, renderMarkdown } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 

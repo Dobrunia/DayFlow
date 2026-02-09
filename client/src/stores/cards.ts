@@ -6,7 +6,7 @@ import { CARDS_QUERY, CARDS_COUNT_QUERY, CARD_QUERY } from '@/graphql/queries';
 import { CREATE_CARD_MUTATION, UPDATE_CARD_MUTATION, DELETE_CARD_MUTATION } from '@/graphql/mutations';
 import type { CardGql, CardFilter, CreateCardInput, UpdateCardInput } from '@/graphql/types';
 
-const FILTER_KEYS = ['type', 'done', 'workspaceId', 'columnId', 'search'] as const;
+const FILTER_KEYS = ['type', 'done', 'workspaceId', 'columnId', 'search', 'learningStatus'] as const;
 
 function toFilterVars(f: Partial<CardFilter>) {
   return Object.fromEntries(
@@ -125,7 +125,13 @@ export const useCardsStore = defineStore('cards', () => {
     
     if (index !== -1) {
       const next = [...cards.value];
-      next[index] = { ...next[index], ...input };
+      const updated = { ...next[index] };
+      if (input.title != null) updated.title = input.title;
+      if (input.done != null) updated.done = input.done;
+      if (input.payload != null) updated.payload = input.payload;
+      if (input.tags != null) updated.tags = input.tags;
+      if (input.learningStatus !== undefined) updated.learningStatus = input.learningStatus;
+      next[index] = updated;
       cards.value = next;
     }
 

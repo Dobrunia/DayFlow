@@ -4,7 +4,7 @@ import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { useCardsStore } from '@/stores/cards';
 import type { CardGql, LearningStatus } from '@/graphql/types';
-import type { ChecklistItem } from 'dayflow-shared';
+import type { ChecklistItem } from '@/lib/card-payload';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogClose,
 } from 'radix-vue';
+import { CARD_TYPES, LEARNING_STATUSES, LEARNING_STATUS_META, CARD_TYPE_META } from '@/lib/constants';
 
 const props = withDefaults(
   defineProps<{
@@ -55,7 +56,7 @@ const selectedWorkspaceId = ref('');
 const workspaces = computed(() => workspaceStore.workspaces);
 
 const title = ref('');
-const cardType = ref<'NOTE' | 'LINK' | 'CHECKLIST'>('NOTE');
+const cardType = ref<typeof CARD_TYPES[keyof typeof CARD_TYPES]>(CARD_TYPES.NOTE);
 const noteContent = ref('');
 const noteSummary = ref('');
 const linkUrl = ref('');
@@ -67,11 +68,10 @@ const learningStatus = ref<LearningStatus | null>(null);
 const loading = ref(false);
 const showDetails = ref(false);
 
-const learningStatuses: { value: LearningStatus; label: string; icon: string }[] = [
-  { value: 'WANT_TO_REPEAT', label: 'Хочу повторить', icon: 'i-lucide-repeat' },
-  { value: 'QUESTIONS_REMAIN', label: 'Остались вопросы', icon: 'i-lucide-help-circle' },
-  { value: 'DEEPEN_KNOWLEDGE', label: 'Хочу углубить знания', icon: 'i-lucide-book-open' },
-];
+const learningStatuses = Object.values(LEARNING_STATUSES).map((value) => ({
+  value,
+  ...LEARNING_STATUS_META[value],
+}));
 
 const submitted = ref(false);
 const checklistListRef = ref<HTMLElement | null>(null);
@@ -80,29 +80,28 @@ let checklistSortable: Sortable | null = null;
 
 const currentSummary = computed({
   get: () => {
-    if (cardType.value === 'NOTE') return noteSummary.value;
-    if (cardType.value === 'LINK') return linkSummary.value;
+    if (cardType.value === CARD_TYPES.NOTE) return noteSummary.value;
+    if (cardType.value === CARD_TYPES.LINK) return linkSummary.value;
     return checklistSummary.value;
   },
   set: (val) => {
-    if (cardType.value === 'NOTE') noteSummary.value = val;
-    else if (cardType.value === 'LINK') linkSummary.value = val;
+    if (cardType.value === CARD_TYPES.NOTE) noteSummary.value = val;
+    else if (cardType.value === CARD_TYPES.LINK) linkSummary.value = val;
     else checklistSummary.value = val;
   }
 });
 
 const isEditMode = computed(() => !!props.card);
 
-const types = [
-  { value: 'NOTE' as const, label: 'Заметка', icon: 'i-lucide-file-text' },
-  { value: 'LINK' as const, label: 'Ссылка', icon: 'i-lucide-link' },
-  { value: 'CHECKLIST' as const, label: 'Чеклист', icon: 'i-lucide-check-square' },
-];
+const types = Object.values(CARD_TYPES).map((value) => ({
+  value,
+  ...CARD_TYPE_META[value],
+}));
 
 function initChecklistSortable() {
   checklistSortable?.destroy();
   checklistSortable = null;
-  if (!checklistListRef.value || cardType.value !== 'CHECKLIST') return;
+  if (!checklistListRef.value || cardType.value !== CARD_TYPES.CHECKLIST) return;
   checklistSortable = new Sortable(checklistListRef.value, {
     animation: 150,
     handle: '.checklist-grip',
@@ -126,17 +125,17 @@ watch(
     if (isOpen) {
       if (card) {
         title.value = card.title ?? '';
-        cardType.value = card.type as 'NOTE' | 'LINK' | 'CHECKLIST';
+        cardType.value = card.type as typeof CARD_TYPES[keyof typeof CARD_TYPES];
         try {
           const pl =
             typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
-          if (card.type === 'NOTE') {
+          if (card.type === CARD_TYPES.NOTE) {
             noteContent.value = (pl as { content?: string }).content ?? '';
             noteSummary.value = (pl as { summary?: string }).summary ?? '';
-          } else if (card.type === 'LINK') {
+          } else if (card.type === CARD_TYPES.LINK) {
             linkUrl.value = (pl as { url?: string }).url ?? '';
             linkSummary.value = (pl as { summary?: string }).summary ?? '';
-          } else if (card.type === 'CHECKLIST') {
+          } else if (card.type === CARD_TYPES.CHECKLIST) {
             const items =
               (pl as { items?: { id: string; text: string; done: boolean; order: number }[] })
                 .items ?? [];
@@ -159,7 +158,7 @@ watch(
         }
       } else {
         title.value = '';
-        cardType.value = 'NOTE';
+        cardType.value = CARD_TYPES.NOTE;
         noteContent.value = '';
         noteSummary.value = '';
         linkUrl.value = '';
@@ -185,7 +184,7 @@ watch(
 );
 
 watch(cardType, (t) => {
-  if (t === 'CHECKLIST') nextTick(() => initChecklistSortable());
+  if (t === CARD_TYPES.CHECKLIST) nextTick(() => initChecklistSortable());
   else {
     checklistSortable?.destroy();
     checklistSortable = null;
@@ -231,13 +230,13 @@ function buildTags(): string[] {
 }
 
 function buildPayload(): string {
-  if (cardType.value === 'NOTE') {
+  if (cardType.value === CARD_TYPES.NOTE) {
     return JSON.stringify({
       content: noteContent.value.trim() || undefined,
       summary: noteSummary.value.trim() || undefined,
     });
   }
-  if (cardType.value === 'LINK') {
+  if (cardType.value === CARD_TYPES.LINK) {
     return JSON.stringify({
       url: linkUrl.value.trim(),
       summary: linkSummary.value.trim() || undefined,
@@ -255,7 +254,7 @@ function buildPayload(): string {
 async function handleSubmit() {
   submitted.value = true;
 
-  if (cardType.value === 'LINK' && !linkUrl.value.trim()) {
+  if (cardType.value === CARD_TYPES.LINK && !linkUrl.value.trim()) {
     toast.error('Введите URL ссылки');
     return;
   }
@@ -425,7 +424,7 @@ async function handleSubmit() {
             </div>
           </div>
 
-          <template v-if="cardType === 'NOTE'">
+          <template v-if="cardType === CARD_TYPES.NOTE">
             <div class="min-h-[152px]">
               <label for="card-note" class="block text-sm font-medium mb-1">Текст заметки</label>
               <textarea
@@ -437,7 +436,7 @@ async function handleSubmit() {
             </div>
           </template>
 
-          <template v-if="cardType === 'LINK'">
+          <template v-if="cardType === CARD_TYPES.LINK">
             <div class="min-h-[152px]">
               <label for="card-url" class="block text-sm font-medium mb-1">URL *</label>
               <input
@@ -451,7 +450,7 @@ async function handleSubmit() {
             </div>
           </template>
 
-          <template v-if="cardType === 'CHECKLIST'">
+          <template v-if="cardType === CARD_TYPES.CHECKLIST">
             <div class="min-h-[152px]">
               <label class="block text-sm font-medium mb-2">Пункты</label>
               <div ref="checklistListRef" class="space-y-2">

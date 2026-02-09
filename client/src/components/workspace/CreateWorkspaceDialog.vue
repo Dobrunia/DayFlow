@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '@/stores/workspace';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import { WORKSPACE_EMOJIS } from '@/lib/workspace-emojis';
+import { LIMITS } from 'dayflow-shared';
 import {
   DialogRoot,
   DialogPortal,
@@ -48,8 +49,8 @@ watch(
 );
 
 async function handleSubmit() {
-  if (workspaceStore.workspaces.length >= 20) {
-    toast.error('Максимум 20 воркспейсов');
+  if (workspaceStore.workspaces.length >= LIMITS.MAX_WORKSPACES_PER_USER) {
+    toast.error(`Максимум ${LIMITS.MAX_WORKSPACES_PER_USER} воркспейсов`);
     return;
   }
 

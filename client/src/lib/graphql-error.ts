@@ -3,21 +3,14 @@
  * Apollo при throw даёт ApolloError с graphQLErrors[].message и .extensions.
  */
 
-export const ErrorCodes = {
-  UNAUTHENTICATED: 'UNAUTHENTICATED',
-  FORBIDDEN: 'FORBIDDEN',
-  NOT_FOUND: 'NOT_FOUND',
-  BAD_REQUEST: 'BAD_REQUEST',
-  INTERNAL: 'INTERNAL',
-} as const;
-
-export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
+import { ErrorCodes, type ErrorCode } from 'dayflow-shared';
 
 const FALLBACK_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCodes.UNAUTHENTICATED]: 'Нужно войти в аккаунт',
   [ErrorCodes.FORBIDDEN]: 'Нет доступа',
   [ErrorCodes.NOT_FOUND]: 'Не найдено',
   [ErrorCodes.BAD_REQUEST]: 'Неверные данные',
+  [ErrorCodes.RATE_LIMIT_EXCEEDED]: 'Слишком много запросов. Подождите.',
   [ErrorCodes.INTERNAL]: 'Ошибка сервера. Попробуйте позже.',
 };
 

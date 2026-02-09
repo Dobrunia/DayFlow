@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '@/stores/workspace';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import type { CardGql, UpdateCardInput } from '@/graphql/types';
+import { CARD_TYPES } from '@/lib/constants';
 
 interface UseCardActionsOptions {
   /** Callback после успешного обновления карточки */
@@ -133,7 +134,7 @@ export function useCardActions(
    */
   async function toggleChecklistItem(index: number): Promise<CardGql | null> {
     const c = getCard();
-    if (c.type !== 'CHECKLIST') return null;
+    if (c.type !== CARD_TYPES.CHECKLIST) return null;
 
     const raw = typeof c.payload === 'string' ? JSON.parse(c.payload || '{}') : c.payload;
     const items = Array.isArray((raw as { items?: unknown[] }).items)

@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { marked } from 'marked';
 import hljs from 'highlight.js/lib/core';
+import { CARD_TYPE_META } from './constants';
 
 // Import only commonly used languages to reduce bundle size
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -65,6 +66,10 @@ export function renderMarkdown(src: string): string {
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function getCardIcon(type: string): string {
+  return CARD_TYPE_META[type as keyof typeof CARD_TYPE_META]?.icon ?? 'i-lucide-circle';
 }
 
 export function formatDate(date: string | Date): string {

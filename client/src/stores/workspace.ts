@@ -134,11 +134,19 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     // Optimistic update
     if (index !== -1) {
       const next = [...workspaces.value];
-      next[index] = { ...next[index], ...input };
+      const updated = { ...next[index] };
+      if (input.title != null) updated.title = input.title;
+      if (input.description !== undefined) updated.description = input.description;
+      if (input.icon !== undefined) updated.icon = input.icon;
+      next[index] = updated;
       workspaces.value = next;
     }
     if (currentWorkspace.value?.id === id) {
-      currentWorkspace.value = { ...currentWorkspace.value, ...input };
+      const updated = { ...currentWorkspace.value };
+      if (input.title != null) updated.title = input.title;
+      if (input.description !== undefined) updated.description = input.description;
+      if (input.icon !== undefined) updated.icon = input.icon;
+      currentWorkspace.value = updated;
     }
 
     try {

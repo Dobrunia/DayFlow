@@ -4,6 +4,7 @@ import type { CardGql } from '@/graphql/types';
 import { parseCard } from '@/lib/card';
 import { useInlineEdit } from '@/composables/useInlineEdit';
 import { useCardActions } from '@/composables/useCardActions';
+import { CARD_TYPES, LEARNING_STATUS_META } from '@/lib/constants';
 import CardNote from './CardNote.vue';
 import CardLink from './CardLink.vue';
 import CardChecklist from './CardChecklist.vue';
@@ -53,11 +54,11 @@ const parsed = computed(() => {
 
 const typeIcon = computed(() => {
   switch (props.card.type) {
-    case 'NOTE':
+    case CARD_TYPES.NOTE:
       return 'i-lucide-file-text';
-    case 'LINK':
-      return 'i-lucide-external-link';
-    case 'CHECKLIST':
+    case CARD_TYPES.LINK:
+      return 'i-lucide-external-link';// тут важно имонно external!!!
+    case CARD_TYPES.CHECKLIST:
       return 'i-lucide-check-square';
     default:
       return 'i-lucide-circle';
@@ -66,18 +67,13 @@ const typeIcon = computed(() => {
 
 /** URL для карточки-ссылки: бейдж «Ссылка» ведёт на него */
 const linkUrl = computed(() => {
-  if (parsed.value?.type !== 'link') return null;
+  if (parsed.value?.type !== CARD_TYPES.LINK) return null;
   return (parsed.value.payload as { url?: string }).url ?? null;
 });
 
 const learningStatusInfo = computed(() => {
   if (!props.card.learningStatus) return null;
-  const map: Record<string, { icon: string; title: string; color: string }> = {
-    WANT_TO_REPEAT: { icon: 'i-lucide-repeat', title: 'Хочу повторить', color: 'text-orange-500' },
-    QUESTIONS_REMAIN: { icon: 'i-lucide-help-circle', title: 'Остались вопросы', color: 'text-red-500' },
-    DEEPEN_KNOWLEDGE: { icon: 'i-lucide-book-open', title: 'Хочу углубить знания', color: 'text-blue-500' },
-  };
-  return map[props.card.learningStatus];
+  return LEARNING_STATUS_META[props.card.learningStatus];
 });
 
 const isCollapsed = ref(!!props.card.learningStatus || props.card.done);
@@ -120,7 +116,7 @@ function handleDeleteFromDialog() {
         <div
           v-if="learningStatusInfo"
           class="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-surface border border-border"
-          :title="learningStatusInfo.title"
+          :title="learningStatusInfo.label"
         >
           <span :class="[learningStatusInfo.icon, learningStatusInfo.color]" class="text-xs" />
         </div>
@@ -153,24 +149,24 @@ function handleDeleteFromDialog() {
 
     <template v-if="parsed && !isCollapsed">
       <CardNote
-        v-if="parsed.type === 'note'"
-        :title="card.title"
+        v-if="parsed.type === CARD_TYPES.NOTE"
+        :title="card.title ?? null"
         :done="card.done"
         :payload="parsed.payload"
         :editable-summary="true"
         @update-summary="cardActions.updateSummary"
       />
       <CardLink
-        v-else-if="parsed.type === 'link'"
-        :title="card.title"
+        v-else-if="parsed.type === CARD_TYPES.LINK"
+        :title="card.title ?? null"
         :done="card.done"
         :payload="parsed.payload"
         :editable-summary="true"
         @update-summary="cardActions.updateSummary"
       />
       <CardChecklist
-        v-else-if="parsed.type === 'checklist'"
-        :title="card.title"
+        v-else-if="parsed.type === CARD_TYPES.CHECKLIST"
+        :title="card.title ?? null"
         :done="card.done"
         :payload="parsed.payload"
         :editable-summary="true"

@@ -298,5 +298,10 @@ export const cardResolvers = {
     learningStatus: (parent: any) => {
       return (parent.learningStatus as LearningStatus) || null;
     },
+    payload: (parent: any) => {
+      return typeof parent.payload === 'string'
+        ? parent.payload
+        : JSON.stringify(parent.payload);
+    },
   },
 };

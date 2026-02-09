@@ -1,17 +1,25 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
 import SearchBar from './SearchBar.vue';
 import GlobalAddButton from './GlobalAddButton.vue';
 
 const router = useRouter();
-const route = useRoute();
 
-const isHomeActive = computed(() => route.path === '/');
-const isLibraryActive = computed(() => route.path === '/library');
-const isTagsActive = computed(() => route.path === '/tags');
+const navLinks = [
+  { to: '/', label: 'Воркспейсы', icon: 'i-lucide-layout-grid' },
+  { to: '/library', label: 'Хаб', icon: 'i-lucide-inbox' },
+  { to: '/tags', label: 'Теги', icon: 'i-lucide-hash' },
+];
+
+const learningLinks = [
+  { to: '/learning/repeat', label: 'Повторить', icon: 'i-lucide-repeat' },
+  { to: '/learning/questions', label: 'Вопросы', icon: 'i-lucide-help-circle' },
+  { to: '/learning/deepen', label: 'Углубить', icon: 'i-lucide-book-open' },
+];
+
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
@@ -117,33 +125,29 @@ function handleSignOut() {
     <div v-if="isAuthenticated" class="h-max border-b border-border" style="background: color-mix(in srgb, rgb(var(--bg)) 90%, black 10%)">
       <nav class="h-full max-w-7xl mx-auto px-4 flex items-center py-2">
         <div class="flex items-center gap-1">
-          <RouterLink to="/" class="btn-ghost" :class="isHomeActive && 'bg-fg/10'">
-            <span class="i-lucide-layout-grid" />
-            <span>Воркспейсы</span>
-          </RouterLink>
-          <RouterLink to="/library" class="btn-ghost" :class="isLibraryActive && 'bg-fg/10'">
-            <span class="i-lucide-inbox" />
-            <span>Хаб</span>
-          </RouterLink>
-          <RouterLink to="/tags" class="btn-ghost" :class="isTagsActive && 'bg-fg/10'">
-            <span class="i-lucide-hash" />
-            <span>Теги</span>
+          <RouterLink
+            v-for="link in navLinks"
+            :key="link.to"
+            :to="link.to"
+            class="btn-ghost"
+            active-class="bg-fg/10"
+          >
+            <span :class="link.icon" />
+            <span>{{ link.label }}</span>
           </RouterLink>
 
           <!-- Learning routes -->
           <div class="w-px h-5 bg-border mx-1"></div>
           
-          <RouterLink to="/learning/repeat" class="btn-ghost" active-class="bg-fg/10">
-            <span class="i-lucide-repeat" />
-            <span>Повторить</span>
-          </RouterLink>
-          <RouterLink to="/learning/questions" class="btn-ghost" active-class="bg-fg/10">
-            <span class="i-lucide-help-circle" />
-            <span>Вопросы</span>
-          </RouterLink>
-          <RouterLink to="/learning/deepen" class="btn-ghost" active-class="bg-fg/10">
-            <span class="i-lucide-book-open" />
-            <span>Углубить</span>
+          <RouterLink
+            v-for="link in learningLinks"
+            :key="link.to"
+            :to="link.to"
+            class="btn-ghost"
+            active-class="bg-fg/10"
+          >
+            <span :class="link.icon" />
+            <span>{{ link.label }}</span>
           </RouterLink>
         </div>
         <div class="ml-auto">

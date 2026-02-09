@@ -1,7 +1,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client/core';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
-import { ErrorCodes } from '@/lib/graphql-error';
+import { ErrorCodes } from 'dayflow-shared';
 
 // Dev: use /graphql (Vite proxy → localhost:4000). Prod: set VITE_GRAPHQL_URL in .env
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL ?? '/graphql';

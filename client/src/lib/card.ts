@@ -1,4 +1,4 @@
-import { parseCardTyped } from 'dayflow-shared';
+import { parseCardTyped } from './card-payload';
 import type { CardGql } from '@/graphql/types';
 
 /** Нормализует карточку с API (type в верхнем регистре, payload строка) в типизированный вид shared */

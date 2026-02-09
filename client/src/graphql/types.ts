@@ -11,6 +11,7 @@ export type {
   ChecklistPayload,
   ChecklistItem,
   CardGql,
+  LearningStatus,
   User,
   Workspace,
   Column,

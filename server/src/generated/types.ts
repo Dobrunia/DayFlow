@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo, GraphQLScalarType, GraphQLScalarTypeConfig } from 'graphql';
-import { User, Workspace, Column, Card } from '@prisma/client';
+import { User as UserModel, Workspace as WorkspaceModel, Column as ColumnModel, Card as CardModel } from '@prisma/client';
 import { Context } from '../lib/context';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -79,6 +79,15 @@ export type CreateCardInput = {
   workspaceId?: InputMaybe<Scalars['ID']['input']>;
 };
 
+export type CreateToolInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
+  title: Scalars['String']['input'];
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+};
+
 export type CreateWorkspaceInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   icon?: InputMaybe<Scalars['String']['input']>;
@@ -94,9 +103,11 @@ export type Mutation = {
   __typename?: 'Mutation';
   createCard: Card;
   createColumn: Column;
+  createTool: Tool;
   createWorkspace: Workspace;
   deleteCard: Scalars['Boolean']['output'];
   deleteColumn: Scalars['Boolean']['output'];
+  deleteTool: Scalars['Boolean']['output'];
   deleteWorkspace: Scalars['Boolean']['output'];
   moveCard: Card;
   reorderColumns: Array<Column>;
@@ -107,6 +118,7 @@ export type Mutation = {
   updateCard: Card;
   updateColumn: Column;
   updateProfile: User;
+  updateTool: Tool;
   updateWorkspace: Workspace;
 };
 
@@ -122,6 +134,11 @@ export type MutationCreateColumnArgs = {
 };
 
 
+export type MutationCreateToolArgs = {
+  input: CreateToolInput;
+};
+
+
 export type MutationCreateWorkspaceArgs = {
   input: CreateWorkspaceInput;
 };
@@ -133,6 +150,11 @@ export type MutationDeleteCardArgs = {
 
 
 export type MutationDeleteColumnArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteToolArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -189,6 +211,12 @@ export type MutationUpdateProfileArgs = {
 };
 
 
+export type MutationUpdateToolArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateToolInput;
+};
+
+
 export type MutationUpdateWorkspaceArgs = {
   id: Scalars['ID']['input'];
   input: UpdateWorkspaceInput;
@@ -203,6 +231,8 @@ export type Query = {
   cardsCount: Scalars['Int']['output'];
   me?: Maybe<User>;
   myWorkspaces: Array<Workspace>;
+  /** Инструменты пользователя (хаб: workspaceId = null). */
+  tools: Array<Tool>;
   /** Публичная статистика пользователя по id (любой авторизованный может запросить). */
   userStats?: Maybe<UserStats>;
   workspace?: Maybe<Workspace>;
@@ -227,6 +257,11 @@ export type QueryCardsCountArgs = {
 };
 
 
+export type QueryToolsArgs = {
+  workspaceId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
 export type QueryUserStatsArgs = {
   userId: Scalars['ID']['input'];
 };
@@ -236,12 +271,36 @@ export type QueryWorkspaceArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type Tool = {
+  __typename?: 'Tool';
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  icon?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  link?: Maybe<Scalars['String']['output']>;
+  owner: User;
+  ownerId: Scalars['ID']['output'];
+  tags: Array<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  workspace?: Maybe<Workspace>;
+  workspaceId?: Maybe<Scalars['ID']['output']>;
+};
+
 export type UpdateCardInput = {
   columnId?: InputMaybe<Scalars['ID']['input']>;
   done?: InputMaybe<Scalars['Boolean']['input']>;
   learningStatus?: InputMaybe<LearningStatus>;
   order?: InputMaybe<Scalars['Int']['input']>;
   payload?: InputMaybe<Scalars['String']['input']>;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateToolInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
@@ -285,6 +344,8 @@ export type Workspace = {
   owner: User;
   pinned: Scalars['Boolean']['output'];
   title: Scalars['String']['output'];
+  /** Инструменты воркспейса. */
+  tools: Array<Tool>;
   updatedAt: Scalars['DateTime']['output'];
 };
 
@@ -375,11 +436,12 @@ export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = 
 export type ResolversTypes = ResolversObject<{
   AuthPayload: ResolverTypeWrapper<Omit<AuthPayload, 'user'> & { user: ResolversTypes['User'] }>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
-  Card: ResolverTypeWrapper<Card>;
+  Card: ResolverTypeWrapper<CardModel>;
   CardFilter: CardFilter;
   CardType: CardType;
-  Column: ResolverTypeWrapper<Column>;
+  Column: ResolverTypeWrapper<ColumnModel>;
   CreateCardInput: CreateCardInput;
+  CreateToolInput: CreateToolInput;
   CreateWorkspaceInput: CreateWorkspaceInput;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
@@ -388,11 +450,13 @@ export type ResolversTypes = ResolversObject<{
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Tool: ResolverTypeWrapper<Omit<Tool, 'owner' | 'workspace'> & { owner: ResolversTypes['User'], workspace?: Maybe<ResolversTypes['Workspace']> }>;
   UpdateCardInput: UpdateCardInput;
+  UpdateToolInput: UpdateToolInput;
   UpdateWorkspaceInput: UpdateWorkspaceInput;
-  User: ResolverTypeWrapper<User>;
+  User: ResolverTypeWrapper<UserModel>;
   UserStats: ResolverTypeWrapper<UserStats>;
-  Workspace: ResolverTypeWrapper<Workspace>;
+  Workspace: ResolverTypeWrapper<WorkspaceModel>;
   WorkspaceStatsItem: ResolverTypeWrapper<WorkspaceStatsItem>;
 }>;
 
@@ -400,10 +464,11 @@ export type ResolversTypes = ResolversObject<{
 export type ResolversParentTypes = ResolversObject<{
   AuthPayload: Omit<AuthPayload, 'user'> & { user: ResolversParentTypes['User'] };
   Boolean: Scalars['Boolean']['output'];
-  Card: Card;
+  Card: CardModel;
   CardFilter: CardFilter;
-  Column: Column;
+  Column: ColumnModel;
   CreateCardInput: CreateCardInput;
+  CreateToolInput: CreateToolInput;
   CreateWorkspaceInput: CreateWorkspaceInput;
   DateTime: Scalars['DateTime']['output'];
   ID: Scalars['ID']['output'];
@@ -411,11 +476,13 @@ export type ResolversParentTypes = ResolversObject<{
   Mutation: Record<PropertyKey, never>;
   Query: Record<PropertyKey, never>;
   String: Scalars['String']['output'];
+  Tool: Omit<Tool, 'owner' | 'workspace'> & { owner: ResolversParentTypes['User'], workspace?: Maybe<ResolversParentTypes['Workspace']> };
   UpdateCardInput: UpdateCardInput;
+  UpdateToolInput: UpdateToolInput;
   UpdateWorkspaceInput: UpdateWorkspaceInput;
-  User: User;
+  User: UserModel;
   UserStats: UserStats;
-  Workspace: Workspace;
+  Workspace: WorkspaceModel;
   WorkspaceStatsItem: WorkspaceStatsItem;
 }>;
 
@@ -458,9 +525,11 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
 export type MutationResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
   createCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationCreateCardArgs, 'input'>>;
   createColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationCreateColumnArgs, 'title' | 'workspaceId'>>;
+  createTool?: Resolver<ResolversTypes['Tool'], ParentType, ContextType, RequireFields<MutationCreateToolArgs, 'input'>>;
   createWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationCreateWorkspaceArgs, 'input'>>;
   deleteCard?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteCardArgs, 'id'>>;
   deleteColumn?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteColumnArgs, 'id'>>;
+  deleteTool?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteToolArgs, 'id'>>;
   deleteWorkspace?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteWorkspaceArgs, 'id'>>;
   moveCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationMoveCardArgs, 'id' | 'order'>>;
   reorderColumns?: Resolver<Array<ResolversTypes['Column']>, ParentType, ContextType, RequireFields<MutationReorderColumnsArgs, 'columnIds' | 'workspaceId'>>;
@@ -471,6 +540,7 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
   updateCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationUpdateCardArgs, 'id' | 'input'>>;
   updateColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationUpdateColumnArgs, 'id' | 'title'>>;
   updateProfile?: Resolver<ResolversTypes['User'], ParentType, ContextType, Partial<MutationUpdateProfileArgs>>;
+  updateTool?: Resolver<ResolversTypes['Tool'], ParentType, ContextType, RequireFields<MutationUpdateToolArgs, 'id' | 'input'>>;
   updateWorkspace?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationUpdateWorkspaceArgs, 'id' | 'input'>>;
 }>;
 
@@ -480,8 +550,24 @@ export type QueryResolvers<ContextType = Context, ParentType extends ResolversPa
   cardsCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, Partial<QueryCardsCountArgs>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   myWorkspaces?: Resolver<Array<ResolversTypes['Workspace']>, ParentType, ContextType>;
+  tools?: Resolver<Array<ResolversTypes['Tool']>, ParentType, ContextType, Partial<QueryToolsArgs>>;
   userStats?: Resolver<Maybe<ResolversTypes['UserStats']>, ParentType, ContextType, RequireFields<QueryUserStatsArgs, 'userId'>>;
   workspace?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType, RequireFields<QueryWorkspaceArgs, 'id'>>;
+}>;
+
+export type ToolResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Tool'] = ResolversParentTypes['Tool']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  icon?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  link?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  owner?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  ownerId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  tags?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  workspace?: Resolver<Maybe<ResolversTypes['Workspace']>, ParentType, ContextType>;
+  workspaceId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
 }>;
 
 export type UserResolvers<ContextType = Context, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
@@ -510,6 +596,7 @@ export type WorkspaceResolvers<ContextType = Context, ParentType extends Resolve
   owner?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   pinned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tools?: Resolver<Array<ResolversTypes['Tool']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
 }>;
 
@@ -529,6 +616,7 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Tool?: ToolResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   UserStats?: UserStatsResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;

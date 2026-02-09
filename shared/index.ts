@@ -28,6 +28,7 @@ export type {
 
 export type {
   CardGql,
+  LearningStatus,
   User,
   Workspace,
   Column,

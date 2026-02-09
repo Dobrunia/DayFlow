@@ -8,10 +8,10 @@ const config: CodegenConfig = {
       config: {
         contextType: '../lib/context#Context',
         mappers: {
-          User: '@prisma/client#User',
-          Workspace: '@prisma/client#Workspace',
-          Column: '@prisma/client#Column',
-          Card: '@prisma/client#Card',
+          User: '@prisma/client#User as UserModel',
+          Workspace: '@prisma/client#Workspace as WorkspaceModel',
+          Column: '@prisma/client#Column as ColumnModel',
+          Card: '@prisma/client#Card as CardModel',
         },
         enumsAsTypes: true,
         useIndexSignature: true,

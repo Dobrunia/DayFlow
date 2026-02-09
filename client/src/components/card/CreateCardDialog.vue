@@ -271,7 +271,7 @@ async function handleSubmit() {
 
     if (props.card) {
       const newTitle = title.value.trim() || null;
-      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: learningStatus.value };
+      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: learningStatus.value ?? undefined };
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
       emit('updated', { ...props.card, title: newTitle, payload, tags, learningStatus: learningStatus.value });

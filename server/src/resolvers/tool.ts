@@ -2,7 +2,7 @@ import type { Context } from '../lib/context.js';
 import { UnauthenticatedError, NotFoundError, ForbiddenError, BadRequestError } from '../lib/errors.js';
 import { MAX_TOOLS_PER_WORKSPACE } from '../lib/constants.js';
 
-interface CreateToolInput {
+export interface CreateToolInput {
   workspaceId?: string;
   title: string;
   link?: string;
@@ -11,7 +11,7 @@ interface CreateToolInput {
   tags?: string[];
 }
 
-interface UpdateToolInput {
+export interface UpdateToolInput {
   title?: string;
   link?: string;
   description?: string;

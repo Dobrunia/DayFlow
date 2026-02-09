@@ -7,7 +7,7 @@ export function parseCard(card: CardGql) {
     ...card,
     type: card.type.toLowerCase() as 'note' | 'link' | 'checklist',
     payload: typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload,
-    learningStatus: card.learningStatus?.toLowerCase() ?? undefined, // <-- Added learningStatus (normalized)
+    learningStatus: card.learningStatus ?? undefined,
   });
 }
 

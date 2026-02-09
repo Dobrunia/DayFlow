@@ -34,15 +34,15 @@ type Column {
 }
 
 enum CardType {
-  NOTE
-  LINK
-  CHECKLIST
+  note
+  link
+  checklist
 }
 
 enum LearningStatus {
-  WANT_TO_REPEAT
-  QUESTIONS_REMAIN
-  DEEPEN_KNOWLEDGE
+  want_to_repeat
+  questions_remain
+  deepen_knowledge
 }
 
 type Card {

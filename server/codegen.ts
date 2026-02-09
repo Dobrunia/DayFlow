@@ -6,7 +6,7 @@ const config: CodegenConfig = {
     'src/generated/types.ts': {
       plugins: ['typescript', 'typescript-resolvers'],
       config: {
-        contextType: '../lib/context#Context',
+        contextType: '../lib/types#Context',
         mappers: {
           User: '@prisma/client#User as UserModel',
           Workspace: '@prisma/client#Workspace as WorkspaceModel',

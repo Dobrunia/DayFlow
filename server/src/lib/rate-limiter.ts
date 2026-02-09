@@ -3,10 +3,7 @@
  * Limits requests per user/IP within a time window
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
+import type { RateLimitEntry, RateLimitConfig } from './types.js';
 
 const store = new Map<string, RateLimitEntry>();
 
@@ -19,11 +16,6 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
-
-export interface RateLimitConfig {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Max requests per window
-}
 
 const defaultConfig: RateLimitConfig = {
   windowMs: 60 * 1000, // 1 minute

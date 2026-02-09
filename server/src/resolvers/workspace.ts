@@ -1,11 +1,17 @@
-import type { CreateWorkspaceInput, UpdateWorkspaceInput } from 'dayflow-shared';
-import type { Context } from '../lib/context.js';
+import type { Context } from '../lib/types.js';
+import type {
+  MutationCreateWorkspaceArgs,
+  MutationUpdateWorkspaceArgs,
+  MutationDeleteWorkspaceArgs,
+  MutationToggleWorkspacePinnedArgs,
+  QueryWorkspaceArgs,
+} from '../generated/types.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
 import { MAX_TITLE_LENGTH, MAX_WORKSPACES_PER_USER } from '../lib/constants.js';
 
 export const workspaceResolvers = {
   Query: {
-    workspace: async (_: unknown, { id }: { id: string }, context: Context) => {
+    workspace: async (_: unknown, { id }: QueryWorkspaceArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
       if (!workspace || workspace.ownerId !== context.user.id) return null;
@@ -24,7 +30,7 @@ export const workspaceResolvers = {
   Mutation: {
     createWorkspace: async (
       _: unknown,
-      { input }: { input: CreateWorkspaceInput },
+      { input }: MutationCreateWorkspaceArgs,
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
@@ -56,7 +62,7 @@ export const workspaceResolvers = {
 
     updateWorkspace: async (
       _: unknown,
-      { id, input }: { id: string; input: UpdateWorkspaceInput },
+      { id, input }: MutationUpdateWorkspaceArgs,
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
@@ -66,13 +72,13 @@ export const workspaceResolvers = {
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
       if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
       const data: { title?: string; description?: string | null; icon?: string | null } = {};
-      if (input.title !== undefined) data.title = input.title;
-      if (input.description !== undefined) data.description = input.description;
-      if (input.icon !== undefined) data.icon = input.icon;
+      if (input.title != null) data.title = input.title;
+      if (input.description !== undefined) data.description = input.description ?? null;
+      if (input.icon !== undefined) data.icon = input.icon ?? null;
       return context.prisma.workspace.update({ where: { id }, data });
     },
 
-    deleteWorkspace: async (_: unknown, { id }: { id: string }, context: Context) => {
+    deleteWorkspace: async (_: unknown, { id }: MutationDeleteWorkspaceArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
       if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');
@@ -80,7 +86,7 @@ export const workspaceResolvers = {
       return true;
     },
 
-    toggleWorkspacePinned: async (_: unknown, { id }: { id: string }, context: Context) => {
+    toggleWorkspacePinned: async (_: unknown, { id }: MutationToggleWorkspacePinnedArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const workspace = await context.prisma.workspace.findUnique({ where: { id } });
       if (!workspace || workspace.ownerId !== context.user.id) throw NotFoundError('Workspace not found');

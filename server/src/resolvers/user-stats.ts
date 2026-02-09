@@ -1,11 +1,12 @@
-import type { Context } from '../lib/context.js';
+import type { Context } from '../lib/types.js';
+import type { QueryUserStatsArgs } from '../generated/types.js';
 import { UnauthenticatedError } from '../lib/errors.js';
 
 export const userStatsResolvers = {
   Query: {
     userStats: async (
       _: unknown,
-      { userId }: { userId: string },
+      { userId }: QueryUserStatsArgs,
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();
@@ -28,10 +29,10 @@ export const userStatsResolvers = {
       ]);
 
       type WorkspaceRow = { id: string; title: string; description: string | null; icon: string | null };
-      type GroupRow = { workspaceId: string | null; _count: { id: number } };
 
       const workspaceIds = workspaces.map((w: WorkspaceRow) => w.id);
-      const counts: GroupRow[] =
+      
+      const countsRaw =
         workspaceIds.length === 0
           ? []
           : await context.prisma.card.groupBy({
@@ -42,7 +43,8 @@ export const userStatsResolvers = {
               },
               _count: { id: true },
             });
-      const completedCounts: GroupRow[] =
+
+      const completedCountsRaw =
         workspaceIds.length === 0
           ? []
           : await context.prisma.card.groupBy({
@@ -55,9 +57,9 @@ export const userStatsResolvers = {
               _count: { id: true },
             });
 
-      const totalByWs = new Map(counts.map((c: GroupRow) => [c.workspaceId, c._count.id]));
+      const totalByWs = new Map(countsRaw.map((c) => [c.workspaceId, c._count.id]));
       const completedByWs = new Map(
-        completedCounts.map((c: GroupRow) => [c.workspaceId, c._count.id])
+        completedCountsRaw.map((c) => [c.workspaceId, c._count.id])
       );
 
       const workspaceStats = workspaces.map((w: WorkspaceRow) => ({

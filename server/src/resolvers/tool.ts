@@ -1,27 +1,17 @@
-import type { Context } from '../lib/context.js';
+import { Prisma } from '@prisma/client';
+import type { Context } from '../lib/types.js';
+import type {
+  MutationCreateToolArgs,
+  MutationUpdateToolArgs,
+  MutationDeleteToolArgs,
+  QueryToolsArgs,
+} from '../generated/types.js';
 import { UnauthenticatedError, NotFoundError, ForbiddenError, BadRequestError } from '../lib/errors.js';
 import { MAX_TOOLS_PER_WORKSPACE } from '../lib/constants.js';
 
-export interface CreateToolInput {
-  workspaceId?: string;
-  title: string;
-  link?: string;
-  description?: string;
-  icon?: string;
-  tags?: string[];
-}
-
-export interface UpdateToolInput {
-  title?: string;
-  link?: string;
-  description?: string;
-  icon?: string;
-  tags?: string[];
-}
-
 export const toolResolvers = {
   Query: {
-    tools: async (_: any, { workspaceId }: { workspaceId?: string | null }, context: Context) => {
+    tools: async (_: unknown, { workspaceId }: QueryToolsArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
 
       return context.prisma.tool.findMany({
@@ -35,7 +25,7 @@ export const toolResolvers = {
   },
 
   Mutation: {
-    createTool: async (_: any, { input }: { input: CreateToolInput }, context: Context) => {
+    createTool: async (_: unknown, { input }: MutationCreateToolArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
 
       if (input.workspaceId) {
@@ -71,22 +61,27 @@ export const toolResolvers = {
       });
     },
 
-    updateTool: async (_: any, { id, input }: { id: string; input: UpdateToolInput }, context: Context) => {
+    updateTool: async (_: unknown, { id, input }: MutationUpdateToolArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
 
       const tool = await context.prisma.tool.findUnique({ where: { id } });
       if (!tool) throw NotFoundError('Tool not found');
       if (tool.ownerId !== context.user.id) throw ForbiddenError('Not authorized');
 
+      const data: Prisma.ToolUpdateInput = {};
+      if (input.title !== undefined) data.title = input.title ?? undefined;
+      if (input.link !== undefined) data.link = input.link;
+      if (input.description !== undefined) data.description = input.description;
+      if (input.icon !== undefined) data.icon = input.icon;
+      if (input.tags !== undefined) data.tags = input.tags ?? undefined;
+
       return context.prisma.tool.update({
         where: { id },
-        data: {
-          ...input,
-        },
+        data,
       });
     },
 
-    deleteTool: async (_: any, { id }: { id: string }, context: Context) => {
+    deleteTool: async (_: unknown, { id }: MutationDeleteToolArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
 
       const tool = await context.prisma.tool.findUnique({ where: { id } });
@@ -99,12 +94,11 @@ export const toolResolvers = {
   },
 
   Tool: {
-    owner: (parent: any, _: any, context: Context) => {
-      return context.prisma.user.findUnique({ where: { id: parent.ownerId } });
-    },
-    workspace: (parent: any, _: any, context: Context) => {
-      if (!parent.workspaceId) return null;
-      return context.prisma.workspace.findUnique({ where: { id: parent.workspaceId } });
-    },
+    owner: (parent: { ownerId: string }, _: unknown, context: Context) =>
+      context.prisma.user.findUnique({ where: { id: parent.ownerId } }),
+    workspace: (parent: { workspaceId: string | null }, _: unknown, context: Context) =>
+      parent.workspaceId
+        ? context.prisma.workspace.findUnique({ where: { id: parent.workspaceId } })
+        : null,
   }
 };

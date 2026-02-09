@@ -22,7 +22,6 @@ dotenv.config({ path: join(envDir, '.env') });
 
 const defaults = {
   DATABASE_URL: 'mysql://dayflow:dayflow@localhost:3306/dayflow',
-  SESSION_SECRET: 'dev-secret-local-only',
   CORS_ORIGINS: 'http://localhost:5173',
   PORT: '4000',
 } as const;
@@ -47,12 +46,6 @@ const schema = makeExecutableSchema({
   typeDefs,
   resolvers,
 });
-
-// Cookie storage per request
-const requestCookies = new WeakMap<
-  Request,
-  Map<string, { value: string; attributes: Record<string, unknown> } | null>
->();
 
 // Логирование запросов и действий пользователя
 function logPayload(operationName: string | undefined, userId: string | null, extra?: string) {
@@ -103,25 +96,7 @@ const yoga = createYoga({
       },
     },
   ],
-  context: async (ctx) => {
-    const cookies = new Map<
-      string,
-      { value: string; attributes: Record<string, unknown> } | null
-    >();
-    requestCookies.set(ctx.request, cookies);
-
-    const baseContext = await createContext(ctx);
-
-    return {
-      ...baseContext,
-      setCookie: (name: string, value: string, attributes: Record<string, unknown>) => {
-        cookies.set(name, { value, attributes });
-      },
-      deleteCookie: (name: string) => {
-        cookies.set(name, null);
-      },
-    };
-  },
+  context: createContext,
   cors: false, // CORS обрабатываем вручную в createServer (whitelist по Origin)
 });
 
@@ -161,47 +136,12 @@ const server = createServer(async (req, res) => {
 
   const response = await yoga.fetch(request, { req, res });
 
-  // Get cookies set during request
-  const cookies = requestCookies.get(request);
-  const setCookieHeaders: string[] = [];
-
-  if (cookies) {
-    for (const [name, cookie] of cookies) {
-      if (cookie === null) {
-        const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
-        const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-        setCookieHeaders.push(
-          `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=${sameSite}${secure}`
-        );
-      } else {
-        // Set cookie
-        let cookieStr = `${name}=${cookie.value}`;
-        const attrs = cookie.attributes;
-
-        if ((attrs as any).path) cookieStr += `; Path=${(attrs as any).path}`;
-        if ((attrs as any).maxAge) cookieStr += `; Max-Age=${(attrs as any).maxAge}`;
-        if ((attrs as any).expires)
-          cookieStr += `; Expires=${((attrs as any).expires as Date).toUTCString()}`;
-        if ((attrs as any).httpOnly) cookieStr += '; HttpOnly';
-        if ((attrs as any).secure) cookieStr += '; Secure';
-        if ((attrs as any).sameSite) cookieStr += `; SameSite=${(attrs as any).sameSite}`;
-
-        setCookieHeaders.push(cookieStr);
-      }
-    }
-    requestCookies.delete(request);
-  }
-
   const headers: Record<string, string | string[]> = {
     ...Object.fromEntries(response.headers.entries()),
     ...(origin ? { 'Access-Control-Allow-Origin': origin } : {}),
     Vary: 'Origin',
     'Access-Control-Allow-Credentials': 'true',
   };
-
-  if (setCookieHeaders.length > 0) {
-    headers['Set-Cookie'] = setCookieHeaders;
-  }
 
   res.writeHead(response.status, headers);
 

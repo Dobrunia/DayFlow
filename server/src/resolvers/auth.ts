@@ -2,17 +2,20 @@ import { hash, verify } from 'argon2';
 import {
   createSession,
   invalidateSession,
-  // createSessionCookie,
-  // createBlankSessionCookie,
 } from '../lib/auth.js';
-import type { Context } from '../lib/context.js';
+import type { Context } from '../lib/types.js';
+import type {
+  MutationSignUpArgs,
+  MutationSignInArgs,
+  MutationUpdateProfileArgs,
+} from '../generated/types.js';
 import { BadRequestError, UnauthenticatedError } from '../lib/errors.js';
 
 export const authResolvers = {
   Mutation: {
     signUp: async (
       _: unknown,
-      { email, password }: { email: string; password: string },
+      { email, password }: MutationSignUpArgs,
       context: Context
     ) => {
       // Validate email
@@ -49,7 +52,7 @@ export const authResolvers = {
 
     signIn: async (
       _: unknown,
-      { email, password }: { email: string; password: string },
+      { email, password }: MutationSignInArgs,
       context: Context
     ) => {
       const user = await context.prisma.user.findUnique({
@@ -80,7 +83,7 @@ export const authResolvers = {
 
     updateProfile: async (
       _: unknown,
-      { avatarUrl }: { avatarUrl?: string | null },
+      { avatarUrl }: MutationUpdateProfileArgs,
       context: Context
     ) => {
       if (!context.user) throw UnauthenticatedError();

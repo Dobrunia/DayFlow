@@ -2,6 +2,9 @@
  * Server-wide constants and limits
  */
 
+// Session
+export const SESSION_EXPIRY_DAYS = 30;
+
 // Field length limits
 export const MAX_TITLE_LENGTH = 191; // MySQL VARCHAR limit
 

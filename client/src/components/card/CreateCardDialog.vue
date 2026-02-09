@@ -3,8 +3,7 @@ import { ref, watch, computed, nextTick, onUnmounted } from 'vue';
 import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { useCardsStore } from '@/stores/cards';
-import type { CardGql, LearningStatus } from '@/graphql/types';
-import type { ChecklistItem } from '@/lib/card-payload';
+import type { CardGql } from '@/graphql/types';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -16,6 +15,7 @@ import {
   DialogClose,
 } from 'radix-vue';
 import { CARD_TYPES, LEARNING_STATUSES, LEARNING_STATUS_META, CARD_TYPE_META } from '@/lib/constants';
+import { useCardForm } from '@/composables/useCardForm';
 
 const props = withDefaults(
   defineProps<{
@@ -46,6 +46,7 @@ const openProxy = computed({
 
 const workspaceStore = useWorkspaceStore();
 const cardsStore = useCardsStore();
+const form = useCardForm();
 
 /** Добавление из хедера (кнопка «Добавить»), не из колонки/беклога */
 const isGlobalAdd = computed(() => !props.card && !props.columnId && props.workspaceId == null);
@@ -55,43 +56,19 @@ const addDestination = ref<'hub' | 'workspace'>('hub');
 const selectedWorkspaceId = ref('');
 const workspaces = computed(() => workspaceStore.workspaces);
 
-const title = ref('');
-const cardType = ref<typeof CARD_TYPES[keyof typeof CARD_TYPES]>(CARD_TYPES.NOTE);
-const noteContent = ref('');
-const noteSummary = ref('');
-const linkUrl = ref('');
-const linkSummary = ref('');
-const checklistItems = ref<ChecklistItem[]>([]);
-const checklistSummary = ref('');
-const tagsInput = ref('');
-const learningStatus = ref<LearningStatus | null>(null);
 const loading = ref(false);
 const showDetails = ref(false);
-
-const learningStatuses = Object.values(LEARNING_STATUSES).map((value) => ({
-  value,
-  ...LEARNING_STATUS_META[value],
-}));
-
 const submitted = ref(false);
 const checklistListRef = ref<HTMLElement | null>(null);
 const titleInputRef = ref<HTMLInputElement | null>(null);
 let checklistSortable: Sortable | null = null;
 
-const currentSummary = computed({
-  get: () => {
-    if (cardType.value === CARD_TYPES.NOTE) return noteSummary.value;
-    if (cardType.value === CARD_TYPES.LINK) return linkSummary.value;
-    return checklistSummary.value;
-  },
-  set: (val) => {
-    if (cardType.value === CARD_TYPES.NOTE) noteSummary.value = val;
-    else if (cardType.value === CARD_TYPES.LINK) linkSummary.value = val;
-    else checklistSummary.value = val;
-  }
-});
-
 const isEditMode = computed(() => !!props.card);
+
+const learningStatuses = Object.values(LEARNING_STATUSES).map((value) => ({
+  value,
+  ...LEARNING_STATUS_META[value],
+}));
 
 const types = Object.values(CARD_TYPES).map((value) => ({
   value,
@@ -101,7 +78,7 @@ const types = Object.values(CARD_TYPES).map((value) => ({
 function initChecklistSortable() {
   checklistSortable?.destroy();
   checklistSortable = null;
-  if (!checklistListRef.value || cardType.value !== CARD_TYPES.CHECKLIST) return;
+  if (!checklistListRef.value || form.cardType.value !== CARD_TYPES.CHECKLIST) return;
   checklistSortable = new Sortable(checklistListRef.value, {
     animation: 150,
     handle: '.checklist-grip',
@@ -110,10 +87,10 @@ function initChecklistSortable() {
       const from = evt.oldIndex ?? 0;
       const to = evt.newIndex ?? 0;
       if (from === to) return;
-      const arr = [...checklistItems.value];
+      const arr = [...form.checklistItems.value];
       const [item] = arr.splice(from, 1);
       arr.splice(to, 0, item);
-      checklistItems.value = arr;
+      form.checklistItems.value = arr;
       nextTick(() => initChecklistSortable());
     },
   });
@@ -124,51 +101,11 @@ watch(
   ([isOpen, card]) => {
     if (isOpen) {
       if (card) {
-        title.value = card.title ?? '';
-        cardType.value = card.type as typeof CARD_TYPES[keyof typeof CARD_TYPES];
-        try {
-          const pl =
-            typeof card.payload === 'string' ? JSON.parse(card.payload || '{}') : card.payload;
-          if (card.type === CARD_TYPES.NOTE) {
-            noteContent.value = (pl as { content?: string }).content ?? '';
-            noteSummary.value = (pl as { summary?: string }).summary ?? '';
-          } else if (card.type === CARD_TYPES.LINK) {
-            linkUrl.value = (pl as { url?: string }).url ?? '';
-            linkSummary.value = (pl as { summary?: string }).summary ?? '';
-          } else if (card.type === CARD_TYPES.CHECKLIST) {
-            const items =
-              (pl as { items?: { id: string; text: string; done: boolean; order: number }[] })
-                .items ?? [];
-            checklistItems.value = items.length
-              ? items.map((i) => ({ ...i }))
-              : [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
-            checklistSummary.value = (pl as { summary?: string }).summary ?? '';
-          }
-          tagsInput.value = Array.isArray(card.tags) ? card.tags.join(', ') : '';
-          learningStatus.value = card.learningStatus ?? null;
-        } catch {
-          noteContent.value = '';
-          noteSummary.value = '';
-          linkUrl.value = '';
-          linkSummary.value = '';
-          checklistItems.value = [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
-          checklistSummary.value = '';
-          tagsInput.value = '';
-          learningStatus.value = null;
-        }
+        form.setFromCard(card);
       } else {
-        title.value = '';
-        cardType.value = CARD_TYPES.NOTE;
-        noteContent.value = '';
-        noteSummary.value = '';
-        linkUrl.value = '';
-        linkSummary.value = '';
-        checklistItems.value = [{ id: crypto.randomUUID(), text: '', done: false, order: 100 }];
-        checklistSummary.value = '';
+        form.reset();
         addDestination.value = 'hub';
         selectedWorkspaceId.value = '';
-        tagsInput.value = '';
-        learningStatus.value = null;
         if (!props.columnId && props.workspaceId == null && !workspaceStore.workspaces.length) workspaceStore.fetchWorkspaces();
       }
       submitted.value = false;
@@ -183,7 +120,7 @@ watch(
   }
 );
 
-watch(cardType, (t) => {
+watch(form.cardType, (t) => {
   if (t === CARD_TYPES.CHECKLIST) nextTick(() => initChecklistSortable());
   else {
     checklistSortable?.destroy();
@@ -195,19 +132,10 @@ onUnmounted(() => {
   checklistSortable?.destroy();
 });
 
-function addChecklistItem() {
-  const maxOrder = checklistItems.value.length
-    ? Math.max(...checklistItems.value.map((i) => i.order))
-    : 0;
-  checklistItems.value.push({
-    id: crypto.randomUUID(),
-    text: '',
-    done: false,
-    order: maxOrder + 100,
-  });
+function handleAddChecklistItem() {
+  form.addChecklistItem();
   nextTick(() => {
     initChecklistSortable();
-    // Focus the new input
     const inputs = checklistListRef.value?.querySelectorAll('input');
     if (inputs?.length) {
       (inputs[inputs.length - 1] as HTMLInputElement).focus();
@@ -215,46 +143,15 @@ function addChecklistItem() {
   });
 }
 
-function removeChecklistItem(index: number) {
-  if (checklistItems.value.length > 1) {
-    checklistItems.value.splice(index, 1);
-    nextTick(() => initChecklistSortable());
-  }
-}
-
-function buildTags(): string[] {
-  return tagsInput.value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function buildPayload(): string {
-  if (cardType.value === CARD_TYPES.NOTE) {
-    return JSON.stringify({
-      content: noteContent.value.trim() || undefined,
-      summary: noteSummary.value.trim() || undefined,
-    });
-  }
-  if (cardType.value === CARD_TYPES.LINK) {
-    return JSON.stringify({
-      url: linkUrl.value.trim(),
-      summary: linkSummary.value.trim() || undefined,
-    });
-  }
-  const items = checklistItems.value
-    .filter((i) => i.text.trim())
-    .map((i, idx) => ({ ...i, order: (idx + 1) * 100 }));
-  return JSON.stringify({
-    items,
-    summary: checklistSummary.value.trim() || undefined,
-  });
+function handleRemoveChecklistItem(index: number) {
+  form.removeChecklistItem(index);
+  nextTick(() => initChecklistSortable());
 }
 
 async function handleSubmit() {
   submitted.value = true;
 
-  if (cardType.value === CARD_TYPES.LINK && !linkUrl.value.trim()) {
+  if (form.cardType.value === CARD_TYPES.LINK && !form.linkUrl.value.trim()) {
     toast.error('Введите URL ссылки');
     return;
   }
@@ -265,45 +162,45 @@ async function handleSubmit() {
 
   try {
     loading.value = true;
-    const payload = buildPayload();
-    const tags = buildTags();
+    const payload = form.getPayloadString();
+    const tags = form.getTagsArray();
 
     if (props.card) {
-      const newTitle = title.value.trim() || null;
-      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: learningStatus.value };
+      const newTitle = form.title.value.trim() || null;
+      const updatePayload = { title: newTitle ?? undefined, payload, tags, learningStatus: form.learningStatus.value };
       if (isHubEdit.value) await cardsStore.updateCard(props.card.id, updatePayload);
       else await workspaceStore.updateCard(props.card.id, updatePayload);
-      emit('updated', { ...props.card, title: newTitle, payload, tags, learningStatus: learningStatus.value });
+      emit('updated', { ...props.card, title: newTitle, payload, tags, learningStatus: form.learningStatus.value });
       toast.success('Сохранено!');
     } else if (isGlobalAdd.value && addDestination.value === 'hub') {
       await cardsStore.createCard({
-        type: cardType.value,
-        title: title.value.trim() || undefined,
+        type: form.cardType.value,
+        title: form.title.value.trim() || undefined,
         payload,
         tags,
-        learningStatus: learningStatus.value ?? undefined,
+        learningStatus: form.learningStatus.value ?? undefined,
       });
       toast.success('Карточка создана в хабе!');
     } else if (isGlobalAdd.value && addDestination.value === 'workspace') {
       await workspaceStore.createCard({
-        type: cardType.value,
-        title: title.value.trim() || undefined,
+        type: form.cardType.value,
+        title: form.title.value.trim() || undefined,
         workspaceId: selectedWorkspaceId.value!,
         columnId: undefined,
         payload,
         tags,
-        learningStatus: learningStatus.value ?? undefined,
+        learningStatus: form.learningStatus.value ?? undefined,
       });
       toast.success('Карточка добавлена в беклог воркспейса');
     } else {
       await workspaceStore.createCard({
-        type: cardType.value,
-        title: title.value.trim() || undefined,
+        type: form.cardType.value,
+        title: form.title.value.trim() || undefined,
         workspaceId: props.workspaceId,
         columnId: props.columnId,
         payload,
         tags,
-        learningStatus: learningStatus.value ?? undefined,
+        learningStatus: form.learningStatus.value ?? undefined,
       });
       toast.success('Карточка создана!');
     }
@@ -396,7 +293,7 @@ async function handleSubmit() {
             <input
               ref="titleInputRef"
               id="card-title"
-              v-model="title"
+              v-model="form.title.value"
               type="text"
               class="input"
               placeholder="Опционально"
@@ -410,10 +307,10 @@ async function handleSubmit() {
                 v-for="t in types"
                 :key="t.value"
                 type="button"
-                @click="cardType = t.value"
+                @click="form.cardType.value = t.value"
                 class="flex-1 h-9 px-3 border border-border text-sm rounded-[var(--r)] flex-center gap-1.5 transition-colors"
                 :class="
-                  cardType === t.value
+                  form.cardType.value === t.value
                     ? 'bg-primary text-on-primary'
                     : 'bg-surface text-muted hover:text-fg'
                 "
@@ -424,38 +321,38 @@ async function handleSubmit() {
             </div>
           </div>
 
-          <template v-if="cardType === CARD_TYPES.NOTE">
+          <template v-if="form.cardType.value === CARD_TYPES.NOTE">
             <div class="min-h-[152px]">
               <label for="card-note" class="block text-sm font-medium mb-1">Текст заметки</label>
               <textarea
                 id="card-note"
-                v-model="noteContent"
+                v-model="form.noteContent.value"
                 class="textarea h-24"
                 placeholder="Ваши мысли..."
               />
             </div>
           </template>
 
-          <template v-if="cardType === CARD_TYPES.LINK">
+          <template v-if="form.cardType.value === CARD_TYPES.LINK">
             <div class="min-h-[152px]">
               <label for="card-url" class="block text-sm font-medium mb-1">URL *</label>
               <input
                 id="card-url"
-                v-model="linkUrl"
+                v-model="form.linkUrl.value"
                 type="url"
                 class="input"
-                :class="submitted && !linkUrl.trim() && 'border-danger!'"
+                :class="submitted && !form.linkUrl.value.trim() && 'border-danger!'"
                 placeholder="https://..."
               />
             </div>
           </template>
 
-          <template v-if="cardType === CARD_TYPES.CHECKLIST">
+          <template v-if="form.cardType.value === CARD_TYPES.CHECKLIST">
             <div class="min-h-[152px]">
               <label class="block text-sm font-medium mb-2">Пункты</label>
               <div ref="checklistListRef" class="space-y-2">
                 <div
-                  v-for="(item, index) in checklistItems"
+                  v-for="(item, index) in form.checklistItems.value"
                   :key="item.id"
                   class="flex items-center gap-2"
                 >
@@ -469,9 +366,9 @@ async function handleSubmit() {
                     placeholder="Пункт списка"
                   />
                   <button
-                    v-if="checklistItems.length > 1"
+                    v-if="form.checklistItems.value.length > 1"
                     type="button"
-                    @click="removeChecklistItem(index)"
+                    @click="handleRemoveChecklistItem(index)"
                     class="icon-btn-delete"
                   >
                     <span class="i-lucide-x" />
@@ -480,7 +377,7 @@ async function handleSubmit() {
               </div>
               <button
                 type="button"
-                @click="addChecklistItem"
+                @click="handleAddChecklistItem"
                 class="w-full mt-2 py-2 border border-dashed border-border rounded-[var(--r)] text-sm text-muted hover:text-fg hover:border-fg/30 flex-center gap-1.5 transition-colors"
               >
                 <span class="i-lucide-plus" />
@@ -508,7 +405,7 @@ async function handleSubmit() {
                 <label for="card-tags" class="block text-sm font-medium mb-1">Теги</label>
                 <input
                   id="card-tags"
-                  v-model="tagsInput"
+                  v-model="form.tagsInput.value"
                   type="text"
                   class="input"
                   placeholder="Через запятую: работа, идеи"
@@ -520,7 +417,7 @@ async function handleSubmit() {
                 <label for="card-summary" class="block text-sm font-medium mb-1">Конспект/Заметка</label>
                 <input
                   id="card-summary"
-                  v-model="currentSummary"
+                  v-model="form.currentSummary.value"
                   type="text"
                   class="input"
                   placeholder="Опционально"
@@ -534,8 +431,8 @@ async function handleSubmit() {
                   <button
                     type="button"
                     class="mode-tab w-full justify-start px-3 py-2"
-                    :class="learningStatus === null && 'active'"
-                    @click="learningStatus = null"
+                    :class="form.learningStatus.value === null && 'active'"
+                    @click="form.learningStatus.value = null"
                   >
                     <span>Нет</span>
                   </button>
@@ -544,8 +441,8 @@ async function handleSubmit() {
                     :key="s.value"
                     type="button"
                     class="mode-tab w-full justify-start px-3 py-2"
-                    :class="learningStatus === s.value && 'active'"
-                    @click="learningStatus = s.value"
+                    :class="form.learningStatus.value === s.value && 'active'"
+                    @click="form.learningStatus.value = s.value"
                   >
                     <span :class="s.icon" />
                     <span>{{ s.label }}</span>

@@ -35,7 +35,7 @@ const workspaceStore = useWorkspaceStore();
 
 const title = ref('');
 const description = ref('');
-const icon = ref<string | null>(WORKSPACE_EMOJIS[0]);
+const icon = ref<string | undefined>(WORKSPACE_EMOJIS[0]);
 const loading = ref(false);
 const submitted = ref(false);
 

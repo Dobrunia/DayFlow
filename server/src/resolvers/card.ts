@@ -197,12 +197,22 @@ export const cardResolvers = {
       const payload = input.payload ?? '{}';
       const tagsJson = tags ? (tags as Prisma.InputJsonValue) : [];
 
+      // Calculate next order: append at the end of the target container
+      const siblingCount = await context.prisma.card.count({
+        where: columnId
+          ? { columnId }
+          : workspaceId
+            ? { workspaceId, columnId: null }
+            : { ownerId: context.user.id, workspaceId: null, columnId: null },
+      });
+
       const data: Prisma.CardUncheckedCreateInput = {
         ownerId: context.user.id,
         type: type as $Enums.CardType,
         title,
         workspaceId,
         columnId,
+        order: siblingCount,
         payload,
         tags: tagsJson,
         learningStatus: learningStatus as $Enums.LearningStatus | null,
@@ -255,6 +265,23 @@ export const cardResolvers = {
       const card = await context.prisma.card.findUnique({ where: { id } });
       if (!card || card.ownerId !== context.user.id) throw NotFoundError('Card not found');
       await context.prisma.card.delete({ where: { id } });
+
+      // Reorder remaining siblings to fill the gap
+      const siblings = await context.prisma.card.findMany({
+        where: card.columnId
+          ? { columnId: card.columnId }
+          : { workspaceId: card.workspaceId, columnId: null },
+        orderBy: { order: 'asc' },
+      });
+      for (let i = 0; i < siblings.length; i++) {
+        if (siblings[i].order !== i) {
+          await context.prisma.card.update({
+            where: { id: siblings[i].id },
+            data: { order: i },
+          });
+        }
+      }
+
       return true;
     },
 
@@ -263,7 +290,9 @@ export const cardResolvers = {
       const card = await context.prisma.card.findUnique({ where: { id } });
       if (!card || card.ownerId !== context.user.id) throw NotFoundError('Card not found');
 
-      const data: Prisma.CardUncheckedUpdateInput = { order };
+      // Determine target columnId and workspaceId
+      let targetColumnId: string | null = card.columnId;
+      let targetWorkspaceId: string | null = card.workspaceId;
       if (columnId !== undefined) {
         if (columnId) {
           const col = await context.prisma.column.findUnique({
@@ -271,14 +300,71 @@ export const cardResolvers = {
             include: { workspace: true },
           });
           if (!col || col.workspace.ownerId !== context.user.id) throw NotFoundError('Column not found');
-          data.columnId = columnId;
-          data.workspaceId = col.workspaceId;
+          targetColumnId = columnId;
+          targetWorkspaceId = col.workspaceId;
         } else {
-          data.columnId = null;
+          targetColumnId = null;
         }
       }
 
-      return context.prisma.card.update({ where: { id }, data });
+      const oldColumnId = card.columnId;
+      const oldWorkspaceId = card.workspaceId;
+
+      // Reorder siblings in source container (if moving to a different container)
+      const movingContainers = oldColumnId !== targetColumnId;
+      if (movingContainers) {
+        // Remove from old container — shift siblings down
+        const oldSiblings = await context.prisma.card.findMany({
+          where: oldColumnId
+            ? { columnId: oldColumnId, id: { not: id } }
+            : { workspaceId: oldWorkspaceId, columnId: null, id: { not: id } },
+          orderBy: { order: 'asc' },
+        });
+        for (let i = 0; i < oldSiblings.length; i++) {
+          if (oldSiblings[i].order !== i) {
+            await context.prisma.card.update({
+              where: { id: oldSiblings[i].id },
+              data: { order: i },
+            });
+          }
+        }
+      }
+
+      // Get siblings in target container (excluding the moved card)
+      const targetSiblings = await context.prisma.card.findMany({
+        where: targetColumnId
+          ? { columnId: targetColumnId, id: { not: id } }
+          : { workspaceId: targetWorkspaceId, columnId: null, id: { not: id } },
+        orderBy: { order: 'asc' },
+      });
+
+      // Clamp order
+      const clampedOrder = Math.min(order, targetSiblings.length);
+
+      // Insert card at new position and reorder all siblings
+      const reordered = [...targetSiblings];
+      // We'll insert a placeholder; update all orders after
+      reordered.splice(clampedOrder, 0, card); // card as placeholder for position
+
+      for (let i = 0; i < reordered.length; i++) {
+        if (reordered[i].id === id) continue; // skip the moved card itself
+        if (reordered[i].order !== i) {
+          await context.prisma.card.update({
+            where: { id: reordered[i].id },
+            data: { order: i },
+          });
+        }
+      }
+
+      // Update the moved card with final order and column
+      return context.prisma.card.update({
+        where: { id },
+        data: {
+          order: clampedOrder,
+          columnId: targetColumnId,
+          ...(targetColumnId ? { workspaceId: targetWorkspaceId } : {}),
+        },
+      });
     },
   },
 

@@ -75,6 +75,7 @@ const completedCount = computed(() => {
 
 function handleDragEnd(evt: Sortable.SortableEvent) {
   const el = evt.item as HTMLElement;
+  const from = evt.from as HTMLElement;
   const to = evt.to as HTMLElement;
   const cardId = el.dataset.cardId;
   if (!cardId) return;
@@ -83,6 +84,28 @@ function handleDragEnd(evt: Sortable.SortableEvent) {
   const order = Math.max(0, (evt.newIndex ?? 1) - 1);
   const toBacklog = to.dataset.backlog != null;
   const toColumnId = to.dataset.columnId;
+
+  // Revert SortableJS DOM manipulation — let Vue re-render from reactive state
+  // Otherwise SortableJS and Vue fight over the DOM causing off-by-1 glitches
+  const oldIndex = evt.oldIndex;
+  if (from === to) {
+    // Same container: move element back to its original DOM position
+    const ref = from.children[oldIndex!] ?? null;
+    if (ref) {
+      from.insertBefore(el, ref);
+    } else {
+      from.appendChild(el);
+    }
+  } else {
+    // Different containers: move element back to source container
+    const ref = from.children[oldIndex!] ?? null;
+    to.removeChild(el);
+    if (ref) {
+      from.insertBefore(el, ref);
+    } else {
+      from.appendChild(el);
+    }
+  }
 
   const doMove = (targetColumnId: string | null) => {
     workspaceStore.moveCard(cardId, targetColumnId, order).catch((e) => {

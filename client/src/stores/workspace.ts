@@ -46,6 +46,8 @@ interface LastMoveAction {
 interface DeletedCard {
   card: CardGql;
   workspaceId: string;
+  /** Индекс карточки в массиве колонки/беклога на момент удаления */
+  index: number;
 }
 
 /** Удалённый воркспейс (для undo) */
@@ -626,16 +628,27 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const ws = currentWorkspace.value;
     const oldWorkspace = ws ? { ...ws } : null;
 
-    // Сохраняем карточку для undo
+    // Сохраняем карточку для undo (вместе с индексом в массиве)
     if (ws) {
       let card: CardGql | undefined;
+      let cardIndex = -1;
       for (const col of ws.columns ?? []) {
-        card = (col.cards ?? []).find((c) => c.id === id);
-        if (card) break;
+        const idx = (col.cards ?? []).findIndex((c) => c.id === id);
+        if (idx !== -1) {
+          card = (col.cards ?? [])[idx];
+          cardIndex = idx;
+          break;
+        }
       }
-      if (!card) card = (ws.backlog ?? []).find((c) => c.id === id);
+      if (!card) {
+        const idx = (ws.backlog ?? []).findIndex((c) => c.id === id);
+        if (idx !== -1) {
+          card = (ws.backlog ?? [])[idx];
+          cardIndex = idx;
+        }
+      }
       if (card) {
-        lastDeletedCard.value = { card: { ...card }, workspaceId: ws.id };
+        lastDeletedCard.value = { card: { ...card }, workspaceId: ws.id, index: cardIndex };
       }
     }
 
@@ -676,8 +689,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!deleted) return;
     lastDeletedCard.value = null;
 
-    const { card } = deleted;
-    const originalOrder = card.order ?? 0;
+    const { card, index } = deleted;
     const input: CreateCardInput = {
       type: card.type,
       title: card.title ?? undefined,
@@ -695,14 +707,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       });
       const newCard = data.createCard as CardGql;
 
-      // Восстанавливаем позицию через moveCard (сервер создаёт карточку в конце)
+      // Восстанавливаем позицию через moveCard на сохранённый индекс
       if (newCard.columnId || newCard.workspaceId) {
         await apolloClient.mutate({
           mutation: MOVE_CARD_MUTATION,
           variables: {
             id: newCard.id,
             columnId: newCard.columnId,
-            order: originalOrder,
+            order: index,
           },
         });
       }
@@ -728,7 +740,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (idx !== -1) {
         card = (col.cards ?? [])[idx];
         fromColumnId = col.id;
-        fromOrder = card.order ?? idx;
+        fromOrder = idx;
         break;
       }
     }
@@ -737,7 +749,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       if (idx !== -1) {
         card = ws.backlog[idx];
         fromColumnId = null; // backlog = null columnId
-        fromOrder = card.order ?? idx;
+        fromOrder = idx;
       }
     }
 

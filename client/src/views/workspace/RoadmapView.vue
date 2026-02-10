@@ -46,14 +46,12 @@ const deletingNodeId = ref<string | null>(null);
 // Delete roadmap confirmation
 const showDeleteRoadmapConfirm = ref(false);
 
-
-
 watch(
   workspaceId,
   (id) => {
     if (id) roadmapStore.fetchRoadmap(id);
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // ─── Serialize tree to indented text ───
@@ -203,7 +201,7 @@ async function confirmAddNode() {
     await roadmapStore.createNode(
       roadmap.value.id,
       addingParentId.value,
-      newNodeTitle.value.trim(),
+      newNodeTitle.value.trim()
     );
     addingParentId.value = null;
     newNodeTitle.value = '';
@@ -226,9 +224,7 @@ async function confirmDeleteNode() {
 
 const rootNodes = computed(() => {
   if (!roadmap.value?.nodes) return [];
-  return [...roadmap.value.nodes]
-    .filter((n) => !n.parentId)
-    .sort((a, b) => a.order - b.order);
+  return [...roadmap.value.nodes].filter((n) => !n.parentId).sort((a, b) => a.order - b.order);
 });
 
 function flattenNodes(nodes: RoadmapNode[]): RoadmapNode[] {
@@ -247,7 +243,7 @@ const progress = computed(() => {
 });
 
 const progressPercent = computed(() =>
-  progress.value.total === 0 ? 0 : Math.round((progress.value.done / progress.value.total) * 100),
+  progress.value.total === 0 ? 0 : Math.round((progress.value.done / progress.value.total) * 100)
 );
 
 const llmPrompt = computed(() => {
@@ -273,6 +269,51 @@ const llmPrompt = computed(() => {
 - От базовых понятий к продвинутым`;
 });
 
+function copyNodeAiPrompt(node: RoadmapNode) {
+  const ws = workspaceStore.currentWorkspace;
+
+  const context = ws ? (ws.description ? `${ws.title} — ${ws.description}` : ws.title) : '';
+
+  const lines: string[] = [
+    'Ты помогаешь мне учиться через карточки с источниками и задачами.',
+    '',
+    `Нужно проработать тему «${node.title}».`,
+    '',
+    'Не объясняй теорию в ответе.',
+    'Твоя задача — составить ПЛАН ИЗУЧЕНИЯ.',
+    '',
+    'Формат ответа строго такой:',
+    '',
+    '1) ИСТОЧНИКИ',
+    '- что почитать (документация, статьи)',
+    '- что посмотреть (видео, курсы, доклады)',
+    '- для каждого источника: зачем он нужен и на что обратить внимание',
+    '',
+    '2) ЗАДАЧИ',
+    '- 3–6 практических задач по теме',
+    '- от простого к сложному',
+    '- каждая задача должна быть конкретной и выполнимой',
+    '',
+    '3) РЕЗУЛЬТАТ ОБУЧЕНИЯ',
+    '- какие навыки я должен получить',
+    '- какие карточки или заметки стоит создать после выполнения задач',
+    '',
+    'Ограничения:',
+    '- не пересказывай содержание источников',
+    '- не пиши учебник',
+    '- не уходи в соседние или продвинутые темы',
+  ];
+
+  if (context) {
+    lines.splice(3, 0, `Контекст проекта: ${context}`, '');
+  }
+
+  navigator.clipboard.writeText(lines.join('\n')).then(
+    () => toast.success('Промпт скопирован'),
+    () => toast.error('Не удалось скопировать')
+  );
+}
+
 const promptCopied = ref(false);
 
 function copyPrompt() {
@@ -282,7 +323,7 @@ function copyPrompt() {
       toast.success('Промпт скопирован');
       setTimeout(() => (promptCopied.value = false), 2000);
     },
-    () => toast.error('Не удалось скопировать'),
+    () => toast.error('Не удалось скопировать')
   );
 }
 </script>
@@ -353,6 +394,7 @@ function copyPrompt() {
             @edit-node="openEditNode"
             @add-child="startAddChild"
             @delete-node="deletingNodeId = $event"
+            @copy-ai-prompt="copyNodeAiPrompt"
           />
         </div>
 
@@ -377,7 +419,6 @@ function copyPrompt() {
             <span class="i-lucide-x" />
           </button>
         </div>
-
       </template>
     </div>
 
@@ -418,7 +459,10 @@ function copyPrompt() {
                 v-if="roadmap"
                 type="button"
                 class="btn-delete"
-                @click="showPasteModal = false; showDeleteRoadmapConfirm = true"
+                @click="
+                  showPasteModal = false;
+                  showDeleteRoadmapConfirm = true;
+                "
               >
                 <span class="i-lucide-trash-2" />
                 Удалить

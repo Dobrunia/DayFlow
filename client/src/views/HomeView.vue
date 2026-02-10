@@ -127,7 +127,7 @@ function togglePinned(e: Event, id: string) {
             </svg>
             <span>Закреплённые</span>
           </h2>
-          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div
               v-for="workspace in pinnedWorkspaces"
               :key="workspace.id"
@@ -168,6 +168,7 @@ function togglePinned(e: Event, id: string) {
               </p>
             </div>
           </div>
+          <hr class="border-border my-10" />
         </template>
 
         <!-- Unpinned -->

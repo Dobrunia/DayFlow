@@ -33,7 +33,7 @@ function select(emoji: string) {
     </PopoverTrigger>
     <PopoverPortal>
       <PopoverContent
-        class="z-50 p-2 card w-64 grid grid-cols-6 gap-1 max-h-48 overflow-y-auto scrollbar-hide shadow-lg border border-border bg-surface origin-top-left"
+        class="z-[200] p-2 card w-64 grid grid-cols-6 gap-1 max-h-48 overflow-y-auto scrollbar-hide shadow-lg border border-border bg-surface origin-top-left"
         :side-offset="5"
         align="start"
       >

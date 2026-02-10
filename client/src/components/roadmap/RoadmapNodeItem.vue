@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'edit-node', node: RoadmapNode): void;
   (e: 'add-child', parentId: string): void;
   (e: 'delete-node', id: string): void;
+  (e: 'copy-ai-prompt', node: RoadmapNode): void;
 }>();
 
 const collapsed = ref(false);
@@ -64,6 +65,9 @@ const hasChildren = computed(() => sortedChildren.value.length > 0);
 
       <!-- Actions (hover) -->
       <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" @click.stop>
+        <button class="icon-btn-ghost !p-1" title="Промпт для AI" @click="emit('copy-ai-prompt', node)">
+          <span class="i-lucide-sparkles text-xs" />
+        </button>
         <button class="icon-btn-ghost !p-1" title="Редактировать" @click="emit('edit-node', node)">
           <span class="i-lucide-pencil text-xs" />
         </button>
@@ -91,6 +95,7 @@ const hasChildren = computed(() => sortedChildren.value.length > 0);
         @edit-node="emit('edit-node', $event)"
         @add-child="emit('add-child', $event)"
         @delete-node="emit('delete-node', $event)"
+        @copy-ai-prompt="emit('copy-ai-prompt', $event)"
       />
     </template>
   </div>

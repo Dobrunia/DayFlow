@@ -408,6 +408,31 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
+  async function updateColumnColor(id: string, color: string | null) {
+    const oldWorkspace = currentWorkspace.value ? { ...currentWorkspace.value } : null;
+
+    // Optimistic update
+    if (currentWorkspace.value?.columns) {
+      const index = currentWorkspace.value.columns.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        const next = [...currentWorkspace.value.columns];
+        next[index] = { ...next[index], color };
+        currentWorkspace.value = { ...currentWorkspace.value, columns: next };
+      }
+    }
+
+    try {
+      await apolloClient.mutate({
+        mutation: UPDATE_COLUMN_MUTATION,
+        variables: { id, color: color ?? '' },
+      });
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      if (oldWorkspace) currentWorkspace.value = oldWorkspace;
+      throw e;
+    }
+  }
+
   async function deleteColumn(id: string) {
     // Сохраняем колонку для undo
     const ws = currentWorkspace.value;
@@ -1008,6 +1033,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     createColumn,
     updateColumn,
     toggleHideCompleted,
+    updateColumnColor,
     deleteColumn,
     undoDeleteColumn,
     reorderColumns,

@@ -32,6 +32,7 @@ type Column {
   title: String!
   order: Int!
   hideCompleted: Boolean!
+  color: String
   workspace: Workspace!
   cards: [Card!]!
 }
@@ -229,7 +230,7 @@ type Mutation {
 
   # Column
   createColumn(workspaceId: ID!, title: String!): Column!
-  updateColumn(id: ID!, title: String, hideCompleted: Boolean): Column!
+  updateColumn(id: ID!, title: String, hideCompleted: Boolean, color: String): Column!
   deleteColumn(id: ID!): Boolean!
   reorderColumns(workspaceId: ID!, columnIds: [ID!]!): [Column!]!
 

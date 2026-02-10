@@ -55,6 +55,7 @@ model Column {
   title         String
   order         Int
   hideCompleted Boolean @default(false)
+  color         String? // hex-цвет колонки, null = без цвета
   workspaceId   String
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

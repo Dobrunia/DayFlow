@@ -58,7 +58,7 @@ export const columnResolvers = {
 
     updateColumn: async (
       _: unknown,
-      { id, title, hideCompleted }: MutationUpdateColumnArgs,
+      { id, title, hideCompleted, color }: MutationUpdateColumnArgs,
       context: Context
     ) => {
       if (!context.user) {
@@ -77,9 +77,10 @@ export const columnResolvers = {
         throw NotFoundError('Колонка не найдена');
       }
 
-      const data: { title?: string; hideCompleted?: boolean } = {};
+      const data: { title?: string; hideCompleted?: boolean; color?: string | null } = {};
       if (title !== undefined && title !== null) data.title = title;
       if (hideCompleted !== undefined && hideCompleted !== null) data.hideCompleted = hideCompleted;
+      if (color !== undefined) data.color = color || null;
 
       return context.prisma.column.update({
         where: { id },

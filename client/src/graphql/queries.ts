@@ -51,6 +51,7 @@ export const WORKSPACE_QUERY = gql`
         title
         order
         hideCompleted
+        color
         cards {
           id
           createdAt

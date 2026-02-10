@@ -58,6 +58,7 @@ export type CardType =
 export type Column = {
   __typename?: 'Column';
   cards: Array<Card>;
+  color?: Maybe<Scalars['String']['output']>;
   hideCompleted: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   order: Scalars['Int']['output'];
@@ -234,6 +235,7 @@ export type MutationUpdateCardArgs = {
 
 
 export type MutationUpdateColumnArgs = {
+  color?: InputMaybe<Scalars['String']['input']>;
   hideCompleted?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['ID']['input'];
   title?: InputMaybe<Scalars['String']['input']>;
@@ -506,10 +508,11 @@ export type UpdateColumnMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   title?: InputMaybe<Scalars['String']['input']>;
   hideCompleted?: InputMaybe<Scalars['Boolean']['input']>;
+  color?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type UpdateColumnMutation = { __typename?: 'Mutation', updateColumn: { __typename?: 'Column', id: string, title: string, hideCompleted: boolean } };
+export type UpdateColumnMutation = { __typename?: 'Mutation', updateColumn: { __typename?: 'Column', id: string, title: string, hideCompleted: boolean, color?: string | null } };
 
 export type DeleteColumnMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -644,7 +647,7 @@ export type WorkspaceQueryVariables = Exact<{
 }>;
 
 
-export type WorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, createdAt: any, updatedAt: any, tools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string> }>, columns: Array<{ __typename?: 'Column', id: string, title: string, order: number, hideCompleted: boolean, cards: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> }>, backlog: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> } | null };
+export type WorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, createdAt: any, updatedAt: any, tools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string> }>, columns: Array<{ __typename?: 'Column', id: string, title: string, order: number, hideCompleted: boolean, color?: string | null, cards: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> }>, backlog: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> } | null };
 
 export type CardsQueryVariables = Exact<{
   filter?: InputMaybe<CardFilter>;

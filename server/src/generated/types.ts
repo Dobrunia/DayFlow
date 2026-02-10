@@ -63,6 +63,7 @@ export type CardType =
 export type Column = {
   __typename?: 'Column';
   cards: Array<Card>;
+  color?: Maybe<Scalars['String']['output']>;
   hideCompleted: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   order: Scalars['Int']['output'];
@@ -239,6 +240,7 @@ export type MutationUpdateCardArgs = {
 
 
 export type MutationUpdateColumnArgs = {
+  color?: InputMaybe<Scalars['String']['input']>;
   hideCompleted?: InputMaybe<Scalars['Boolean']['input']>;
   id: Scalars['ID']['input'];
   title?: InputMaybe<Scalars['String']['input']>;
@@ -598,6 +600,7 @@ export type CardResolvers<ContextType = Context, ParentType extends ResolversPar
 
 export type ColumnResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Column'] = ResolversParentTypes['Column']> = ResolversObject<{
   cards?: Resolver<Array<ResolversTypes['Card']>, ParentType, ContextType>;
+  color?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hideCompleted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   order?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;

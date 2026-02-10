@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, toRef } from 'vue';
+import { ref, computed, toRef, watch } from 'vue';
 import type { CardGql } from '@/graphql/types';
 import { parseCard } from '@/lib/card';
 import { useInlineEdit } from '@/composables/useInlineEdit';
@@ -84,6 +84,15 @@ const learningStatusInfo = computed(() => {
 });
 
 const isCollapsed = ref(!!props.card.learningStatus || props.card.done);
+
+watch(
+  () => [props.card.learningStatus, props.card.done] as const,
+  ([status, done], [oldStatus, oldDone]) => {
+    if ((status && !oldStatus) || (done && !oldDone)) {
+      isCollapsed.value = true;
+    }
+  }
+);
 
 function handleDeleteFromDialog() {
   showEditDialog.value = false;

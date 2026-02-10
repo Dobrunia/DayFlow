@@ -461,11 +461,11 @@ async function handleSubmit() {
           <div class="flex justify-between items-center gap-3 pt-4">
             <button v-if="isEditMode" type="button" class="btn-delete" @click="emit('delete')">
               <span class="i-lucide-trash-2" />
-              Удалить
+              <span>Удалить</span>
             </button>
             <button type="submit" class="btn-primary ml-auto" :disabled="loading">
               <span v-if="loading" class="i-lucide-loader-2 animate-spin" />
-              {{ isEditMode ? 'Сохранить' : 'Создать' }}
+              <span>{{ isEditMode ? 'Сохранить' : 'Создать' }}</span>
             </button>
           </div>
         </form>

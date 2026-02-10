@@ -6,6 +6,7 @@ export const CardTypeEnum = z.enum(["note", "link", "checklist"]);
 export type CardType = z.infer<typeof CardTypeEnum>;
 
 export const LearningStatusEnum = z.enum([
+  "in_progress",
   "want_to_repeat",
   "questions_remain",
   "deepen_knowledge",

@@ -345,7 +345,7 @@ function copyPrompt() {
           <div class="flex gap-2 justify-center">
             <button class="btn-ghost" @click="showPasteModal = true">
               <span class="i-lucide-clipboard-paste" />
-              Вставить текст
+              <span>Вставить текст</span>
             </button>
             <button
               class="btn-ghost transition-colors"
@@ -353,7 +353,7 @@ function copyPrompt() {
               @click="copyPrompt"
             >
               <span :class="promptCopied ? 'i-lucide-check' : 'i-lucide-sparkles'" />
-              {{ promptCopied ? 'Скопировано' : 'Промпт для LLM' }}
+              <span>{{ promptCopied ? 'Скопировано' : 'Промпт для LLM' }}</span>
             </button>
           </div>
         </div>
@@ -465,12 +465,12 @@ function copyPrompt() {
                 "
               >
                 <span class="i-lucide-trash-2" />
-                Удалить
+                <span>Удалить</span>
               </button>
               <span v-else />
               <button type="submit" class="btn-primary" :disabled="pasteLoading">
                 <span v-if="pasteLoading" class="i-lucide-loader-2 animate-spin" />
-                {{ roadmap ? 'Сохранить' : 'Создать' }}
+                <span>{{ roadmap ? 'Сохранить' : 'Создать' }}</span>
               </button>
             </div>
           </form>
@@ -495,9 +495,9 @@ function copyPrompt() {
             <input v-model="editNodeTitle" class="input" required autofocus />
             <div class="flex justify-end gap-2 pt-2">
               <button type="button" class="btn-ghost" @click="showEditNodeModal = false">
-                Отмена
+                <span>Отмена</span>
               </button>
-              <button type="submit" class="btn-primary">Сохранить</button>
+              <button type="submit" class="btn-primary"><span>Сохранить</span></button>
             </div>
           </form>
         </DialogContent>
@@ -519,10 +519,10 @@ function copyPrompt() {
           </div>
           <p class="text-sm text-muted mb-4">Все дочерние узлы тоже будут удалены.</p>
           <div class="flex justify-end gap-2">
-            <button class="btn-ghost" @click="deletingNodeId = null">Отмена</button>
+            <button class="btn-ghost" @click="deletingNodeId = null"><span>Отмена</span></button>
             <button class="btn-danger" @click="confirmDeleteNode">
               <span class="i-lucide-trash-2" />
-              Удалить
+              <span>Удалить</span>
             </button>
           </div>
         </DialogContent>
@@ -546,10 +546,10 @@ function copyPrompt() {
             Роадмап и все узлы будут удалены. Это действие нельзя отменить.
           </p>
           <div class="flex justify-end gap-2">
-            <button class="btn-ghost" @click="showDeleteRoadmapConfirm = false">Отмена</button>
+            <button class="btn-ghost" @click="showDeleteRoadmapConfirm = false"><span>Отмена</span></button>
             <button class="btn-danger" @click="confirmDeleteRoadmap">
               <span class="i-lucide-trash-2" />
-              Удалить
+              <span>Удалить</span>
             </button>
           </div>
         </DialogContent>

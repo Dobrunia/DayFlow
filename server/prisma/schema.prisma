@@ -162,6 +162,7 @@ enum CardType {
 }
 
 enum LearningStatus {
+  in_progress
   want_to_repeat
   questions_remain
   deepen_knowledge

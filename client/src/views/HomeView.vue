@@ -90,7 +90,7 @@ function togglePinned(e: Event, id: string) {
         <div v-if="workspaceStore.workspaces.length > 0" class="flex items-center gap-3">
           <div class="relative w-full min-w-0 sm:w-64 shrink-0">
             <span
-              class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted pointer-events-none"
+              class="absolute left-3 top-1/2 -translate-y-[calc(50%+1px)] i-lucide-search text-muted pointer-events-none"
             />
             <input
               v-model="workspaceSearch"

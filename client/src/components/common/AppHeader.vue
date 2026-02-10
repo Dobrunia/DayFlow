@@ -16,6 +16,7 @@ const navLinks = [
 ];
 
 const learningLinks = [
+  { to: '/learning/inprogress', label: 'В работе', icon: 'i-lucide-circle-arrow-right', color: 'text-ls-inprogress' },
   { to: '/learning/repeat', label: 'Повторить', icon: 'i-lucide-repeat', color: 'text-ls-repeat' },
   { to: '/learning/questions', label: 'Вопросы', icon: 'i-lucide-help-circle', color: 'text-ls-questions' },
   { to: '/learning/deepen', label: 'Углубить', icon: 'i-lucide-book-open', color: 'text-ls-deepen' },

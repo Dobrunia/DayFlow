@@ -68,6 +68,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/learning/inprogress',
+      name: 'learning-inprogress',
+      component: () => import('@/views/LearningView.vue'),
+      meta: { requiresAuth: true, status: LEARNING_STATUSES.IN_PROGRESS },
+    },
+    {
       path: '/learning/repeat',
       name: 'learning-repeat',
       component: () => import('@/views/LearningView.vue'),

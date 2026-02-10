@@ -220,7 +220,7 @@ async function moveRight() {
     class="flex-shrink-0 w-72 flex flex-col rounded-xl"
     :style="column.color
       ? { background: `color-mix(in srgb, ${column.color} 6%, rgb(var(--bg)))`, borderTop: `2px solid color-mix(in srgb, ${column.color} 40%, transparent)` }
-      : { background: 'rgb(var(--fg) / 0.05)' }"
+      : { background: 'rgb(var(--fg) / 0.05)', borderTop: '2px solid transparent' }"
   >
     <div ref="headerRef" class="group h-12 px-3 flex-between">
       <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">

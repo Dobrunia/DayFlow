@@ -21,10 +21,13 @@ const { result, loading, refetch } = useQuery(CARDS_QUERY, () => ({
   sortOrder: 'createdAt_DESC',
 }));
 
-watch(() => route.fullPath, () => {
-  initialLoaded.value = false;
-  refetch();
-});
+watch(
+  () => route.fullPath,
+  () => {
+    initialLoaded.value = false;
+    refetch();
+  }
+);
 
 const cards = computed(() => (result.value?.cards ?? []) as CardGql[]);
 
@@ -71,7 +74,7 @@ function toggleCollapse(id: string) {
       <section v-if="hubCards.length > 0">
         <button
           type="button"
-          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:(text-primary bg-fg/5) rounded-[var(--r)] px-2 -mx-2 py-1.5 transition-colors"
           @click="toggleCollapse('hub')"
         >
           <span
@@ -97,7 +100,7 @@ function toggleCollapse(id: string) {
       <section v-for="wsGroup in workspaceCards" :key="wsGroup.workspace.id">
         <button
           type="button"
-          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:(text-primary bg-fg/5) rounded-[var(--r)] px-2 -mx-2 py-1.5 transition-colors"
           @click="toggleCollapse(wsGroup.workspace.id)"
         >
           <span
@@ -110,7 +113,7 @@ function toggleCollapse(id: string) {
           <span class="text-sm font-normal text-muted ml-1">({{ wsGroup.cards.length }})</span>
         </button>
         <div v-show="!collapsed.has(wsGroup.workspace.id)" class="grid gap-2">
-           <CardItem
+          <CardItem
             v-for="card in wsGroup.cards"
             :key="card.id"
             :card="card"

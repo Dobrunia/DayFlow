@@ -124,22 +124,7 @@ async function deleteWorkspace() {
   try {
     await workspaceStore.deleteWorkspace(workspace.value.id);
     router.push('/');
-    toast(`«${wsTitle}» удалён`, {
-      action: {
-        label: 'Отменить',
-        onClick: () => {
-          workspaceStore
-            .undoDeleteWorkspace()
-            .then((newId) => {
-              if (newId) {
-                toast.success('Воркспейс восстановлен');
-                router.push(`/workspace/${newId}`);
-              }
-            })
-            .catch((e) => toast.error(getGraphQLErrorMessage(e)));
-        },
-      },
-    });
+    toast(`«${wsTitle}» удалён`);
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
   }
@@ -266,18 +251,18 @@ function downloadSummaries() {
             <template v-if="isBoardRoute">
               <div class="relative">
                 <span
-                  class="absolute left-2.5 top-1/2 -translate-y-1/2 i-lucide-search text-muted text-sm pointer-events-none"
+                  class="absolute left-2.5 top-1/2 -translate-y-[calc(50%+2px)] i-lucide-search text-muted pointer-events-none"
                 />
                 <input
                   v-model="cardSearch"
                   type="text"
                   placeholder="Поиск карточек..."
-                  class="input pl-8 pr-8 h-9 w-48 text-sm"
+                  class="input pl-8 pr-8 h-9 w-48"
                 />
                 <button
                   v-if="cardSearch"
                   type="button"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-fg"
+                  class="absolute right-2 top-1/2 -translate-y-[calc(50%+2px)] text-muted hover:text-fg"
                   @click="cardSearch = ''"
                 >
                   <span class="i-lucide-x text-sm" />
@@ -290,7 +275,7 @@ function downloadSummaries() {
                 title="Все конспекты"
               >
                 <span class="i-lucide-book-open" />
-                Конспекты
+                <span>Конспекты</span>
               </button>
 
               <button
@@ -324,7 +309,7 @@ function downloadSummaries() {
               active-class="active"
             >
               <span class="i-lucide-columns-3 text-sm" />
-              Доска
+              <span>Доска</span>
             </RouterLink>
             <RouterLink
               :to="`/workspace/${workspaceId}/roadmap`"
@@ -332,7 +317,7 @@ function downloadSummaries() {
               active-class="active"
             >
               <span class="i-lucide-map text-sm" />
-              Роадмап
+              <span>Роадмап</span>
             </RouterLink>
           </div>
         </div>
@@ -395,11 +380,11 @@ function downloadSummaries() {
           <div class="flex justify-end gap-2 pt-4 border-t border-border mt-4">
             <button type="button" class="btn-ghost" @click="copySummaries">
               <span class="i-lucide-copy" />
-              Копировать
+              <span>Копировать</span>
             </button>
             <button type="button" class="btn-primary" @click="downloadSummaries">
               <span class="i-lucide-download" />
-              Скачать .md
+              <span>Скачать .md</span>
             </button>
           </div>
         </DialogContent>
@@ -445,11 +430,11 @@ function downloadSummaries() {
             <div class="flex justify-between items-center gap-3 pt-4">
               <button type="button" class="btn-delete" @click="deleteWorkspace">
                 <span class="i-lucide-trash-2" />
-                Удалить
+                <span>Удалить</span>
               </button>
               <button type="submit" class="btn-primary" :disabled="editModalLoading">
                 <span v-if="editModalLoading" class="i-lucide-loader-2 animate-spin" />
-                Сохранить
+                <span>Сохранить</span>
               </button>
             </div>
           </form>

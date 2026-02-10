@@ -48,7 +48,6 @@ function handleBlur() {
     isOpen.value = false;
   }, 200);
 }
-
 </script>
 
 <template>

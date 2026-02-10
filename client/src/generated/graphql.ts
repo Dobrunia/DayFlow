@@ -93,6 +93,7 @@ export type CreateWorkspaceInput = {
 
 export type LearningStatus =
   | 'deepen_knowledge'
+  | 'in_progress'
   | 'questions_remain'
   | 'want_to_repeat';
 

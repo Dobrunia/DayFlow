@@ -154,9 +154,9 @@ async function startCreating() {
         />
         
         <div class="flex justify-end gap-2">
-          <button @click="isCreating = false" class="btn-ghost text-xs py-1">Отмена</button>
+          <button @click="isCreating = false" class="btn-ghost text-xs py-1"><span>Отмена</span></button>
           <button @click="handleCreate" class="btn-primary text-xs py-1" :disabled="createLoading">
-            Добавить
+            <span>Добавить</span>
           </button>
         </div>
       </div>

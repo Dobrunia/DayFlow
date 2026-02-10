@@ -146,13 +146,13 @@ async function handleDelete() {
         </button>
 
         <div class="flex gap-2">
-          <button @click="isEditing = false" class="btn-ghost text-xs px-2 py-1">Отмена</button>
+          <button @click="isEditing = false" class="btn-ghost text-xs px-2 py-1"><span>Отмена</span></button>
           <button
             @click="handleUpdate"
             class="btn-primary text-xs px-2 py-1"
             :disabled="updateLoading"
           >
-            Сохранить
+            <span>Сохранить</span>
           </button>
         </div>
       </div>
@@ -201,7 +201,7 @@ async function handleDelete() {
       <!-- Edit Button (Absolute) -->
       <button
         @click.stop.prevent="startEdit"
-        class="absolute top-1/2 -translate-y-1/2 right-2 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface rounded-full text-muted hover:text-fg transition-all shadow-sm border border-transparent hover:border-border"
+        class="absolute top-1/2 -translate-y-[calc(50%+1px)] right-2 opacity-0 group-hover:opacity-100 p-1.5 hover:bg-surface rounded-full text-muted hover:text-fg transition-all shadow-sm border border-transparent hover:border-border"
         title="Редактировать"
       >
         <span class="i-lucide-pencil text-xs" />

@@ -17,9 +17,7 @@ const filtered = computed(() => {
   const q = search.value.trim().toLowerCase();
   if (!q) return allTools.value;
   return allTools.value.filter(
-    (t) =>
-      t.title.toLowerCase().includes(q) ||
-      t.tags.some((tag) => tag.toLowerCase().includes(q)),
+    (t) => t.title.toLowerCase().includes(q) || t.tags.some((tag) => tag.toLowerCase().includes(q))
   );
 });
 
@@ -61,12 +59,8 @@ function toggleCollapse(id: string) {
 
     <!-- Search -->
     <div class="relative mb-6">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 i-lucide-search text-muted" />
-      <input
-        v-model="search"
-        placeholder="Поиск по названию или тегу…"
-        class="input pl-9"
-      />
+      <span class="absolute left-3 top-1/2 -translate-y-[calc(50%+1px)] i-lucide-search text-muted" />
+      <input v-model="search" placeholder="Поиск по названию или тегу…" class="input pl-9" />
     </div>
 
     <div v-if="loading && allTools.length === 0" class="flex-center py-12">
@@ -82,7 +76,7 @@ function toggleCollapse(id: string) {
       <section v-if="hubTools.length > 0">
         <button
           type="button"
-          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:(text-primary bg-fg/5) rounded-[var(--r)] px-2 -mx-2 py-1.5 transition-colors"
           @click="toggleCollapse('hub')"
         >
           <span
@@ -94,11 +88,7 @@ function toggleCollapse(id: string) {
           <span class="text-sm font-normal text-muted ml-1">({{ hubTools.length }})</span>
         </button>
         <div v-show="!collapsed.has('hub')" class="grid gap-2">
-          <ToolItem
-            v-for="tool in hubTools"
-            :key="tool.id"
-            :tool="tool"
-          />
+          <ToolItem v-for="tool in hubTools" :key="tool.id" :tool="tool" />
         </div>
       </section>
 
@@ -106,7 +96,7 @@ function toggleCollapse(id: string) {
       <section v-for="wsGroup in workspaceTools" :key="wsGroup.workspace.id">
         <button
           type="button"
-          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:text-primary transition-colors"
+          class="w-full text-lg font-semibold mb-3 flex items-center gap-2 cursor-pointer select-none hover:(text-primary bg-fg/5) rounded-[var(--r)] px-2 -mx-2 py-1.5 transition-colors"
           @click="toggleCollapse(wsGroup.workspace.id)"
         >
           <span

@@ -145,30 +145,34 @@ function stopHeartbeat() {
   }
 }
 
-// Poll lock state for non-lock-holders (every 10s)
-let lockPollTimer: ReturnType<typeof setInterval> | null = null;
+// Background sync — always runs while workspace is open (every 10s)
+// Keeps members, tools, columns, etc. in sync for all users
+let syncTimer: ReturnType<typeof setInterval> | null = null;
 
 watch(
-  [workspace, lockHeld],
+  workspace,
   () => {
-    if (lockPollTimer) {
-      clearInterval(lockPollTimer);
-      lockPollTimer = null;
+    if (syncTimer) {
+      clearInterval(syncTimer);
+      syncTimer = null;
     }
-    // If we DON'T hold the lock, poll periodically to detect when it's freed
-    // Uses softFetchWorkspace to only patch changed fields (no full UI re-render)
-    if (workspace.value && !lockHeld.value) {
-      lockPollTimer = setInterval(async () => {
-        if (workspace.value) {
-          await workspaceStore.softFetchWorkspace(workspace.value.id);
-          // Also sync roadmap if on that route
-          if (currentMode.value === 'roadmap') {
-            await roadmapStore.softFetchRoadmap(workspace.value.id);
-          }
-          // Auto-acquire if lock just freed
-          if (!workspace.value.editingBy) {
-            await acquireLock();
-          }
+    if (workspace.value) {
+      syncTimer = setInterval(async () => {
+        if (!workspace.value) return;
+        await workspaceStore.softFetchWorkspace(workspace.value.id);
+        // Access revoked — redirect home
+        if (!workspace.value) {
+          toast.error('Доступ к воркспейсу отозван');
+          router.replace('/');
+          return;
+        }
+        // Also sync roadmap if on that route
+        if (currentMode.value === 'roadmap') {
+          await roadmapStore.softFetchRoadmap(workspace.value.id);
+        }
+        // Auto-acquire lock if freed and we don't hold it
+        if (!lockHeld.value && !workspace.value.editingBy) {
+          await acquireLock();
         }
       }, 10_000);
     }
@@ -194,7 +198,7 @@ onBeforeRouteLeave(() => {
 
 onBeforeUnmount(() => {
   releaseLock();
-  if (lockPollTimer) clearInterval(lockPollTimer);
+  if (syncTimer) clearInterval(syncTimer);
 });
 
 async function startEditTitle() {
@@ -312,7 +316,7 @@ async function removeMember(userId: string) {
     });
     // Remove from local members list — no full refetch
     if (workspace.value.members) {
-      workspace.value.members = workspace.value.members.filter((m) => m.id !== userId);
+      workspace.value.members = workspace.value.members.filter((m) => m.userId !== userId);
     }
     toast.success('Участник удалён');
   } catch (e) {

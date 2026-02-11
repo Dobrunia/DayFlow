@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Workspace } from '@/graphql/types';
 
-const props = defineProps<{
+defineProps<{
   workspace: Workspace;
   shared?: boolean;
 }>();

@@ -118,9 +118,14 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { id },
         fetchPolicy: 'network-only',
       });
+
+      // Access revoked (kicked/deleted) — clear local state
+      if (!data.workspace) {
+        currentWorkspace.value = null;
+        return null;
+      }
+
       if (currentWorkspace.value && currentWorkspace.value.id === id) {
-        // data.workspace is frozen by Apollo — that's fine,
-        // patchWorkspace only reads from `remote` and writes to `local`.
         patchWorkspace(currentWorkspace.value, data.workspace);
       } else {
         currentWorkspace.value = structuredClone(data.workspace);

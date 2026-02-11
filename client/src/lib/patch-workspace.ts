@@ -140,10 +140,23 @@ function patchOwner(local: any, remote: any): void {
   }
 }
 
+const MEMBER_FIELDS = ['userId', 'joinedAt'] as const;
+
+function patchMember(local: any, remote: any): void {
+  patchScalars(local, remote, MEMBER_FIELDS);
+  const lu = local.user;
+  const ru = remote.user;
+  if (lu?.id !== ru?.id || lu?.email !== ru?.email || lu?.avatarUrl !== ru?.avatarUrl) {
+    local.user = ru ? { ...ru } : ru;
+  }
+}
+
 function patchMembers(local: any, remote: any): void {
-  const lmIds = local.members?.map((m: any) => m.userId).join(',') ?? '';
-  const rmIds = remote.members?.map((m: any) => m.userId).join(',') ?? '';
-  if (lmIds !== rmIds) local.members = clone(remote.members);
+  if (remote.members && local.members) {
+    reconcileById(local.members, remote.members, patchMember);
+  } else if (remote.members) {
+    local.members = clone(remote.members);
+  }
 }
 
 /** Reconcile a named array field (columns / backlog / tools). */

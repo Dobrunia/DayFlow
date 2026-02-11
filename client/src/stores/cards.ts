@@ -228,6 +228,21 @@ export const useCardsStore = defineStore('cards', () => {
     if (!options?.skipFetch) fetchCards();
   }
 
+  async function fetchRandomCard(): Promise<CardGql | null> {
+    try {
+      const { data } = await apolloClient.query({
+        query: CARDS_QUERY,
+        variables: { filter: {} },
+        fetchPolicy: 'cache-first',
+      });
+      const all = (data.cards ?? []) as CardGql[];
+      if (!all.length) return null;
+      return all[Math.floor(Math.random() * all.length)];
+    } catch {
+      return null;
+    }
+  }
+
   function clearFilter() {
     filter.value = {};
     fetchCards();
@@ -248,6 +263,7 @@ export const useCardsStore = defineStore('cards', () => {
     updateCard,
     deleteCard,
     undoDeleteCard,
+    fetchRandomCard,
     setFilter,
     clearFilter,
   };

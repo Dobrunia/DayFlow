@@ -3,10 +3,12 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useThemeStore } from '@/stores/theme';
+import { useCardsStore } from '@/stores/cards';
 import SearchBar from './SearchBar.vue';
 import GlobalAddButton from './GlobalAddButton.vue';
 
 const router = useRouter();
+const cardsStore = useCardsStore();
 
 const navLinks = [
   { to: '/', label: 'Воркспейсы', icon: 'i-lucide-layout-grid' },
@@ -21,8 +23,6 @@ const learningLinks = [
   { to: '/learning/questions', label: 'Вопросы', icon: 'i-lucide-help-circle', color: 'text-ls-questions' },
   { to: '/learning/deepen', label: 'Углубить', icon: 'i-lucide-book-open', color: 'text-ls-deepen' },
 ];
-
-const isLearningActive = computed(() => router.currentRoute.value.path.startsWith('/learning'));
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
@@ -40,6 +40,16 @@ function handleSignOut() {
   authStore.signOut();
   router.push('/');
 }
+
+async function goToRandomCard() {
+  const card = await cardsStore.fetchRandomCard();
+  if (!card) return;
+  if (card.workspaceId) {
+    router.push(`/workspace/${card.workspaceId}`);
+  } else {
+    router.push({ path: '/library', query: { card: card.id } });
+  }
+}
 </script>
 
 <template>
@@ -47,8 +57,13 @@ function handleSignOut() {
     <!-- Main header -->
     <div class="h-14" style="background: color-mix(in srgb, rgb(var(--bg)) 90%, black 10%)">
       <div class="h-full max-w-7xl mx-auto px-4 pt-[12px] flex-between">
-        <!-- Logo -->
-        <RouterLink to="/" class="flex items-center gap-2 text-xl font-semibold text-fg">
+        <!-- Logo: random card on click -->
+        <button
+          type="button"
+          class="flex items-center gap-2 text-xl font-semibold text-fg cursor-pointer"
+          title="Случайная карточка"
+          @click="goToRandomCard"
+        >
           <span
             class="w-8 h-8 rounded-lg flex-center bg-success text-on-primary pointer-events-none"
             aria-hidden="true"
@@ -56,7 +71,7 @@ function handleSignOut() {
             <span class="i-lucide-square-check text-lg" />
           </span>
           <span>DayFlow</span>
-        </RouterLink>
+        </button>
 
         <!-- Center: Search (only when authenticated) -->
         <div v-if="isAuthenticated" class="flex-1 max-w-md mx-8">

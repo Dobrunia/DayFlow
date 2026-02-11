@@ -22,6 +22,8 @@ const learningLinks = [
   { to: '/learning/deepen', label: 'Углубить', icon: 'i-lucide-book-open', color: 'text-ls-deepen' },
 ];
 
+const isLearningActive = computed(() => router.currentRoute.value.path.startsWith('/learning'));
+
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
@@ -138,19 +140,36 @@ function handleSignOut() {
             <span>{{ link.label }}</span>
           </RouterLink>
 
-          <!-- Learning routes -->
+          <!-- Learning dropdown -->
           <div class="w-px h-5 bg-border mx-1"></div>
-          
-          <RouterLink
-            v-for="link in learningLinks"
-            :key="link.to"
-            :to="link.to"
-            class="btn-ghost"
-            active-class="bg-fg/10"
-          >
-            <span :class="[link.icon, link.color]" />
-            <span>{{ link.label }}</span>
-          </RouterLink>
+
+          <div class="relative group">
+            <button
+              type="button"
+              class="btn-ghost"
+            
+            >
+              <span class="i-lucide-signal" />
+              <span>Статус карточки</span>
+              <span class="i-lucide-chevron-down text-xs opacity-60" />
+            </button>
+            <div
+              class="absolute left-0 mt-1 min-w-full dropdown-panel opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
+            >
+              <div class="p-1">
+                <RouterLink
+                  v-for="link in learningLinks"
+                  :key="link.to"
+                  :to="link.to"
+                  class="dropdown-menu-item"
+                  active-class="bg-fg/10"
+                >
+                  <span :class="[link.icon, link.color]" />
+                  <span>{{ link.label }}</span>
+                </RouterLink>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="ml-auto">
           <GlobalAddButton />

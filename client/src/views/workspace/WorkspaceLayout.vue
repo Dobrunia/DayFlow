@@ -4,6 +4,7 @@ import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
 import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 import ToolboxPanel from '@/components/toolbox/ToolboxPanel.vue';
+import SearchInput from '@/components/common/SearchInput.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -25,6 +26,7 @@ const showEditModal = ref(false);
 const editModalTitle = ref('');
 const editModalDescription = ref('');
 const editModalLoading = ref(false);
+const confirmDelete = ref(false);
 const titleInputRef = ref<HTMLInputElement | null>(null);
 
 // Board-specific state (lives here so search stays in the original header)
@@ -92,6 +94,7 @@ function openEditModal() {
   if (!workspace.value) return;
   editModalTitle.value = workspace.value.title;
   editModalDescription.value = workspace.value.description ?? '';
+  confirmDelete.value = false;
   showEditModal.value = true;
 }
 
@@ -249,25 +252,11 @@ function downloadSummaries() {
           <!-- Search + Actions (same as original) -->
           <div class="flex items-center gap-3">
             <template v-if="isBoardRoute">
-              <div class="relative">
-                <span
-                  class="absolute left-2.5 top-1/2 -translate-y-[calc(50%+2px)] i-lucide-search text-muted pointer-events-none"
-                />
-                <input
-                  v-model="cardSearch"
-                  type="text"
-                  placeholder="Поиск карточек..."
-                  class="input pl-8 pr-8 h-9 w-48"
-                />
-                <button
-                  v-if="cardSearch"
-                  type="button"
-                  class="absolute right-2 top-1/2 -translate-y-[calc(50%+2px)] text-muted hover:text-fg"
-                  @click="cardSearch = ''"
-                >
-                  <span class="i-lucide-x text-sm" />
-                </button>
-              </div>
+              <SearchInput
+                v-model="cardSearch"
+                placeholder="Поиск карточек..."
+                class="w-48"
+              />
               <button
                 v-if="allSummaries.length > 0"
                 @click="showSummariesModal = true"
@@ -289,8 +278,8 @@ function downloadSummaries() {
               </button>
             </template>
 
-            <button @click="openEditModal" class="btn-ghost" title="Редактировать воркспейс">
-              <span class="i-lucide-pencil" />
+            <button @click="openEditModal" class="btn-ghost" title="Настройки воркспейса">
+              <span class="i-lucide-settings" />
             </button>
           </div>
         </div>
@@ -428,7 +417,16 @@ function downloadSummaries() {
               />
             </div>
             <div class="flex justify-between items-center gap-3 pt-4">
-              <button type="button" class="btn-delete" @click="deleteWorkspace">
+              <div v-if="confirmDelete" class="flex items-center gap-2">
+                <span class="text-sm text-danger">Это необратимо! Удалить?</span>
+                <button type="button" class="btn-delete" @click="deleteWorkspace">
+                  <span>Да</span>
+                </button>
+                <button type="button" class="btn-ghost" @click="confirmDelete = false">
+                  <span>Нет</span>
+                </button>
+              </div>
+              <button v-else type="button" class="btn-delete" @click="confirmDelete = true">
                 <span class="i-lucide-trash-2" />
                 <span>Удалить</span>
               </button>

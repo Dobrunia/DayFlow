@@ -4,6 +4,7 @@ import { useQuery } from '@vue/apollo-composable';
 import { ALL_TOOLS_QUERY } from '@/graphql/queries';
 import type { Tool, Workspace } from '@/graphql/types';
 import ToolItem from '@/components/toolbox/ToolItem.vue';
+import SearchInput from '@/components/common/SearchInput.vue';
 
 type ToolWithWorkspace = Tool & { workspace?: Pick<Workspace, 'id' | 'title' | 'icon'> | null };
 
@@ -58,10 +59,11 @@ function toggleCollapse(id: string) {
     </h1>
 
     <!-- Search -->
-    <div class="relative mb-6">
-      <span class="absolute left-3 top-1/2 -translate-y-[calc(50%+1px)] i-lucide-search text-muted" />
-      <input v-model="search" placeholder="Поиск по названию или тегу…" class="input pl-9" />
-    </div>
+    <SearchInput
+      v-model="search"
+      placeholder="Поиск по названию или тегу…"
+      class="mb-6"
+    />
 
     <div v-if="loading && allTools.length === 0" class="flex-center py-12">
       <span class="i-lucide-loader-2 animate-spin text-2xl text-muted" />

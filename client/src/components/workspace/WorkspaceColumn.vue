@@ -282,7 +282,7 @@ async function moveRight() {
             class="icon-btn-ghost"
             title="Настройки колонки"
           >
-            <span class="i-lucide-pencil" />
+            <span class="i-lucide-settings" />
           </button>
         </template>
       </div>

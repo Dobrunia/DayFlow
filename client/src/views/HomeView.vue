@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useWorkspaceStore } from '@/stores/workspace';
 import CreateWorkspaceDialog from '@/components/workspace/CreateWorkspaceDialog.vue';
+import SearchInput from '@/components/common/SearchInput.vue';
 import type { Workspace } from '@/graphql/types';
 
 const router = useRouter();
@@ -88,17 +89,11 @@ function togglePinned(e: Event, id: string) {
           <p class="page-desc">Доски для тем и проектов</p>
         </div>
         <div v-if="workspaceStore.workspaces.length > 0" class="flex items-center gap-3">
-          <div class="relative w-full min-w-0 sm:w-64 shrink-0">
-            <span
-              class="absolute left-3 top-1/2 -translate-y-[calc(50%+1px)] i-lucide-search text-muted pointer-events-none"
-            />
-            <input
-              v-model="workspaceSearch"
-              type="search"
-              class="input w-full py-2 pl-9"
-              placeholder="Поиск воркспейсов..."
-            />
-          </div>
+          <SearchInput
+            v-model="workspaceSearch"
+            placeholder="Поиск воркспейсов..."
+            class="w-full min-w-0 sm:w-64 shrink-0"
+          />
           <button
             v-if="canCreateWorkspace"
             class="btn-ghost shrink-0"

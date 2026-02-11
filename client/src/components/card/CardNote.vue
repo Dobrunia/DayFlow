@@ -61,7 +61,8 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
         <div class="flex-1 min-w-0">
           <p class="text-xs text-muted whitespace-pre-wrap line-clamp-3" v-html="contentHtml" />
           <p v-if="hasLongContent" class="text-xs text-muted mt-0.5">
-            <span class="opacity-80">… </span><span class="font-medium">ещё</span>
+            <span class="opacity-80">…</span>
+            <!-- <span class="font-medium">ещё</span> -->
           </p>
         </div>
         <button
@@ -84,9 +85,9 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
           v-html="summaryHtml"
         />
         <p v-else class="text-xs text-muted/50 italic leading-5">Конспект...</p>
-        <p v-if="payload.summary && summaryOverflow" class="text-xs text-muted mt-0.5">
+        <!-- <p v-if="payload.summary && summaryOverflow" class="text-xs text-muted mt-0.5">
           <span class="opacity-80">… </span><span class="font-medium">ещё</span>
-        </p>
+        </p> -->
       </div>
       <button
         type="button"

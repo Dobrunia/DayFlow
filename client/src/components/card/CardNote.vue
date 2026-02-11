@@ -69,7 +69,7 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
           v-if="hasLongContent"
           type="button"
           @click="showContentModal = true"
-          class="icon-btn-ghost shrink-0 opacity-0 group-hover:opacity-100"
+          class="icon-btn-ghost shrink-0 card-action"
           title="Открыть полностью"
         >
           <span class="i-lucide-maximize-2" />
@@ -92,7 +92,7 @@ watch([summaryEl, () => props.payload.summary], () => nextTick(checkSummaryOverf
       <button
         type="button"
         @click="showSummaryModal = true"
-        class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
+        class="icon-btn-edit shrink-0 card-action"
         title="Редактировать конспект"
       >
         <span class="i-lucide-pencil" />

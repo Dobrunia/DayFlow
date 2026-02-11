@@ -4,7 +4,8 @@ import type { CardGql } from '@/graphql/types';
 import { parseCard } from '@/lib/card';
 import { useInlineEdit } from '@/composables/useInlineEdit';
 import { useCardActions } from '@/composables/useCardActions';
-import { CARD_TYPES, LEARNING_STATUS_META } from '@/lib/constants';
+import { CARD_TYPES, LEARNING_STATUS_META, CARD_TYPE_META } from '@/lib/constants';
+import { toast } from 'vue-sonner';
 import CardNote from './CardNote.vue';
 import CardLink from './CardLink.vue';
 import CardChecklist from './CardChecklist.vue';
@@ -98,13 +99,70 @@ function handleDeleteFromDialog() {
   showEditDialog.value = false;
   cardActions.deleteCard();
 }
+
+const promptCopied = ref(false);
+
+const aiPrompt = computed(() => {
+  const c = props.card;
+  const typeName = CARD_TYPE_META[c.type as keyof typeof CARD_TYPE_META]?.label ?? c.type;
+  const lines: string[] = [
+    'Помоги мне разобраться в теме на основе моей карточки.',
+    '',
+    `Тип карточки: ${typeName}`,
+    `Название: ${c.title || '(без названия)'}`,
+  ];
+
+  if (c.tags?.length) {
+    lines.push(`Теги: ${c.tags.join(', ')}`);
+  }
+
+  const p = parsed.value;
+  if (p) {
+    const payload = p.payload as Record<string, unknown>;
+    if (p.type === CARD_TYPES.NOTE && payload.content) {
+      lines.push('', `Текст заметки:\n${payload.content}`);
+    }
+    if (p.type === CARD_TYPES.LINK && payload.url) {
+      lines.push(`Ссылка: ${payload.url}`);
+    }
+    if (p.type === CARD_TYPES.CHECKLIST && Array.isArray(payload.items)) {
+      const items = payload.items as { text: string; done: boolean }[];
+      lines.push('', 'Чеклист:');
+      items.forEach((it) => lines.push(`- [${it.done ? 'x' : ' '}] ${it.text}`));
+    }
+    if (payload.summary) {
+      lines.push('', `Мой конспект:\n${payload.summary}`);
+    }
+  }
+
+  lines.push(
+    '',
+    'На основе этой информации:',
+    '1) Объясни ключевые концепции простым языком',
+    '2) Укажи что стоит изучить глубже',
+    '3) Предложи практические задачи для закрепления',
+  );
+
+  return lines.join('\n');
+});
+
+function copyAiPrompt() {
+  navigator.clipboard.writeText(aiPrompt.value).then(
+    () => {
+      promptCopied.value = true;
+      toast.success('Промпт скопирован');
+      setTimeout(() => (promptCopied.value = false), 2000);
+    },
+    () => toast.error('Не удалось скопировать'),
+  );
+}
 </script>
 
 <template>
   <div class="card-item relative group" :data-card-id="card.id">
     <button
       type="button"
-      class="absolute -top-2 right-3 z-10 icon-btn-edit rounded-full bg-surface border border-border shadow-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+      class="absolute -top-2 right-3 z-10 icon-btn-edit rounded-full bg-surface border border-border shadow-sm card-action pointer-events-none group-hover:pointer-events-auto"
       title="Редактировать"
       @click="showEditDialog = true"
     >
@@ -197,8 +255,10 @@ function handleDeleteFromDialog() {
         />
       </template>
 
-      <div v-if="linkUrl && !isCollapsed" class="flex items-center gap-2 px-3 pb-2 pt-1">
+      <!-- Card footer: link + AI prompt -->
+      <div v-if="!isCollapsed" class="flex items-center gap-2 px-3 pb-2 pt-1">
         <a
+          v-if="linkUrl"
           :href="linkUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -208,6 +268,16 @@ function handleDeleteFromDialog() {
           <span>Перейти</span>
           <span :class="typeIcon" class="shrink-0" />
         </a>
+        <span class="flex-1" />
+        <button
+          type="button"
+          class="text-xs flex items-center gap-1 card-action"
+          :class="promptCopied ? 'text-success opacity-100!' : 'text-muted hover:text-fg'"
+          title="Промпт для ИИ: разобраться в теме"
+          @click.stop="copyAiPrompt"
+        >
+          <span :class="promptCopied ? 'i-lucide-check' : 'i-lucide-sparkles'" class="text-sm" />
+        </button>
       </div>
 
       <div v-if="isCollapsed" class="px-3 pt-0 text-center">

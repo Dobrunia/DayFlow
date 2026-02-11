@@ -73,6 +73,7 @@ export default defineConfig({
     card: 'ui-surface ui-border rounded-[var(--r)] shadow-[var(--shadow)]',
     'card-pad': 'p-[calc(var(--space)*4)]', // 16px
     'card-hover': 'card hover:bg-fg/3 transition-colors duration-150',
+    'card-action': 'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
 
     /* ─────────────────────────────
        Button

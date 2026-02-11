@@ -35,7 +35,7 @@ const summaryHtml = computed(() => renderMarkdown(props.payload.summary ?? ''));
       <button
         type="button"
         @click="showSummaryModal = true"
-        class="icon-btn-edit shrink-0 opacity-0 group-hover:opacity-100"
+        class="icon-btn-edit shrink-0 card-action"
         title="Редактировать конспект"
       >
         <span class="i-lucide-pencil" />

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { apolloClient } from '@/lib/apollo';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import { MY_WORKSPACES_QUERY, WORKSPACE_QUERY } from '@/graphql/queries';
+import { patchWorkspace } from '@/lib/patch-workspace';
 import {
   CREATE_WORKSPACE_MUTATION,
   UPDATE_WORKSPACE_MUTATION,
@@ -92,13 +93,47 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         variables: { id },
         fetchPolicy: 'network-only',
       });
-      currentWorkspace.value = data.workspace;
+      // structuredClone: Apollo returns frozen objects; we need a mutable copy
+      // so that softFetchWorkspace can patch fields in-place later.
+      currentWorkspace.value = structuredClone(data.workspace);
       return data.workspace;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;
     } finally {
       loading.value = false;
+    }
+  }
+
+  /**
+   * Fetch workspace from server and patch only changed fields in-place.
+   * Unlike fetchWorkspace(), this does NOT replace the entire object reference,
+   * so Vue only re-renders components whose specific data actually changed.
+   * Use for background polling (lock poll, etc.).
+   */
+  async function softFetchWorkspace(id: string) {
+    try {
+      const { data } = await apolloClient.query({
+        query: WORKSPACE_QUERY,
+        variables: { id },
+        fetchPolicy: 'network-only',
+      });
+
+      // Access revoked (kicked/deleted) — clear local state
+      if (!data.workspace) {
+        currentWorkspace.value = null;
+        return null;
+      }
+
+      if (currentWorkspace.value && currentWorkspace.value.id === id) {
+        patchWorkspace(currentWorkspace.value, data.workspace);
+      } else {
+        currentWorkspace.value = structuredClone(data.workspace);
+      }
+      return data.workspace;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      throw e;
     }
   }
 
@@ -937,6 +972,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     lastDeletedColumn,
     fetchWorkspaces,
     fetchWorkspace,
+    softFetchWorkspace,
     createWorkspace,
     updateWorkspace,
     deleteWorkspace,

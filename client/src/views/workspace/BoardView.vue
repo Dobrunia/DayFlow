@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, inject, type Ref } from 'vue';
+import { computed, ref, inject, type Ref, type ComputedRef } from 'vue';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { LIMITS } from 'dayflow-shared';
 import WorkspaceColumn from '@/components/workspace/WorkspaceColumn.vue';
@@ -11,6 +11,7 @@ const workspaceStore = useWorkspaceStore();
 
 const columnsContainer = ref<HTMLElement | null>(null);
 const cardSearch = inject<Ref<string>>('cardSearch', ref(''));
+const isReadOnly = inject<ComputedRef<boolean>>('isReadOnly', computed(() => false));
 
 function handleWheel(e: WheelEvent) {
   const target = e.target as HTMLElement;
@@ -60,6 +61,7 @@ async function addColumn() {
           :backlog-cards="backlogCards"
           :is-backlog-column="true"
           :search-query="cardSearch"
+          :read-only="isReadOnly"
         />
 
         <WorkspaceColumn
@@ -70,11 +72,12 @@ async function addColumn() {
           :column="column"
           :workspace-id="workspace.id"
           :search-query="cardSearch"
+          :read-only="isReadOnly"
         />
 
         <!-- Add Column Button -->
         <button
-          v-if="columns.length < LIMITS.MAX_COLUMNS_PER_WORKSPACE"
+          v-if="!isReadOnly && columns.length < LIMITS.MAX_COLUMNS_PER_WORKSPACE"
           @click="addColumn"
           class="shrink-0 w-72 h-32 border-2 border-dashed border-border rounded-[var(--r)] flex-center flex-col gap-2 text-muted hover:text-fg hover:border-fg/30 transition-colors"
         >

@@ -5,6 +5,7 @@ import type { RoadmapNode } from '@/graphql/types';
 const props = defineProps<{
   node: RoadmapNode;
   depth?: number;
+  readOnly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -50,6 +51,7 @@ const hasChildren = computed(() => sortedChildren.value.length > 0);
         type="checkbox"
         :checked="node.done"
         class="checkbox shrink-0"
+        :disabled="readOnly"
         @click.stop
         @change="emit('toggle-done', node)"
       />
@@ -58,13 +60,13 @@ const hasChildren = computed(() => sortedChildren.value.length > 0);
       <span
         class="flex-1 text-sm select-none"
         :class="node.done ? 'line-through text-muted' : 'text-fg'"
-        @dblclick="emit('edit-node', node)"
+        @dblclick="!readOnly && emit('edit-node', node)"
       >
         {{ node.title }}
       </span>
 
       <!-- Actions (hover) -->
-      <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" @click.stop>
+      <div v-if="!readOnly" class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" @click.stop>
         <button class="icon-btn-ghost !p-1" title="Промпт для AI" @click="emit('copy-ai-prompt', node)">
           <span class="i-lucide-sparkles text-xs" />
         </button>
@@ -91,6 +93,7 @@ const hasChildren = computed(() => sortedChildren.value.length > 0);
         :key="child.id"
         :node="child"
         :depth="depth + 1"
+        :read-only="readOnly"
         @toggle-done="emit('toggle-done', $event)"
         @edit-node="emit('edit-node', $event)"
         @add-child="emit('add-child', $event)"

@@ -20,6 +20,7 @@ import type {
   LearningStatus
 } from '../generated/types.js';
 import type { Context } from '../lib/types.js';
+import { hasWorkspaceAccess } from '../lib/workspace-access.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,13 @@ export const cardResolvers = {
     card: async (_: unknown, { id }: QueryCardArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const card = await context.prisma.card.findUnique({ where: { id } });
-      if (!card || card.ownerId !== context.user.id) throw NotFoundError('Карточка не найдена');
+      if (!card) throw NotFoundError('Карточка не найдена');
+      // Owner always has access; for workspace cards, check membership
+      if (card.ownerId !== context.user.id) {
+        if (!card.workspaceId || !(await hasWorkspaceAccess(context.prisma, card.workspaceId, context.user.id))) {
+          throw NotFoundError('Карточка не найдена');
+        }
+      }
       return card;
     },
   },
@@ -178,17 +185,18 @@ export const cardResolvers = {
       let columnId: string | null = input.columnId ?? null;
 
       if (input.workspaceId) {
-        const ws = await context.prisma.workspace.findUnique({
-          where: { id: input.workspaceId },
-        });
-        if (!ws || ws.ownerId !== context.user.id) throw NotFoundError('Рабочее пространство не найдено');
+        if (!(await hasWorkspaceAccess(context.prisma, input.workspaceId, context.user.id))) {
+          throw NotFoundError('Рабочее пространство не найдено');
+        }
       }
       if (input.columnId) {
         const col = await context.prisma.column.findUnique({
           where: { id: input.columnId },
           include: { workspace: true },
         });
-        if (!col || col.workspace.ownerId !== context.user.id) throw NotFoundError('Колонка не найдена');
+        if (!col || !(await hasWorkspaceAccess(context.prisma, col.workspaceId, context.user.id))) {
+          throw NotFoundError('Колонка не найдена');
+        }
         workspaceId = col.workspaceId;
         columnId = input.columnId;
       }
@@ -232,7 +240,13 @@ export const cardResolvers = {
       }
 
       const card = await context.prisma.card.findUnique({ where: { id } });
-      if (!card || card.ownerId !== context.user.id) throw NotFoundError('Карточка не найдена');
+      if (!card) throw NotFoundError('Карточка не найдена');
+      // Check access: owner or workspace member
+      if (card.ownerId !== context.user.id) {
+        if (!card.workspaceId || !(await hasWorkspaceAccess(context.prisma, card.workspaceId, context.user.id))) {
+          throw NotFoundError('Карточка не найдена');
+        }
+      }
 
       const data: Prisma.CardUncheckedUpdateInput = {};
       if (input.title !== undefined) data.title = input.title;
@@ -244,7 +258,9 @@ export const cardResolvers = {
             where: { id: input.columnId },
             include: { workspace: true },
           });
-          if (!col || col.workspace.ownerId !== context.user.id) throw NotFoundError('Колонка не найдена');
+          if (!col || !(await hasWorkspaceAccess(context.prisma, col.workspaceId, context.user.id))) {
+            throw NotFoundError('Колонка не найдена');
+          }
           data.columnId = input.columnId;
           data.workspaceId = col.workspaceId;
         } else {
@@ -263,7 +279,12 @@ export const cardResolvers = {
     deleteCard: async (_: unknown, { id }: MutationDeleteCardArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const card = await context.prisma.card.findUnique({ where: { id } });
-      if (!card || card.ownerId !== context.user.id) throw NotFoundError('Карточка не найдена');
+      if (!card) throw NotFoundError('Карточка не найдена');
+      if (card.ownerId !== context.user.id) {
+        if (!card.workspaceId || !(await hasWorkspaceAccess(context.prisma, card.workspaceId, context.user.id))) {
+          throw NotFoundError('Карточка не найдена');
+        }
+      }
       await context.prisma.card.delete({ where: { id } });
 
       // Reorder remaining siblings to fill the gap
@@ -288,8 +309,12 @@ export const cardResolvers = {
     moveCard: async (_: unknown, { id, columnId, order }: MutationMoveCardArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const card = await context.prisma.card.findUnique({ where: { id } });
-      if (!card || card.ownerId !== context.user.id) throw NotFoundError('Карточка не найдена');
-
+      if (!card) throw NotFoundError('Карточка не найдена');
+      if (card.ownerId !== context.user.id) {
+        if (!card.workspaceId || !(await hasWorkspaceAccess(context.prisma, card.workspaceId, context.user.id))) {
+          throw NotFoundError('Карточка не найдена');
+        }
+      }
       // Determine target columnId and workspaceId
       let targetColumnId: string | null = card.columnId;
       let targetWorkspaceId: string | null = card.workspaceId;
@@ -299,7 +324,9 @@ export const cardResolvers = {
             where: { id: columnId },
             include: { workspace: true },
           });
-          if (!col || col.workspace.ownerId !== context.user.id) throw NotFoundError('Колонка не найдена');
+          if (!col || !(await hasWorkspaceAccess(context.prisma, col.workspaceId, context.user.id))) {
+            throw NotFoundError('Колонка не найдена');
+          }
           targetColumnId = columnId;
           targetWorkspaceId = col.workspaceId;
         } else {

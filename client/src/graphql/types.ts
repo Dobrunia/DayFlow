@@ -8,6 +8,7 @@ export type {
   LearningStatus,
   User,
   Workspace,
+  WorkspaceMember,
   Column,
   Tool,
   Roadmap,

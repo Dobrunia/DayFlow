@@ -27,13 +27,36 @@ export const useRoadmapStore = defineStore('roadmap', () => {
         variables: { workspaceId },
         fetchPolicy: 'network-only',
       });
-      currentRoadmap.value = data.roadmap ?? null;
+      currentRoadmap.value = data.roadmap ? structuredClone(data.roadmap) : null;
       return data.roadmap;
     } catch (e: unknown) {
       error.value = getGraphQLErrorMessage(e);
       throw e;
     } finally {
       loading.value = false;
+    }
+  }
+
+  /**
+   * Background-friendly fetch: only replaces currentRoadmap if the data
+   * actually changed (JSON comparison). No loading flag → no spinner flash.
+   */
+  async function softFetchRoadmap(workspaceId: string) {
+    try {
+      const { data } = await apolloClient.query({
+        query: ROADMAP_QUERY,
+        variables: { workspaceId },
+        fetchPolicy: 'network-only',
+      });
+      const incoming = data.roadmap ?? null;
+      // Only replace if something actually changed
+      if (JSON.stringify(currentRoadmap.value) !== JSON.stringify(incoming)) {
+        currentRoadmap.value = incoming ? structuredClone(incoming) : null;
+      }
+      return incoming;
+    } catch (e: unknown) {
+      error.value = getGraphQLErrorMessage(e);
+      throw e;
     }
   }
 
@@ -145,6 +168,7 @@ export const useRoadmapStore = defineStore('roadmap', () => {
     loading,
     error,
     fetchRoadmap,
+    softFetchRoadmap,
     createRoadmap,
     deleteRoadmap,
     createNode,

@@ -7,6 +7,7 @@ import { userStatsResolvers } from './user-stats.js';
 import { roadmapResolvers } from './roadmap.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import type { Context } from '../lib/types.js';
+import { withLockMiddleware } from '../lib/lock-middleware.js';
 
 export const resolvers = {
   DateTime: DateTimeResolver,
@@ -20,14 +21,14 @@ export const resolvers = {
     ...roadmapResolvers.Query,
   },
 
-  Mutation: {
+  Mutation: withLockMiddleware({
     ...authResolvers.Mutation,
     ...workspaceResolvers.Mutation,
     ...columnResolvers.Mutation,
     ...cardResolvers.Mutation,
     ...toolResolvers.Mutation,
     ...roadmapResolvers.Mutation,
-  },
+  }),
 
   User: {
     workspaces: (parent: { id: string }, _: unknown, context: Context) =>

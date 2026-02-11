@@ -80,7 +80,6 @@ export const toolResolvers = {
           throw ForbiddenError('Нет доступа');
         }
       }
-
       const data: Prisma.ToolUpdateInput = {};
       if (input.title !== undefined) data.title = input.title ?? undefined;
       if (input.link !== undefined) data.link = input.link;
@@ -104,7 +103,6 @@ export const toolResolvers = {
           throw ForbiddenError('Нет доступа');
         }
       }
-
       await context.prisma.tool.delete({ where: { id } });
       return true;
     },

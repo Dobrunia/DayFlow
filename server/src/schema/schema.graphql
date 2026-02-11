@@ -259,6 +259,8 @@ type Mutation {
   releaseWorkspaceLock(workspaceId: ID!): Workspace!
   """Heartbeat — продлить лок (вызывать каждые ~15с)."""
   heartbeatWorkspaceLock(workspaceId: ID!): Workspace!
+  """Передать права редактирования другому участнику."""
+  transferWorkspaceLock(workspaceId: ID!, toUserId: ID!): Workspace!
 
   # Column
   createColumn(workspaceId: ID!, title: String!): Column!

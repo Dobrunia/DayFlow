@@ -315,7 +315,6 @@ export const cardResolvers = {
           throw NotFoundError('Карточка не найдена');
         }
       }
-
       // Determine target columnId and workspaceId
       let targetColumnId: string | null = card.columnId;
       let targetWorkspaceId: string | null = card.workspaceId;

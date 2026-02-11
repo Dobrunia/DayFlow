@@ -135,6 +135,8 @@ export type Mutation = {
   signOut: Scalars['Boolean']['output'];
   signUp: AuthPayload;
   toggleWorkspacePinned: Workspace;
+  /** Передать права редактирования другому участнику. */
+  transferWorkspaceLock: Workspace;
   updateCard: Card;
   updateColumn: Column;
   updateProfile: User;
@@ -274,6 +276,12 @@ export type MutationSignUpArgs = {
 
 export type MutationToggleWorkspacePinnedArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationTransferWorkspaceLockArgs = {
+  toUserId: Scalars['ID']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -700,6 +708,7 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
   signOut?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   signUp?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'email' | 'password'>>;
   toggleWorkspacePinned?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationToggleWorkspacePinnedArgs, 'id'>>;
+  transferWorkspaceLock?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationTransferWorkspaceLockArgs, 'toUserId' | 'workspaceId'>>;
   updateCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationUpdateCardArgs, 'id' | 'input'>>;
   updateColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationUpdateColumnArgs, 'id'>>;
   updateProfile?: Resolver<ResolversTypes['User'], ParentType, ContextType, Partial<MutationUpdateProfileArgs>>;

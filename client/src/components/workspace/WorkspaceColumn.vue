@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { Column, CardGql } from '@/graphql/types';
@@ -31,8 +31,10 @@ const props = withDefaults(
     isFirst?: boolean;
     /** Это последняя колонка */
     isLast?: boolean;
+    /** Режим только чтение */
+    readOnly?: boolean;
   }>(),
-  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '', isFirst: false, isLast: false }
+  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '', isFirst: false, isLast: false, readOnly: false }
 );
 
 const COLUMN_COLORS = [
@@ -149,8 +151,13 @@ onMounted(() => {
     animation: 150,
     ghostClass: 'opacity-50',
     filter: '.sortable-no-drag',
+    disabled: props.readOnly,
     onEnd: handleDragEnd,
   });
+});
+
+watch(() => props.readOnly, (ro) => {
+  if (sortable) sortable.option('disabled', ro);
 });
 
 onUnmounted(() => {
@@ -223,7 +230,7 @@ async function moveRight() {
       : { background: 'rgb(var(--fg) / 0.05)', borderTop: '2px solid transparent' }"
   >
     <div ref="headerRef" class="group h-12 px-3 flex-between">
-      <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">
+      <div v-if="!isBacklog && !readOnly && isEditing" class="flex-1 mr-2 min-w-0">
         <input
           ref="inputRef"
           v-model="editTitle"
@@ -236,17 +243,17 @@ async function moveRight() {
       <h3
         v-else
         class="flex items-baseline min-w-0 leading-none flex-1"
-        :class="{ 'cursor-text': !isBacklog }"
+        :class="{ 'cursor-text': !isBacklog && !readOnly }"
       >
         <span
           class="font-medium text-fg truncate"
           :title="column.title"
-          @dblclick="!isBacklog && startEdit()"
+          @dblclick="!isBacklog && !readOnly && startEdit()"
         >{{ column.title || '!?' }}</span>
         <span class="text-xs text-muted font-normal ml-1 tabular-nums shrink-0">{{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}<template v-if="hideCompleted || searchQuery">/{{ isBacklog ? (backlogCards ?? []).length : cards.length }}</template></span>
       </h3>
 
-      <div class="flex items-center gap-0.5 shrink-0 leading-none">
+      <div v-if="!readOnly" class="flex items-center gap-0.5 shrink-0 leading-none">
         <button
           v-if="completedCount > 0"
           type="button"
@@ -295,7 +302,7 @@ async function moveRight() {
       :data-backlog="isBacklog ? true : undefined"
     >
       <template v-if="isBacklog">
-        <CardItem v-for="c in filteredBacklogCards" :key="c.id" :card="c" :is-backlog="true" />
+        <CardItem v-for="c in filteredBacklogCards" :key="c.id" :card="c" :is-backlog="true" :read-only="readOnly" />
       </template>
       <template v-else>
         <CardItem
@@ -303,11 +310,12 @@ async function moveRight() {
           :key="card.id"
           :card="card"
           :column-id="column.id"
+          :read-only="readOnly"
         />
       </template>
     </div>
 
-    <div class="px-2 pb-2 shrink-0">
+    <div v-if="!readOnly" class="px-2 pb-2 shrink-0">
       <button
         type="button"
         @click="showAddCard = true"

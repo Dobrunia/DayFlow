@@ -33,7 +33,6 @@ export const roadmapResolvers = {
       if (!(await hasWorkspaceAccess(context.prisma, workspaceId, context.user.id))) {
         throw NotFoundError('Рабочее пространство не найдено');
       }
-
       const existing = await context.prisma.roadmap.findUnique({ where: { workspaceId } });
       if (existing) throw BadRequestError('Роадмап для этого воркспейса уже существует');
 
@@ -67,7 +66,6 @@ export const roadmapResolvers = {
       if (!roadmap || !(await hasWorkspaceAccess(context.prisma, roadmap.workspaceId, context.user.id))) {
         throw NotFoundError('Роадмап не найден');
       }
-
       const totalNodes = await context.prisma.roadmapNode.count({ where: { roadmapId } });
       if (totalNodes >= LIMITS.MAX_ROADMAP_NODES) {
         throw BadRequestError(`Максимум ${LIMITS.MAX_ROADMAP_NODES} узлов в роадмапе`);
@@ -100,7 +98,6 @@ export const roadmapResolvers = {
       if (!node || !(await hasWorkspaceAccess(context.prisma, node.roadmap.workspaceId, context.user.id))) {
         throw NotFoundError('Узел не найден');
       }
-
       const data: { title?: string; done?: boolean } = {};
       if (title !== undefined && title !== null) data.title = title;
       if (done !== undefined && done !== null) data.done = done;
@@ -121,7 +118,6 @@ export const roadmapResolvers = {
       if (!node || !(await hasWorkspaceAccess(context.prisma, node.roadmap.workspaceId, context.user.id))) {
         throw NotFoundError('Узел не найден');
       }
-
       await context.prisma.roadmapNode.delete({ where: { id } });
 
       await context.prisma.roadmapNode.updateMany({
@@ -146,7 +142,6 @@ export const roadmapResolvers = {
       if (!roadmap || !(await hasWorkspaceAccess(context.prisma, roadmap.workspaceId, context.user.id))) {
         throw NotFoundError('Роадмап не найден');
       }
-
       await context.prisma.$transaction(
         nodeIds.map((nodeId, index) =>
           context.prisma.roadmapNode.update({

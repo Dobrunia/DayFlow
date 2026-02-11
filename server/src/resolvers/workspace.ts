@@ -217,20 +217,28 @@ export const workspaceResolvers = {
       const ws = await canAccess(context.prisma, workspaceId, context.user.id);
       if (!ws) throw NotFoundError('Рабочее пространство не найдено');
 
-      // Check if already locked by someone else (and lock is still fresh)
-      if (
-        ws.editingBy &&
-        ws.editingBy !== context.user.id &&
-        ws.editingAt &&
-        Date.now() - ws.editingAt.getTime() < WORKSPACE_LOCK_TIMEOUT_MS
-      ) {
+      const userId = context.user.id;
+      const now = new Date();
+      const expiredBefore = new Date(Date.now() - WORKSPACE_LOCK_TIMEOUT_MS);
+
+      // Atomic conditional update: succeed only if lock is free, expired, or already ours
+      const result = await context.prisma.workspace.updateMany({
+        where: {
+          id: workspaceId,
+          OR: [
+            { editingBy: null },                         // no lock
+            { editingBy: userId },                       // already ours
+            { editingAt: { lt: expiredBefore } },        // expired lock
+          ],
+        },
+        data: { editingBy: userId, editingAt: now },
+      });
+
+      if (result.count === 0) {
         throw BadRequestError('Воркспейс сейчас редактирует другой пользователь');
       }
 
-      return context.prisma.workspace.update({
-        where: { id: workspaceId },
-        data: { editingBy: context.user.id, editingAt: new Date() },
-      });
+      return context.prisma.workspace.findUnique({ where: { id: workspaceId } });
     },
 
     releaseWorkspaceLock: async (
@@ -248,6 +256,32 @@ export const workspaceResolvers = {
       return context.prisma.workspace.update({
         where: { id: workspaceId },
         data: { editingBy: null, editingAt: null },
+      });
+    },
+
+    transferWorkspaceLock: async (
+      _: unknown,
+      { workspaceId, toUserId }: { workspaceId: string; toUserId: string },
+      context: Context,
+    ) => {
+      if (!context.user) throw UnauthenticatedError();
+      const ws = await canAccess(context.prisma, workspaceId, context.user.id);
+      if (!ws) throw NotFoundError('Рабочее пространство не найдено');
+
+      // Only the current lock holder can transfer
+      if (ws.editingBy !== context.user.id) {
+        throw BadRequestError('Вы не удерживаете блокировку');
+      }
+
+      // Verify target user has access
+      const targetAccess = await canAccess(context.prisma, workspaceId, toUserId);
+      if (!targetAccess) {
+        throw NotFoundError('Целевой пользователь не имеет доступа к воркспейсу');
+      }
+
+      return context.prisma.workspace.update({
+        where: { id: workspaceId },
+        data: { editingBy: toUserId, editingAt: new Date() },
       });
     },
 

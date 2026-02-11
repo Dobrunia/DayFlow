@@ -130,6 +130,8 @@ export type Mutation = {
   signOut: Scalars['Boolean']['output'];
   signUp: AuthPayload;
   toggleWorkspacePinned: Workspace;
+  /** Передать права редактирования другому участнику. */
+  transferWorkspaceLock: Workspace;
   updateCard: Card;
   updateColumn: Column;
   updateProfile: User;
@@ -269,6 +271,12 @@ export type MutationSignUpArgs = {
 
 export type MutationToggleWorkspacePinnedArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationTransferWorkspaceLockArgs = {
+  toUserId: Scalars['ID']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -532,7 +540,7 @@ export type CreateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type CreateWorkspaceMutation = { __typename?: 'Mutation', createWorkspace: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any } };
+export type CreateWorkspaceMutation = { __typename?: 'Mutation', createWorkspace: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any, owner: { __typename?: 'User', id: string, email: string } } };
 
 export type UpdateWorkspaceMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -735,6 +743,14 @@ export type HeartbeatWorkspaceLockMutationVariables = Exact<{
 
 export type HeartbeatWorkspaceLockMutation = { __typename?: 'Mutation', heartbeatWorkspaceLock: { __typename?: 'Workspace', id: string, editingBy?: string | null } };
 
+export type TransferWorkspaceLockMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  toUserId: Scalars['ID']['input'];
+}>;
+
+
+export type TransferWorkspaceLockMutation = { __typename?: 'Mutation', transferWorkspaceLock: { __typename?: 'Workspace', id: string, editingBy?: string | null, editingUser?: { __typename?: 'User', id: string, email: string, avatarUrl?: string | null } | null } };
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -743,7 +759,7 @@ export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: st
 export type MyWorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MyWorkspacesQuery = { __typename?: 'Query', myWorkspaces: Array<{ __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any }> };
+export type MyWorkspacesQuery = { __typename?: 'Query', myWorkspaces: Array<{ __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any, owner: { __typename?: 'User', id: string, email: string } }> };
 
 export type WorkspaceQueryVariables = Exact<{
   id: Scalars['ID']['input'];

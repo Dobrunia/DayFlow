@@ -10,6 +10,7 @@ import {
   ACQUIRE_WORKSPACE_LOCK_MUTATION,
   RELEASE_WORKSPACE_LOCK_MUTATION,
   HEARTBEAT_WORKSPACE_LOCK_MUTATION,
+  TRANSFER_WORKSPACE_LOCK_MUTATION,
 } from '@/graphql/mutations';
 import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 import ToolboxPanel from '@/components/toolbox/ToolboxPanel.vue';
@@ -309,6 +310,22 @@ async function removeMember(userId: string) {
   }
 }
 
+async function transferLock(toUserId: string) {
+  if (!workspace.value) return;
+  try {
+    await apolloClient.mutate({
+      mutation: TRANSFER_WORKSPACE_LOCK_MUTATION,
+      variables: { workspaceId: workspace.value.id, toUserId },
+    });
+    lockHeld.value = false;
+    stopHeartbeat();
+    await workspaceStore.fetchWorkspace(workspace.value.id);
+    toast.success('Права редактирования переданы');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
 // Summaries (board-specific but in header)
 const allSummaries = computed(() => {
   if (!workspace.value) return [];
@@ -395,7 +412,7 @@ function downloadSummaries() {
 
             <!-- Workspace icon (click to change) -->
             <div class="relative shrink-0">
-              <EmojiPickerPopover :model-value="workspace.icon || ''" @update:model-value="setIcon">
+              <EmojiPickerPopover v-if="!isReadOnly" :model-value="workspace.icon || ''" @update:model-value="setIcon">
                 <button
                   type="button"
                   class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
@@ -405,6 +422,13 @@ function downloadSummaries() {
                   <span v-else class="i-lucide-layout-grid text-base text-muted" />
                 </button>
               </EmojiPickerPopover>
+              <div
+                v-else
+                class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5"
+              >
+                <span v-if="workspace.icon">{{ workspace.icon }}</span>
+                <span v-else class="i-lucide-layout-grid text-base text-muted" />
+              </div>
             </div>
           </div>
 
@@ -422,8 +446,9 @@ function downloadSummaries() {
             <h1
               v-else
               :title="workspace.title"
-              class="text-xl font-bold text-fg cursor-text truncate"
-              @dblclick="startEditTitle"
+              class="text-xl font-bold text-fg truncate"
+              :class="{ 'cursor-text': !isReadOnly }"
+              @dblclick="!isReadOnly && startEditTitle()"
             >
               {{ workspace.title }}
             </h1>
@@ -437,31 +462,33 @@ function downloadSummaries() {
                 placeholder="Поиск карточек..."
                 class="w-48"
               />
-              <button
-                v-if="allSummaries.length > 0"
-                @click="showSummariesModal = true"
-                class="btn-ghost"
-                title="Все конспекты"
-              >
-                <span class="i-lucide-book-open" />
-                <span>Конспекты</span>
-              </button>
+              <template v-if="!isReadOnly">
+                <button
+                  v-if="allSummaries.length > 0"
+                  @click="showSummariesModal = true"
+                  class="btn-ghost"
+                  title="Все конспекты"
+                >
+                  <span class="i-lucide-book-open" />
+                  <span>Конспекты</span>
+                </button>
 
-              <button
-                @click.stop="showToolbox = !showToolbox"
-                @mousedown.stop
-                class="btn-ghost"
-                :class="{ 'text-primary bg-primary/10': showToolbox }"
-                title="Инструменты"
-              >
-                <span class="i-lucide-box" />
-              </button>
+                <button
+                  @click.stop="showToolbox = !showToolbox"
+                  @mousedown.stop
+                  class="btn-ghost"
+                  :class="{ 'text-primary bg-primary/10': showToolbox }"
+                  title="Инструменты"
+                >
+                  <span class="i-lucide-box" />
+                </button>
+              </template>
             </template>
 
             <button @click="showShareModal = true" class="btn-ghost" title="Совместный доступ">
               <span class="i-lucide-share-2" />
             </button>
-            <button @click="openEditModal" class="btn-ghost" title="Настройки воркспейса">
+            <button v-if="!isReadOnly" @click="openEditModal" class="btn-ghost" title="Настройки воркспейса">
               <span class="i-lucide-settings" />
             </button>
           </div>
@@ -624,6 +651,15 @@ function downloadSummaries() {
                   <div class="flex-1 min-w-0">
                     <p class="text-sm text-fg truncate">{{ workspace.owner.email }}</p>
                   </div>
+                  <button
+                    v-if="lockHeld && workspace.owner.id !== authStore.user?.id"
+                    type="button"
+                    class="icon-btn-ghost text-primary"
+                    title="Передать редактирование"
+                    @click="transferLock(workspace.owner.id)"
+                  >
+                    <span class="i-lucide-arrow-right-left" />
+                  </button>
                   <span class="text-xs text-muted shrink-0">Владелец</span>
                 </div>
 
@@ -646,6 +682,15 @@ function downloadSummaries() {
                   <div class="flex-1 min-w-0">
                     <p class="text-sm text-fg truncate">{{ m.user.email }}</p>
                   </div>
+                  <button
+                    v-if="lockHeld && m.userId !== authStore.user?.id"
+                    type="button"
+                    class="icon-btn-ghost text-primary"
+                    title="Передать редактирование"
+                    @click="transferLock(m.userId)"
+                  >
+                    <span class="i-lucide-arrow-right-left" />
+                  </button>
                   <button
                     v-if="isOwner"
                     type="button"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, inject, type ComputedRef } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRoadmapStore } from '@/stores/roadmap';
 import { useWorkspaceStore } from '@/stores/workspace';
@@ -24,6 +24,7 @@ const workspaceStore = useWorkspaceStore();
 const workspaceId = computed(() => route.params.id as string);
 const roadmap = computed(() => roadmapStore.currentRoadmap);
 const loading = computed(() => roadmapStore.loading);
+const isReadOnly = inject<ComputedRef<boolean>>('isReadOnly', computed(() => false));
 
 // Paste modal
 const showPasteModal = ref(false);
@@ -342,7 +343,7 @@ function copyPrompt() {
           <span class="i-lucide-map text-4xl mb-3 block mx-auto opacity-40" />
           <p class="mb-6">Роадмап ещё не создан</p>
 
-          <div class="flex gap-2 justify-center">
+          <div v-if="!isReadOnly" class="flex gap-2 justify-center">
             <button class="btn-ghost" @click="showPasteModal = true">
               <span class="i-lucide-clipboard-paste" />
               <span>Вставить текст</span>
@@ -364,7 +365,7 @@ function copyPrompt() {
         <!-- Title + Actions -->
         <div class="flex items-center gap-3 mb-4">
           <h2 class="text-lg font-bold flex-1 truncate">{{ roadmap.title }}</h2>
-          <button class="icon-btn-ghost" title="Изменить роадмап" @click="openEditRoadmap">
+          <button v-if="!isReadOnly" class="icon-btn-ghost" title="Изменить роадмап" @click="openEditRoadmap">
             <span class="i-lucide-pencil" />
           </button>
         </div>
@@ -390,6 +391,7 @@ function copyPrompt() {
             :key="node.id"
             :node="node"
             :depth="0"
+            :read-only="isReadOnly"
             @toggle-done="toggleNodeDone"
             @edit-node="openEditNode"
             @add-child="startAddChild"
@@ -403,7 +405,7 @@ function copyPrompt() {
         </div>
 
         <!-- Inline add child (triggered by + on a node) -->
-        <div v-if="addingParentId !== null" class="mt-4 flex gap-2 items-center">
+        <div v-if="!isReadOnly && addingParentId !== null" class="mt-4 flex gap-2 items-center">
           <input
             v-model="newNodeTitle"
             class="input flex-1 text-sm"

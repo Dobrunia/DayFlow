@@ -23,8 +23,10 @@ const props = withDefaults(
     isBacklog?: boolean;
     /** Отключить drag-курсор (для Tags view и т.п.) */
     static?: boolean;
+    /** Режим только чтение (чужой лок) */
+    readOnly?: boolean;
   }>(),
-  { isBacklog: false, static: false }
+  { isBacklog: false, static: false, readOnly: false }
 );
 
 const emit = defineEmits<{
@@ -173,6 +175,7 @@ function copyAiPrompt() {
 <template>
   <div class="card-item relative group" :data-card-id="card.id">
     <button
+      v-if="!readOnly"
       type="button"
       class="absolute -top-2 right-[9px] z-10 icon-btn-edit rounded-full bg-surface border border-border shadow-sm card-action transition-colors duration-150 pointer-events-none group-hover:pointer-events-auto"
       title="Редактировать"
@@ -194,13 +197,14 @@ function copyAiPrompt() {
       <div class="flex items-center gap-2 p-3 pb-0">
         <button
           type="button"
-          @click="cardActions.toggleDone()"
+          @click="!readOnly && cardActions.toggleDone()"
           class="w-4 h-4 rounded flex-center border transition-colors shrink-0"
-          :class="
+          :class="[
+            readOnly ? 'pointer-events-none' : '',
             card.done
               ? 'bg-success border-success text-on-primary'
-              : 'border-border hover:border-success'
-          "
+              : 'border-border hover:border-success',
+          ]"
         >
           <span v-if="card.done" class="i-lucide-check text-xs" />
         </button>
@@ -215,9 +219,10 @@ function copyAiPrompt() {
 
         <div
           ref="titleContainerRef"
-          class="flex-1 min-w-0 flex items-center cursor-text overflow-hidden"
+          class="flex-1 min-w-0 flex items-center overflow-hidden"
+          :class="readOnly ? 'cursor-default' : 'cursor-text'"
           :title="card.title || '(без названия)'"
-          @dblclick.prevent="startEditTitle()"
+          @dblclick.prevent="!readOnly && startEditTitle()"
         >
           <template v-if="isEditingTitle">
             <input
@@ -251,6 +256,7 @@ function copyAiPrompt() {
         <CardChecklist
           v-else-if="parsed.type === CARD_TYPES.CHECKLIST"
           :payload="parsed.payload"
+          :disabled="readOnly"
           @toggle-item="cardActions.toggleChecklistItem"
         />
       </template>
@@ -267,6 +273,7 @@ function copyAiPrompt() {
             <p v-else class="text-xs text-muted/50 italic leading-5">Конспект...</p>
           </div>
           <CardActionBtn
+            v-if="!readOnly"
             icon="i-lucide-pencil"
             title="Редактировать конспект"
             @click="showSummaryModal = true"
@@ -289,6 +296,7 @@ function copyAiPrompt() {
         </a>
         <span class="flex-1" />
         <CardActionBtn
+          v-if="!readOnly"
           :icon="promptCopied ? 'i-lucide-check' : 'i-lucide-sparkles'"
           title="Промпт для ИИ: разобраться в теме"
           :active="promptCopied"

@@ -21,6 +21,10 @@ export const MY_WORKSPACES_QUERY = gql`
       pinned
       createdAt
       updatedAt
+      owner {
+        id
+        email
+      }
     }
   }
 `;

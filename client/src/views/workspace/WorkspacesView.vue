@@ -21,21 +21,29 @@ const filteredWorkspaces = computed(() => {
   const q = workspaceSearch.value.trim().toLowerCase();
   if (!q) return list;
   return list.filter(
-    (w: Workspace) => w.title?.toLowerCase().includes(q) || w.description?.toLowerCase().includes(q)
+    (w: Workspace) =>
+      w.title?.toLowerCase().includes(q) || w.description?.toLowerCase().includes(q),
   );
 });
 
-const pinnedWorkspaces = computed(() => filteredWorkspaces.value.filter((w) => w.pinned));
-const unpinnedWorkspaces = computed(() => filteredWorkspaces.value.filter((w) => !w.pinned));
+const myWorkspaces = computed(() =>
+  filteredWorkspaces.value.filter((w) => w.owner?.id === authStore.user?.id),
+);
+const sharedWorkspaces = computed(() =>
+  filteredWorkspaces.value.filter((w) => w.owner?.id && w.owner.id !== authStore.user?.id),
+);
 
-const canCreateWorkspace = computed(() => workspaceStore.workspaces.length < 20);
+const pinnedOwn = computed(() => myWorkspaces.value.filter((w) => w.pinned));
+const unpinnedOwn = computed(() => myWorkspaces.value.filter((w) => !w.pinned));
+
+const canCreateWorkspace = computed(() => myWorkspaces.value.length < 20);
 
 watch(
   () => authStore.user,
   (u) => {
     if (u && workspaceStore.workspaces.length === 0) workspaceStore.fetchWorkspaces();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function navigateToWorkspace(id: string) {
@@ -85,7 +93,7 @@ function togglePinned(e: Event, id: string) {
     <template v-else>
       <div class="flex flex-wrap items-end justify-between gap-4 mb-8 cursor-default">
         <div>
-          <h1 class="page-title">Мои воркспейсы</h1>
+          <h1 class="page-title">Воркспейсы</h1>
           <p class="page-desc">Доски для тем и проектов</p>
         </div>
         <div v-if="workspaceStore.workspaces.length > 0" class="flex items-center gap-3">
@@ -112,8 +120,8 @@ function togglePinned(e: Event, id: string) {
 
       <!-- Workspaces Grid -->
       <template v-else-if="workspaceStore.workspaces.length > 0">
-        <!-- Pinned -->
-        <template v-if="pinnedWorkspaces.length > 0">
+        <!-- ── My workspaces: Pinned ─────────────────────────────────── -->
+        <template v-if="pinnedOwn.length > 0">
           <h2 class="text-sm font-medium text-muted mb-3 flex items-center gap-1.5">
             <svg class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -124,10 +132,10 @@ function togglePinned(e: Event, id: string) {
           </h2>
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div
-              v-for="workspace in pinnedWorkspaces"
+              v-for="workspace in pinnedOwn"
               :key="workspace.id"
+              class="card-hover text-left p-5 group relative cursor-pointer border-l-3 border-transparent"
               @click="navigateToWorkspace(workspace.id)"
-              class="card-hover text-left p-5 group relative cursor-pointer"
             >
               <button
                 type="button"
@@ -152,7 +160,10 @@ function togglePinned(e: Event, id: string) {
                 <span v-if="workspace.icon">{{ workspace.icon }}</span>
                 <span v-else class="i-lucide-layout-grid text-lg text-muted" />
               </div>
-              <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">
+              <h3
+                :title="workspace.title"
+                class="font-semibold text-fg mb-1.5 truncate text-base"
+              >
                 {{ workspace.title }}
               </h3>
               <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
@@ -166,47 +177,96 @@ function togglePinned(e: Event, id: string) {
           <hr class="border-border my-10" />
         </template>
 
-        <!-- Unpinned -->
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div
-            v-for="workspace in unpinnedWorkspaces"
-            :key="workspace.id"
-            @click="navigateToWorkspace(workspace.id)"
-            class="card-hover text-left p-5 group relative cursor-pointer"
+        <!-- ── My workspaces: Unpinned ───────────────────────────────── -->
+        <template v-if="unpinnedOwn.length > 0">
+          <h2
+            v-if="pinnedOwn.length > 0 || sharedWorkspaces.length > 0"
+            class="text-sm font-medium text-muted mb-3 flex items-center gap-1.5"
           >
-            <button
-              type="button"
-              class="absolute top-3 right-3 icon-btn-ghost opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-yellow-500"
-              title="Закрепить"
-              @click="togglePinned($event, workspace.id)"
-            >
-              <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                />
-              </svg>
-            </button>
+            <span class="i-lucide-folder" />
+            <span>Мои</span>
+          </h2>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div
-              class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
+              v-for="workspace in unpinnedOwn"
+              :key="workspace.id"
+              class="card-hover text-left p-5 group relative cursor-pointer border-l-3 border-transparent"
+              @click="navigateToWorkspace(workspace.id)"
             >
-              <span v-if="workspace.icon">{{ workspace.icon }}</span>
-              <span v-else class="i-lucide-layout-grid text-lg text-muted" />
+              <button
+                type="button"
+                class="absolute top-3 right-3 icon-btn-ghost opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-yellow-500"
+                title="Закрепить"
+                @click="togglePinned($event, workspace.id)"
+              >
+                <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  />
+                </svg>
+              </button>
+              <div
+                class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
+              >
+                <span v-if="workspace.icon">{{ workspace.icon }}</span>
+                <span v-else class="i-lucide-layout-grid text-lg text-muted" />
+              </div>
+              <h3
+                :title="workspace.title"
+                class="font-semibold text-fg mb-1.5 truncate text-base"
+              >
+                {{ workspace.title }}
+              </h3>
+              <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
+                {{ workspace.description }}
+              </p>
+              <p class="text-xs text-muted">
+                {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
+              </p>
             </div>
-            <h3 :title="workspace.title" class="font-semibold text-fg mb-1.5 truncate text-base">
-              {{ workspace.title }}
-            </h3>
-            <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
-              {{ workspace.description }}
-            </p>
-            <p class="text-xs text-muted">
-              {{ new Date(workspace.updatedAt).toLocaleDateString('ru-RU') }}
-            </p>
           </div>
+        </template>
 
-          <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
-            <p class="col-span-full text-sm text-muted py-4">По запросу ничего не найдено</p>
-          </template>
-        </div>
+        <!-- ── Shared workspaces ─────────────────────────────────────── -->
+        <template v-if="sharedWorkspaces.length > 0">
+          <hr v-if="myWorkspaces.length > 0" class="border-border my-10" />
+          <h2 class="text-sm font-medium text-muted mb-3 flex items-center gap-1.5">
+            <span class="i-lucide-users" />
+            <span>Доступные мне</span>
+          </h2>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="workspace in sharedWorkspaces"
+              :key="workspace.id"
+              class="card-hover text-left p-5 group relative cursor-pointer border-l-3 border-primary/30"
+              @click="navigateToWorkspace(workspace.id)"
+            >
+              <div
+                class="w-10 h-10 rounded-xl flex-center mb-3 text-2xl transition-colors bg-fg/5 group-hover:bg-fg/8"
+              >
+                <span v-if="workspace.icon">{{ workspace.icon }}</span>
+                <span v-else class="i-lucide-layout-grid text-lg text-muted" />
+              </div>
+              <h3
+                :title="workspace.title"
+                class="font-semibold text-fg mb-1.5 truncate text-base"
+              >
+                {{ workspace.title }}
+              </h3>
+              <p v-if="workspace.description" class="text-sm text-muted line-clamp-2 mb-3">
+                {{ workspace.description }}
+              </p>
+              <div class="flex items-center gap-2 text-xs text-muted">
+                <span class="i-lucide-user text-[10px]" />
+                <span>{{ workspace.owner?.email }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template v-if="filteredWorkspaces.length === 0 && workspaceSearch.trim()">
+          <p class="text-sm text-muted py-4">По запросу ничего не найдено</p>
+        </template>
       </template>
 
       <!-- Empty State -->

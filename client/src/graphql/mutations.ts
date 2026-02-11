@@ -55,6 +55,10 @@ export const CREATE_WORKSPACE_MUTATION = gql`
       pinned
       createdAt
       updatedAt
+      owner {
+        id
+        email
+      }
     }
   }
 `;
@@ -319,6 +323,16 @@ export const HEARTBEAT_WORKSPACE_LOCK_MUTATION = gql`
     heartbeatWorkspaceLock(workspaceId: $workspaceId) {
       id
       editingBy
+    }
+  }
+`;
+
+export const TRANSFER_WORKSPACE_LOCK_MUTATION = gql`
+  mutation TransferWorkspaceLock($workspaceId: ID!, $toUserId: ID!) {
+    transferWorkspaceLock(workspaceId: $workspaceId, toUserId: $toUserId) {
+      id
+      editingBy
+      editingUser { id email avatarUrl }
     }
   }
 `;

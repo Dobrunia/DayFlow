@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, toRef, watch } from 'vue';
+import { ref, computed, toRef, watch, defineAsyncComponent } from 'vue';
 import type { CardGql } from '@/graphql/types';
 import { parseCard } from '@/lib/card';
 import { useInlineEdit } from '@/composables/useInlineEdit';
 import { useCardActions } from '@/composables/useCardActions';
 import { CARD_TYPES, LEARNING_STATUS_META, CARD_TYPE_META } from '@/lib/constants';
+import { renderMarkdown } from '@/lib/utils';
 import { toast } from 'vue-sonner';
 import CardNote from './CardNote.vue';
 import CardLink from './CardLink.vue';
 import CardChecklist from './CardChecklist.vue';
+import CardActionBtn from './CardActionBtn.vue';
 import CreateCardDialog from '@/components/card/CreateCardDialog.vue';
+
+const SummaryEditorModal = defineAsyncComponent(() => import('./SummaryEditorModal.vue'));
 
 const props = withDefaults(
   defineProps<{
@@ -101,6 +105,14 @@ function handleDeleteFromDialog() {
 }
 
 const promptCopied = ref(false);
+const showSummaryModal = ref(false);
+
+const summaryText = computed(() => {
+  const p = parsed.value;
+  if (!p) return '';
+  return (p.payload as Record<string, unknown>).summary as string ?? '';
+});
+const summaryHtml = computed(() => renderMarkdown(summaryText.value));
 
 const aiPrompt = computed(() => {
   const c = props.card;
@@ -162,7 +174,7 @@ function copyAiPrompt() {
   <div class="card-item relative group" :data-card-id="card.id">
     <button
       type="button"
-      class="absolute -top-2 right-3 z-10 icon-btn-edit rounded-full bg-surface border border-border shadow-sm card-action pointer-events-none group-hover:pointer-events-auto"
+      class="absolute -top-2 right-[9px] z-10 icon-btn-edit rounded-full bg-surface border border-border shadow-sm card-action transition-colors duration-150 pointer-events-none group-hover:pointer-events-auto"
       title="Редактировать"
       @click="showEditDialog = true"
     >
@@ -230,33 +242,40 @@ function copyAiPrompt() {
       <template v-if="parsed && !isCollapsed">
         <CardNote
           v-if="parsed.type === CARD_TYPES.NOTE"
-          :title="card.title ?? null"
-          :done="card.done"
           :payload="parsed.payload"
-          :editable-summary="true"
-          @update-summary="cardActions.updateSummary"
         />
         <CardLink
           v-else-if="parsed.type === CARD_TYPES.LINK"
-          :title="card.title ?? null"
-          :done="card.done"
           :payload="parsed.payload"
-          :editable-summary="true"
-          @update-summary="cardActions.updateSummary"
         />
         <CardChecklist
           v-else-if="parsed.type === CARD_TYPES.CHECKLIST"
-          :title="card.title ?? null"
-          :done="card.done"
           :payload="parsed.payload"
-          :editable-summary="true"
           @toggle-item="cardActions.toggleChecklistItem"
-          @update-summary="cardActions.updateSummary"
         />
       </template>
 
+      <!-- Summary (shared across all card types) -->
+      <div v-if="parsed && !isCollapsed" class="px-3">
+        <div class="mt-2 pt-2 border-t border-border/50 flex items-center gap-1">
+          <div class="flex-1 min-w-0 pl-2 border-l-2 border-primary/40">
+            <div
+              v-if="summaryText"
+              class="text-xs text-muted/80 leading-5 max-h-[200px] overflow-y-auto scrollbar-hide markdown-body"
+              v-html="summaryHtml"
+            />
+            <p v-else class="text-xs text-muted/50 italic leading-5">Конспект...</p>
+          </div>
+          <CardActionBtn
+            icon="i-lucide-pencil"
+            title="Редактировать конспект"
+            @click="showSummaryModal = true"
+          />
+        </div>
+      </div>
+
       <!-- Card footer: link + AI prompt -->
-      <div v-if="!isCollapsed" class="flex items-center gap-2 px-3 pb-2 pt-1">
+      <div v-if="!isCollapsed" class="flex items-center px-3 pb-2 pt-1">
         <a
           v-if="linkUrl"
           :href="linkUrl"
@@ -269,15 +288,12 @@ function copyAiPrompt() {
           <span :class="typeIcon" class="shrink-0" />
         </a>
         <span class="flex-1" />
-        <button
-          type="button"
-          class="text-xs flex items-center gap-1 card-action"
-          :class="promptCopied ? 'text-success opacity-100!' : 'text-muted hover:text-fg'"
+        <CardActionBtn
+          :icon="promptCopied ? 'i-lucide-check' : 'i-lucide-sparkles'"
           title="Промпт для ИИ: разобраться в теме"
-          @click.stop="copyAiPrompt"
-        >
-          <span :class="promptCopied ? 'i-lucide-check' : 'i-lucide-sparkles'" class="text-sm" />
-        </button>
+          :active="promptCopied"
+          @click="copyAiPrompt"
+        />
       </div>
 
       <div v-if="isCollapsed" class="px-3 pt-0 text-center">
@@ -290,6 +306,13 @@ function copyAiPrompt() {
         </button>
       </div>
     </div>
+
+    <SummaryEditorModal
+      :open="showSummaryModal"
+      :model-value="summaryText"
+      @update:model-value="cardActions.updateSummary"
+      @close="showSummaryModal = false"
+    />
 
     <CreateCardDialog
       :open="showEditDialog"

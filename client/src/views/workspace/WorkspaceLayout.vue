@@ -102,8 +102,8 @@ async function acquireLock() {
     lockHeld.value = true;
     startHeartbeat();
   } catch {
-    // Lock held by someone else — just poll to refresh state
-    await workspaceStore.fetchWorkspace(workspace.value.id);
+    // Lock held by someone else — soft-refresh to update lock state
+    await workspaceStore.softFetchWorkspace(workspace.value.id);
   }
 }
 
@@ -287,12 +287,14 @@ async function generateInviteToken() {
   if (!workspace.value) return;
   try {
     generatingToken.value = true;
-    await apolloClient.mutate({
+    const { data } = await apolloClient.mutate({
       mutation: GENERATE_INVITE_TOKEN_MUTATION,
       variables: { workspaceId: workspace.value.id },
     });
-    // Re-fetch to update local state (computed is readonly)
-    await workspaceStore.fetchWorkspace(workspace.value.id);
+    // Apply token directly — no refetch needed
+    if (workspace.value && data?.generateInviteToken?.inviteToken != null) {
+      workspace.value.inviteToken = data.generateInviteToken.inviteToken;
+    }
     toast.success('Ссылка сгенерирована');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
@@ -308,7 +310,10 @@ async function removeMember(userId: string) {
       mutation: REMOVE_WORKSPACE_MEMBER_MUTATION,
       variables: { workspaceId: workspace.value.id, userId },
     });
-    await workspaceStore.fetchWorkspace(workspace.value.id);
+    // Remove from local members list — no full refetch
+    if (workspace.value.members) {
+      workspace.value.members = workspace.value.members.filter((m) => m.id !== userId);
+    }
     toast.success('Участник удалён');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));
@@ -324,7 +329,7 @@ async function transferLock(toUserId: string) {
     });
     lockHeld.value = false;
     stopHeartbeat();
-    await workspaceStore.fetchWorkspace(workspace.value.id);
+    await workspaceStore.softFetchWorkspace(workspace.value.id);
     toast.success('Права редактирования переданы');
   } catch (e) {
     toast.error(getGraphQLErrorMessage(e));

@@ -41,8 +41,8 @@ export const workspaceResolvers = {
       if (!context.user) throw UnauthenticatedError();
       const userId = context.user.id;
 
-      // Own workspaces + workspaces where user is a member
-      const [owned, memberships] = await Promise.all([
+      // Own workspaces + workspaces where user is a member + per-user pins
+      const [owned, memberships, pins] = await Promise.all([
         context.prisma.workspace.findMany({
           where: { ownerId: userId },
           orderBy: { createdAt: 'desc' },
@@ -51,12 +51,18 @@ export const workspaceResolvers = {
           where: { userId },
           include: { workspace: true },
         }),
+        context.prisma.userWorkspacePin.findMany({
+          where: { userId },
+          select: { workspaceId: true },
+        }),
       ]);
 
+      const pinnedIds = new Set(pins.map((p) => p.workspaceId));
       const memberWorkspaces = memberships.map((m) => m.workspace);
       const ownedIds = new Set(owned.map((w) => w.id));
-      // Merge without duplicates (owner could theoretically also be member)
-      return [...owned, ...memberWorkspaces.filter((w) => !ownedIds.has(w.id))];
+      const all = [...owned, ...memberWorkspaces.filter((w) => !ownedIds.has(w.id))];
+      // Annotate _pinnedByUser so the field resolver can skip a DB query
+      return all.map((w) => ({ ...w, _pinnedByUser: pinnedIds.has(w.id) }));
     },
   },
 
@@ -132,10 +138,24 @@ export const workspaceResolvers = {
       if (!context.user) throw UnauthenticatedError();
       const ws = await canAccess(context.prisma, id, context.user.id);
       if (!ws) throw NotFoundError('Рабочее пространство не найдено');
-      return context.prisma.workspace.update({
-        where: { id },
-        data: { pinned: !ws.pinned },
+
+      const userId = context.user.id;
+      const existing = await context.prisma.userWorkspacePin.findUnique({
+        where: { userId_workspaceId: { userId, workspaceId: id } },
       });
+
+      if (existing) {
+        await context.prisma.userWorkspacePin.delete({
+          where: { id: existing.id },
+        });
+      } else {
+        await context.prisma.userWorkspacePin.create({
+          data: { userId, workspaceId: id },
+        });
+      }
+
+      // Return workspace — pinned will be resolved per-user by the field resolver
+      return ws;
     },
 
     // ── Sharing ────────────────────────────────────────────────────────────────
@@ -305,6 +325,15 @@ export const workspaceResolvers = {
   },
 
   Workspace: {
+    // Per-user pinned: use annotation from myWorkspaces, or query DB for single fetch
+    pinned: async (parent: Workspace & { _pinnedByUser?: boolean }, _: unknown, context: Context) => {
+      if (typeof parent._pinnedByUser === 'boolean') return parent._pinnedByUser;
+      if (!context.user) return false;
+      const pin = await context.prisma.userWorkspacePin.findUnique({
+        where: { userId_workspaceId: { userId: context.user.id, workspaceId: parent.id } },
+      });
+      return !!pin;
+    },
     owner: (parent: Workspace, _: unknown, context: Context) =>
       context.loaders.userById.load(parent.ownerId),
     // inviteToken: only visible to owner

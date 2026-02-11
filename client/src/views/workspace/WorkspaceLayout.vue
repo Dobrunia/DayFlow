@@ -2,6 +2,7 @@
 import { computed, ref, watch, nextTick, provide, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, RouterLink, RouterView, onBeforeRouteLeave } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
+import { useRoadmapStore } from '@/stores/roadmap';
 import { useAuthStore } from '@/stores/auth';
 import { apolloClient } from '@/lib/apollo';
 import {
@@ -30,6 +31,7 @@ import {
 const route = useRoute();
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
+const roadmapStore = useRoadmapStore();
 const authStore = useAuthStore();
 
 const isEditing = ref(false);
@@ -69,7 +71,7 @@ watch(
   (id) => {
     if (id) workspaceStore.fetchWorkspace(id);
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // ── Editing lock ─────────────────────────────────────────────────────────────
@@ -154,10 +156,15 @@ watch(
       lockPollTimer = null;
     }
     // If we DON'T hold the lock, poll periodically to detect when it's freed
+    // Uses softFetchWorkspace to only patch changed fields (no full UI re-render)
     if (workspace.value && !lockHeld.value) {
       lockPollTimer = setInterval(async () => {
         if (workspace.value) {
-          await workspaceStore.fetchWorkspace(workspace.value.id);
+          await workspaceStore.softFetchWorkspace(workspace.value.id);
+          // Also sync roadmap if on that route
+          if (currentMode.value === 'roadmap') {
+            await roadmapStore.softFetchRoadmap(workspace.value.id);
+          }
           // Auto-acquire if lock just freed
           if (!workspace.value.editingBy) {
             await acquireLock();
@@ -166,7 +173,7 @@ watch(
       }, 10_000);
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // Acquire lock when workspace loads
@@ -177,7 +184,7 @@ watch(
       acquireLock();
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // Release lock on leave
@@ -268,9 +275,7 @@ async function deleteWorkspace() {
 const showShareModal = ref(false);
 const generatingToken = ref(false);
 
-const isOwner = computed(
-  () => workspace.value?.owner?.id === authStore.user?.id,
-);
+const isOwner = computed(() => workspace.value?.owner?.id === authStore.user?.id);
 
 const inviteUrl = computed(() => {
   const token = workspace.value?.inviteToken;
@@ -386,18 +391,7 @@ function downloadSummaries() {
 
     <!-- Workspace Content -->
     <template v-else-if="workspace">
-      <!-- Lock banner -->
-      <div
-        v-if="lockedByOther && lockUser"
-        class="flex-shrink-0 px-6 py-2 bg-warning/10 border-b border-warning/30 flex items-center gap-2 text-sm"
-      >
-        <span class="i-lucide-lock text-warning" />
-        <span class="text-fg">
-          Сейчас редактирует <strong>{{ lockUser.email }}</strong> — режим просмотра
-        </span>
-      </div>
-
-      <!-- Original Header (untouched) -->
+      <!-- Header -->
       <div class="flex-shrink-0 px-6 py-2">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-4 shrink-0">
@@ -412,7 +406,11 @@ function downloadSummaries() {
 
             <!-- Workspace icon (click to change) -->
             <div class="relative shrink-0">
-              <EmojiPickerPopover v-if="!isReadOnly" :model-value="workspace.icon || ''" @update:model-value="setIcon">
+              <EmojiPickerPopover
+                v-if="!isReadOnly"
+                :model-value="workspace.icon || ''"
+                @update:model-value="setIcon"
+              >
                 <button
                   type="button"
                   class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5 hover:bg-fg/10 transition-colors"
@@ -422,10 +420,7 @@ function downloadSummaries() {
                   <span v-else class="i-lucide-layout-grid text-base text-muted" />
                 </button>
               </EmojiPickerPopover>
-              <div
-                v-else
-                class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5"
-              >
+              <div v-else class="w-9 h-9 rounded-[var(--r)] flex-center text-xl bg-fg/5">
                 <span v-if="workspace.icon">{{ workspace.icon }}</span>
                 <span v-else class="i-lucide-layout-grid text-base text-muted" />
               </div>
@@ -454,14 +449,29 @@ function downloadSummaries() {
             </h1>
           </div>
 
+          <!-- Lock indicator: avatar + lock icon -->
+          <div
+            v-if="lockedByOther && lockUser"
+            class="flex items-center gap-1.5 px-2 py-1 rounded-[var(--r)] bg-primary/10 text-primary"
+            :title="`Редактирует ${lockUser.email}`"
+          >
+            <span class="i-lucide-lock text-sm" />
+            <img
+              v-if="lockUser.avatarUrl"
+              :src="lockUser.avatarUrl"
+              :alt="lockUser.email"
+              class="w-5 h-5 rounded-full object-cover"
+            />
+            <span
+              v-else
+              class="w-5 h-5 rounded-full bg-primary/20 flex-center text-[10px] i-lucide-user"
+            />
+          </div>
+
           <!-- Search + Actions (same as original) -->
           <div class="flex items-center gap-3">
             <template v-if="isBoardRoute">
-              <SearchInput
-                v-model="cardSearch"
-                placeholder="Поиск карточек..."
-                class="w-48"
-              />
+              <SearchInput v-model="cardSearch" placeholder="Поиск карточек..." class="w-48" />
               <template v-if="!isReadOnly">
                 <button
                   v-if="allSummaries.length > 0"
@@ -484,11 +494,15 @@ function downloadSummaries() {
                 </button>
               </template>
             </template>
-
             <button @click="showShareModal = true" class="btn-ghost" title="Совместный доступ">
               <span class="i-lucide-share-2" />
             </button>
-            <button v-if="!isReadOnly" @click="openEditModal" class="btn-ghost" title="Настройки воркспейса">
+            <button
+              v-if="!isReadOnly"
+              @click="openEditModal"
+              class="btn-ghost"
+              title="Настройки воркспейса"
+            >
               <span class="i-lucide-settings" />
             </button>
           </div>
@@ -577,7 +591,11 @@ function downloadSummaries() {
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-border mt-4">
-            <CopyButton :text="summariesText" success-message="Конспекты скопированы" title="Копировать" />
+            <CopyButton
+              :text="summariesText"
+              success-message="Конспекты скопированы"
+              title="Копировать"
+            />
             <button type="button" class="btn-primary" @click="downloadSummaries">
               <span class="i-lucide-download" />
               <span>Скачать .md</span>
@@ -637,7 +655,10 @@ function downloadSummaries() {
               <p class="text-sm font-medium mb-2">Участники</p>
               <div class="space-y-2">
                 <!-- Owner -->
-                <div v-if="workspace?.owner" class="flex items-center gap-3 p-2 rounded-[var(--r)] bg-fg/3">
+                <div
+                  v-if="workspace?.owner"
+                  class="flex items-center gap-3 p-2 rounded-[var(--r)] bg-fg/3"
+                >
                   <img
                     v-if="workspace.owner.avatarUrl"
                     :src="workspace.owner.avatarUrl"
@@ -702,10 +723,7 @@ function downloadSummaries() {
                   </button>
                 </div>
 
-                <p
-                  v-if="!workspace?.members?.length"
-                  class="text-xs text-muted italic"
-                >
+                <p v-if="!workspace?.members?.length" class="text-xs text-muted italic">
                   Пока нет участников
                 </p>
               </div>

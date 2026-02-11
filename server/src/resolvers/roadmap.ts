@@ -10,13 +10,15 @@ import type {
 } from '../generated/types.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
 import { LIMITS } from 'dayflow-shared';
+import { hasWorkspaceAccess } from '../lib/workspace-access.js';
 
 export const roadmapResolvers = {
   Query: {
     roadmap: async (_: unknown, { workspaceId }: QueryRoadmapArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
-      const workspace = await context.prisma.workspace.findUnique({ where: { id: workspaceId } });
-      if (workspace?.ownerId !== context.user.id) throw NotFoundError('Рабочее пространство не найдено');
+      if (!(await hasWorkspaceAccess(context.prisma, workspaceId, context.user.id))) {
+        throw NotFoundError('Рабочее пространство не найдено');
+      }
       return context.prisma.roadmap.findUnique({ where: { workspaceId } });
     },
   },
@@ -28,8 +30,9 @@ export const roadmapResolvers = {
       context: Context,
     ) => {
       if (!context.user) throw UnauthenticatedError();
-      const workspace = await context.prisma.workspace.findUnique({ where: { id: workspaceId } });
-      if (workspace?.ownerId !== context.user.id) throw NotFoundError('Рабочее пространство не найдено');
+      if (!(await hasWorkspaceAccess(context.prisma, workspaceId, context.user.id))) {
+        throw NotFoundError('Рабочее пространство не найдено');
+      }
 
       const existing = await context.prisma.roadmap.findUnique({ where: { workspaceId } });
       if (existing) throw BadRequestError('Роадмап для этого воркспейса уже существует');
@@ -47,7 +50,9 @@ export const roadmapResolvers = {
     deleteRoadmap: async (_: unknown, { id }: MutationDeleteRoadmapArgs, context: Context) => {
       if (!context.user) throw UnauthenticatedError();
       const roadmap = await context.prisma.roadmap.findUnique({ where: { id } });
-      if (roadmap?.ownerId !== context.user.id) throw NotFoundError('Роадмап не найден');
+      if (!roadmap || !(await hasWorkspaceAccess(context.prisma, roadmap.workspaceId, context.user.id))) {
+        throw NotFoundError('Роадмап не найден');
+      }
       await context.prisma.roadmap.delete({ where: { id } });
       return true;
     },
@@ -59,7 +64,9 @@ export const roadmapResolvers = {
     ) => {
       if (!context.user) throw UnauthenticatedError();
       const roadmap = await context.prisma.roadmap.findUnique({ where: { id: roadmapId } });
-      if (roadmap?.ownerId !== context.user.id) throw NotFoundError('Роадмап не найден');
+      if (!roadmap || !(await hasWorkspaceAccess(context.prisma, roadmap.workspaceId, context.user.id))) {
+        throw NotFoundError('Роадмап не найден');
+      }
 
       const totalNodes = await context.prisma.roadmapNode.count({ where: { roadmapId } });
       if (totalNodes >= LIMITS.MAX_ROADMAP_NODES) {
@@ -90,7 +97,9 @@ export const roadmapResolvers = {
         where: { id },
         include: { roadmap: true },
       });
-      if (!node || node.roadmap.ownerId !== context.user.id) throw NotFoundError('Узел не найден');
+      if (!node || !(await hasWorkspaceAccess(context.prisma, node.roadmap.workspaceId, context.user.id))) {
+        throw NotFoundError('Узел не найден');
+      }
 
       const data: { title?: string; done?: boolean } = {};
       if (title !== undefined && title !== null) data.title = title;
@@ -109,7 +118,9 @@ export const roadmapResolvers = {
         where: { id },
         include: { roadmap: true },
       });
-      if (!node || node.roadmap.ownerId !== context.user.id) throw NotFoundError('Узел не найден');
+      if (!node || !(await hasWorkspaceAccess(context.prisma, node.roadmap.workspaceId, context.user.id))) {
+        throw NotFoundError('Узел не найден');
+      }
 
       await context.prisma.roadmapNode.delete({ where: { id } });
 
@@ -132,7 +143,9 @@ export const roadmapResolvers = {
     ) => {
       if (!context.user) throw UnauthenticatedError();
       const roadmap = await context.prisma.roadmap.findUnique({ where: { id: roadmapId } });
-      if (roadmap?.ownerId !== context.user.id) throw NotFoundError('Роадмап не найден');
+      if (!roadmap || !(await hasWorkspaceAccess(context.prisma, roadmap.workspaceId, context.user.id))) {
+        throw NotFoundError('Роадмап не найден');
+      }
 
       await context.prisma.$transaction(
         nodeIds.map((nodeId, index) =>

@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, provide } from 'vue';
-import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router';
+import { computed, ref, watch, nextTick, provide, onBeforeUnmount } from 'vue';
+import { useRoute, useRouter, RouterLink, RouterView, onBeforeRouteLeave } from 'vue-router';
 import { useWorkspaceStore } from '@/stores/workspace';
+import { useAuthStore } from '@/stores/auth';
+import { apolloClient } from '@/lib/apollo';
+import {
+  GENERATE_INVITE_TOKEN_MUTATION,
+  REMOVE_WORKSPACE_MEMBER_MUTATION,
+  ACQUIRE_WORKSPACE_LOCK_MUTATION,
+  RELEASE_WORKSPACE_LOCK_MUTATION,
+  HEARTBEAT_WORKSPACE_LOCK_MUTATION,
+} from '@/graphql/mutations';
 import EmojiPickerPopover from '@/components/common/EmojiPickerPopover.vue';
 import ToolboxPanel from '@/components/toolbox/ToolboxPanel.vue';
 import SearchInput from '@/components/common/SearchInput.vue';
+import CopyButton from '@/components/common/CopyButton.vue';
 import { toast } from 'vue-sonner';
 import { getGraphQLErrorMessage } from '@/lib/graphql-error';
 import {
@@ -19,6 +29,7 @@ import {
 const route = useRoute();
 const router = useRouter();
 const workspaceStore = useWorkspaceStore();
+const authStore = useAuthStore();
 
 const isEditing = ref(false);
 const editTitle = ref('');
@@ -57,8 +68,126 @@ watch(
   (id) => {
     if (id) workspaceStore.fetchWorkspace(id);
   },
-  { immediate: true }
+  { immediate: true },
 );
+
+// ── Editing lock ─────────────────────────────────────────────────────────────
+
+const lockHeld = ref(false);
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
+const lockedByOther = computed(() => {
+  const ws = workspace.value;
+  if (!ws?.editingBy) return false;
+  return ws.editingBy !== authStore.user?.id;
+});
+
+const lockUser = computed(() => workspace.value?.editingUser ?? null);
+
+const isReadOnly = computed(() => lockedByOther.value);
+
+// Provide read-only flag to child routes
+provide('isReadOnly', isReadOnly);
+
+async function acquireLock() {
+  if (!workspace.value) return;
+  try {
+    await apolloClient.mutate({
+      mutation: ACQUIRE_WORKSPACE_LOCK_MUTATION,
+      variables: { workspaceId: workspace.value.id },
+    });
+    lockHeld.value = true;
+    startHeartbeat();
+  } catch {
+    // Lock held by someone else — just poll to refresh state
+    await workspaceStore.fetchWorkspace(workspace.value.id);
+  }
+}
+
+async function releaseLock() {
+  stopHeartbeat();
+  if (!lockHeld.value || !workspace.value) return;
+  lockHeld.value = false;
+  try {
+    await apolloClient.mutate({
+      mutation: RELEASE_WORKSPACE_LOCK_MUTATION,
+      variables: { workspaceId: workspace.value.id },
+    });
+  } catch {
+    // best-effort
+  }
+}
+
+function startHeartbeat() {
+  stopHeartbeat();
+  heartbeatTimer = setInterval(async () => {
+    if (!lockHeld.value || !workspace.value) return;
+    try {
+      await apolloClient.mutate({
+        mutation: HEARTBEAT_WORKSPACE_LOCK_MUTATION,
+        variables: { workspaceId: workspace.value.id },
+      });
+    } catch {
+      // lost lock
+      lockHeld.value = false;
+      stopHeartbeat();
+    }
+  }, 15_000);
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+}
+
+// Poll lock state for non-lock-holders (every 10s)
+let lockPollTimer: ReturnType<typeof setInterval> | null = null;
+
+watch(
+  [workspace, lockHeld],
+  () => {
+    if (lockPollTimer) {
+      clearInterval(lockPollTimer);
+      lockPollTimer = null;
+    }
+    // If we DON'T hold the lock, poll periodically to detect when it's freed
+    if (workspace.value && !lockHeld.value) {
+      lockPollTimer = setInterval(async () => {
+        if (workspace.value) {
+          await workspaceStore.fetchWorkspace(workspace.value.id);
+          // Auto-acquire if lock just freed
+          if (!workspace.value.editingBy) {
+            await acquireLock();
+          }
+        }
+      }, 10_000);
+    }
+  },
+  { immediate: true },
+);
+
+// Acquire lock when workspace loads
+watch(
+  workspace,
+  (ws) => {
+    if (ws && !lockHeld.value && !lockedByOther.value) {
+      acquireLock();
+    }
+  },
+  { immediate: true },
+);
+
+// Release lock on leave
+onBeforeRouteLeave(() => {
+  releaseLock();
+});
+
+onBeforeUnmount(() => {
+  releaseLock();
+  if (lockPollTimer) clearInterval(lockPollTimer);
+});
 
 async function startEditTitle() {
   if (!workspace.value) return;
@@ -133,6 +262,53 @@ async function deleteWorkspace() {
   }
 }
 
+// ── Sharing ──────────────────────────────────────────────────────────────────
+
+const showShareModal = ref(false);
+const generatingToken = ref(false);
+
+const isOwner = computed(
+  () => workspace.value?.owner?.id === authStore.user?.id,
+);
+
+const inviteUrl = computed(() => {
+  const token = workspace.value?.inviteToken;
+  if (!token) return '';
+  return `${window.location.origin}/invite/${token}`;
+});
+
+async function generateInviteToken() {
+  if (!workspace.value) return;
+  try {
+    generatingToken.value = true;
+    await apolloClient.mutate({
+      mutation: GENERATE_INVITE_TOKEN_MUTATION,
+      variables: { workspaceId: workspace.value.id },
+    });
+    // Re-fetch to update local state (computed is readonly)
+    await workspaceStore.fetchWorkspace(workspace.value.id);
+    toast.success('Ссылка сгенерирована');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  } finally {
+    generatingToken.value = false;
+  }
+}
+
+async function removeMember(userId: string) {
+  if (!workspace.value) return;
+  try {
+    await apolloClient.mutate({
+      mutation: REMOVE_WORKSPACE_MEMBER_MUTATION,
+      variables: { workspaceId: workspace.value.id, userId },
+    });
+    await workspaceStore.fetchWorkspace(workspace.value.id);
+    toast.success('Участник удалён');
+  } catch (e) {
+    toast.error(getGraphQLErrorMessage(e));
+  }
+}
+
 // Summaries (board-specific but in header)
 const allSummaries = computed(() => {
   if (!workspace.value) return [];
@@ -169,13 +345,6 @@ const summariesText = computed(() => {
   return text.trim();
 });
 
-function copySummaries() {
-  navigator.clipboard.writeText(summariesText.value).then(
-    () => toast.success('Конспекты скопированы'),
-    () => toast.error('Не удалось скопировать')
-  );
-}
-
 function downloadSummaries() {
   if (!workspace.value) return;
   const blob = new Blob([summariesText.value], { type: 'text/markdown;charset=utf-8' });
@@ -200,6 +369,17 @@ function downloadSummaries() {
 
     <!-- Workspace Content -->
     <template v-else-if="workspace">
+      <!-- Lock banner -->
+      <div
+        v-if="lockedByOther && lockUser"
+        class="flex-shrink-0 px-6 py-2 bg-warning/10 border-b border-warning/30 flex items-center gap-2 text-sm"
+      >
+        <span class="i-lucide-lock text-warning" />
+        <span class="text-fg">
+          Сейчас редактирует <strong>{{ lockUser.email }}</strong> — режим просмотра
+        </span>
+      </div>
+
       <!-- Original Header (untouched) -->
       <div class="flex-shrink-0 px-6 py-2">
         <div class="flex items-center gap-4">
@@ -278,6 +458,9 @@ function downloadSummaries() {
               </button>
             </template>
 
+            <button @click="showShareModal = true" class="btn-ghost" title="Совместный доступ">
+              <span class="i-lucide-share-2" />
+            </button>
             <button @click="openEditModal" class="btn-ghost" title="Настройки воркспейса">
               <span class="i-lucide-settings" />
             </button>
@@ -367,14 +550,121 @@ function downloadSummaries() {
           </div>
 
           <div class="flex justify-end gap-2 pt-4 border-t border-border mt-4">
-            <button type="button" class="btn-ghost" @click="copySummaries">
-              <span class="i-lucide-copy" />
-              <span>Копировать</span>
-            </button>
+            <CopyButton :text="summariesText" success-message="Конспекты скопированы" title="Копировать" />
             <button type="button" class="btn-primary" @click="downloadSummaries">
               <span class="i-lucide-download" />
               <span>Скачать .md</span>
             </button>
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
+
+    <!-- Share Modal -->
+    <DialogRoot v-model:open="showShareModal">
+      <DialogPortal>
+        <DialogOverlay class="dialog-overlay" @click="showShareModal = false" />
+        <DialogContent
+          :aria-describedby="undefined"
+          class="dialog-content max-w-md"
+          @escape-key-down="showShareModal = false"
+        >
+          <div class="dialog-header">
+            <DialogTitle class="dialog-title">Совместный доступ</DialogTitle>
+            <DialogClose class="icon-btn-close">
+              <span class="i-lucide-x" />
+            </DialogClose>
+          </div>
+
+          <div class="space-y-5">
+            <!-- Invite link -->
+            <template v-if="isOwner">
+              <div>
+                <p class="text-sm font-medium mb-2">Пригласительная ссылка</p>
+                <div v-if="inviteUrl" class="flex items-center gap-2">
+                  <input
+                    type="text"
+                    :value="inviteUrl"
+                    readonly
+                    class="input flex-1 text-xs font-mono select-all"
+                    @focus="($event.target as HTMLInputElement).select()"
+                  />
+                  <CopyButton :text="inviteUrl" success-message="Ссылка скопирована" />
+                </div>
+                <p v-else class="text-xs text-muted mb-2">Ссылка ещё не создана</p>
+                <button
+                  type="button"
+                  class="btn-ghost mt-2"
+                  :disabled="generatingToken"
+                  @click="generateInviteToken"
+                >
+                  <span v-if="generatingToken" class="i-lucide-loader-2 animate-spin" />
+                  <span class="i-lucide-refresh-cw" v-else />
+                  <span>{{ inviteUrl ? 'Перегенерировать' : 'Создать ссылку' }}</span>
+                </button>
+              </div>
+            </template>
+
+            <!-- Members list -->
+            <div>
+              <p class="text-sm font-medium mb-2">Участники</p>
+              <div class="space-y-2">
+                <!-- Owner -->
+                <div v-if="workspace?.owner" class="flex items-center gap-3 p-2 rounded-[var(--r)] bg-fg/3">
+                  <img
+                    v-if="workspace.owner.avatarUrl"
+                    :src="workspace.owner.avatarUrl"
+                    class="w-7 h-7 rounded-full object-cover"
+                    alt=""
+                  />
+                  <span
+                    v-else
+                    class="w-7 h-7 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-sm"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-fg truncate">{{ workspace.owner.email }}</p>
+                  </div>
+                  <span class="text-xs text-muted shrink-0">Владелец</span>
+                </div>
+
+                <!-- Members -->
+                <div
+                  v-for="m in workspace?.members ?? []"
+                  :key="m.id"
+                  class="flex items-center gap-3 p-2 rounded-[var(--r)] bg-fg/3"
+                >
+                  <img
+                    v-if="m.user.avatarUrl"
+                    :src="m.user.avatarUrl"
+                    class="w-7 h-7 rounded-full object-cover"
+                    alt=""
+                  />
+                  <span
+                    v-else
+                    class="w-7 h-7 rounded-full bg-fg/10 flex-center text-muted i-lucide-user text-sm"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-fg truncate">{{ m.user.email }}</p>
+                  </div>
+                  <button
+                    v-if="isOwner"
+                    type="button"
+                    class="icon-btn-ghost text-danger"
+                    title="Удалить участника"
+                    @click="removeMember(m.userId)"
+                  >
+                    <span class="i-lucide-user-x" />
+                  </button>
+                </div>
+
+                <p
+                  v-if="!workspace?.members?.length"
+                  class="text-xs text-muted italic"
+                >
+                  Пока нет участников
+                </p>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </DialogPortal>
@@ -417,19 +707,22 @@ function downloadSummaries() {
               />
             </div>
             <div class="flex justify-between items-center gap-3 pt-4">
-              <div v-if="confirmDelete" class="flex items-center gap-2">
-                <span class="text-sm text-danger">Это необратимо! Удалить?</span>
-                <button type="button" class="btn-delete" @click="deleteWorkspace">
-                  <span>Да</span>
+              <template v-if="isOwner">
+                <div v-if="confirmDelete" class="flex items-center gap-2">
+                  <span class="text-sm text-danger">Это необратимо! Удалить?</span>
+                  <button type="button" class="btn-delete" @click="deleteWorkspace">
+                    <span>Да</span>
+                  </button>
+                  <button type="button" class="btn-ghost" @click="confirmDelete = false">
+                    <span>Нет</span>
+                  </button>
+                </div>
+                <button v-else type="button" class="btn-delete" @click="confirmDelete = true">
+                  <span class="i-lucide-trash-2" />
+                  <span>Удалить</span>
                 </button>
-                <button type="button" class="btn-ghost" @click="confirmDelete = false">
-                  <span>Нет</span>
-                </button>
-              </div>
-              <button v-else type="button" class="btn-delete" @click="confirmDelete = true">
-                <span class="i-lucide-trash-2" />
-                <span>Удалить</span>
-              </button>
+              </template>
+              <span v-else /><!-- spacer for non-owner -->
               <button type="submit" class="btn-primary" :disabled="editModalLoading">
                 <span v-if="editModalLoading" class="i-lucide-loader-2 animate-spin" />
                 <span>Сохранить</span>

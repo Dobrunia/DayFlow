@@ -8,6 +8,7 @@ import type {
 } from '../generated/types.js';
 import { UnauthenticatedError, NotFoundError, ForbiddenError, BadRequestError } from '../lib/errors.js';
 import { MAX_TOOLS_PER_WORKSPACE } from '../lib/constants.js';
+import { hasWorkspaceAccess } from '../lib/workspace-access.js';
 
 export const toolResolvers = {
   Query: {
@@ -39,11 +40,9 @@ export const toolResolvers = {
       if (!context.user) throw UnauthenticatedError();
 
       if (input.workspaceId) {
-        const workspace = await context.prisma.workspace.findUnique({
-          where: { id: input.workspaceId },
-        });
-        if (!workspace) throw NotFoundError('Рабочее пространство не найдено');
-        if (workspace.ownerId !== context.user.id) throw ForbiddenError('Нет доступа');
+        if (!(await hasWorkspaceAccess(context.prisma, input.workspaceId, context.user.id))) {
+          throw NotFoundError('Рабочее пространство не найдено');
+        }
       }
 
       // Check tool limit
@@ -76,7 +75,11 @@ export const toolResolvers = {
 
       const tool = await context.prisma.tool.findUnique({ where: { id } });
       if (!tool) throw NotFoundError('Инструмент не найден');
-      if (tool.ownerId !== context.user.id) throw ForbiddenError('Нет доступа');
+      if (tool.ownerId !== context.user.id) {
+        if (!tool.workspaceId || !(await hasWorkspaceAccess(context.prisma, tool.workspaceId, context.user.id))) {
+          throw ForbiddenError('Нет доступа');
+        }
+      }
 
       const data: Prisma.ToolUpdateInput = {};
       if (input.title !== undefined) data.title = input.title ?? undefined;
@@ -96,7 +99,11 @@ export const toolResolvers = {
 
       const tool = await context.prisma.tool.findUnique({ where: { id } });
       if (!tool) throw NotFoundError('Инструмент не найден');
-      if (tool.ownerId !== context.user.id) throw ForbiddenError('Нет доступа');
+      if (tool.ownerId !== context.user.id) {
+        if (!tool.workspaceId || !(await hasWorkspaceAccess(context.prisma, tool.workspaceId, context.user.id))) {
+          throw ForbiddenError('Нет доступа');
+        }
+      }
 
       await context.prisma.tool.delete({ where: { id } });
       return true;

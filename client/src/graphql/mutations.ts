@@ -265,3 +265,60 @@ export const REORDER_ROADMAP_NODES_MUTATION = gql`
     }
   }
 `;
+
+// Workspace sharing
+
+export const GENERATE_INVITE_TOKEN_MUTATION = gql`
+  mutation GenerateInviteToken($workspaceId: ID!) {
+    generateInviteToken(workspaceId: $workspaceId) {
+      id
+      inviteToken
+    }
+  }
+`;
+
+export const ACCEPT_INVITE_MUTATION = gql`
+  mutation AcceptInvite($token: String!) {
+    acceptInvite(token: $token) {
+      id
+      title
+      icon
+    }
+  }
+`;
+
+export const REMOVE_WORKSPACE_MEMBER_MUTATION = gql`
+  mutation RemoveWorkspaceMember($workspaceId: ID!, $userId: ID!) {
+    removeWorkspaceMember(workspaceId: $workspaceId, userId: $userId)
+  }
+`;
+
+// Workspace editing lock
+
+export const ACQUIRE_WORKSPACE_LOCK_MUTATION = gql`
+  mutation AcquireWorkspaceLock($workspaceId: ID!) {
+    acquireWorkspaceLock(workspaceId: $workspaceId) {
+      id
+      editingBy
+      editingUser { id email avatarUrl }
+    }
+  }
+`;
+
+export const RELEASE_WORKSPACE_LOCK_MUTATION = gql`
+  mutation ReleaseWorkspaceLock($workspaceId: ID!) {
+    releaseWorkspaceLock(workspaceId: $workspaceId) {
+      id
+      editingBy
+    }
+  }
+`;
+
+export const HEARTBEAT_WORKSPACE_LOCK_MUTATION = gql`
+  mutation HeartbeatWorkspaceLock($workspaceId: ID!) {
+    heartbeatWorkspaceLock(workspaceId: $workspaceId) {
+      id
+      editingBy
+    }
+  }
+`;

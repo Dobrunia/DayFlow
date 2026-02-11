@@ -14,11 +14,12 @@ model User {
   avatarUrl    String?   // null = нет аватара
   createdAt    DateTime  @default(now())
 
-  sessions   Session[]
-  workspaces Workspace[]
-  cards      Card[]
-  tools      Tool[]
-  roadmaps   Roadmap[]
+  sessions            Session[]
+  workspaces          Workspace[]
+  workspaceMemberships WorkspaceMember[]
+  cards               Card[]
+  tools               Tool[]
+  roadmaps            Roadmap[]
 }
 
 model Session {
@@ -37,17 +38,35 @@ model Workspace {
   description String?  @db.Text
   icon        String?  // один эмодзи, например "📁"
   pinned      Boolean  @default(false)
+  inviteToken String?  @unique // секретный токен для пригласительной ссылки
+  editingBy   String?  // userId того, кто сейчас редактирует
+  editingAt   DateTime? // время последнего heartbeat
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   ownerId     String
 
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner    User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members  WorkspaceMember[]
   columns  Column[]
   cards    Card[]
   tools    Tool[]
-  roadmap Roadmap?
+  roadmap  Roadmap?
 
   @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  joinedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
 }
 
 model Column {

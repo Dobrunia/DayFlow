@@ -32,8 +32,30 @@ export const WORKSPACE_QUERY = gql`
       title
       description
       icon
+      inviteToken
+      editingBy
+      editingUser {
+        id
+        email
+        avatarUrl
+      }
       createdAt
       updatedAt
+      owner {
+        id
+        email
+        avatarUrl
+      }
+      members {
+        id
+        userId
+        joinedAt
+        user {
+          id
+          email
+          avatarUrl
+        }
+      }
       tools {
         id
         createdAt

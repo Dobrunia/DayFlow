@@ -104,6 +104,10 @@ export type LearningStatus =
 
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Принять приглашение по токену. Возвращает воркспейс. */
+  acceptInvite: Workspace;
+  /** Захватить лок на редактирование воркспейса. */
+  acquireWorkspaceLock: Workspace;
   createCard: Card;
   createColumn: Column;
   createRoadmap: Roadmap;
@@ -116,7 +120,15 @@ export type Mutation = {
   deleteRoadmapNode: Scalars['Boolean']['output'];
   deleteTool: Scalars['Boolean']['output'];
   deleteWorkspace: Scalars['Boolean']['output'];
+  /** Сгенерировать (или перегенерировать) пригласительную ссылку. */
+  generateInviteToken: Workspace;
+  /** Heartbeat — продлить лок (вызывать каждые ~15с). */
+  heartbeatWorkspaceLock: Workspace;
   moveCard: Card;
+  /** Отпустить лок. */
+  releaseWorkspaceLock: Workspace;
+  /** Удалить участника из воркспейса (только владелец). */
+  removeWorkspaceMember: Scalars['Boolean']['output'];
   reorderColumns: Array<Column>;
   reorderRoadmapNodes: Array<RoadmapNode>;
   signIn: AuthPayload;
@@ -129,6 +141,16 @@ export type Mutation = {
   updateRoadmapNode: RoadmapNode;
   updateTool: Tool;
   updateWorkspace: Workspace;
+};
+
+
+export type MutationAcceptInviteArgs = {
+  token: Scalars['String']['input'];
+};
+
+
+export type MutationAcquireWorkspaceLockArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -197,10 +219,31 @@ export type MutationDeleteWorkspaceArgs = {
 };
 
 
+export type MutationGenerateInviteTokenArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationHeartbeatWorkspaceLockArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationMoveCardArgs = {
   columnId?: InputMaybe<Scalars['ID']['input']>;
   id: Scalars['ID']['input'];
   order: Scalars['Int']['input'];
+};
+
+
+export type MutationReleaseWorkspaceLockArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationRemoveWorkspaceMemberArgs = {
+  userId: Scalars['ID']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -422,8 +465,16 @@ export type Workspace = {
   columns: Array<Column>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  /** Кто сейчас редактирует воркспейс (userId). */
+  editingBy?: Maybe<Scalars['ID']['output']>;
+  /** Email/имя того, кто редактирует (resolved). */
+  editingUser?: Maybe<User>;
   icon?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  /** Токен пригласительной ссылки (виден только владельцу). */
+  inviteToken?: Maybe<Scalars['String']['output']>;
+  /** Участники воркспейса (кроме владельца). */
+  members: Array<WorkspaceMember>;
   owner: User;
   pinned: Scalars['Boolean']['output'];
   /** Роадмап воркспейса (один на воркспейс). */
@@ -432,6 +483,14 @@ export type Workspace = {
   /** Инструменты воркспейса. */
   tools: Array<Tool>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type WorkspaceMember = {
+  __typename?: 'WorkspaceMember';
+  id: Scalars['ID']['output'];
+  joinedAt: Scalars['DateTime']['output'];
+  user: User;
+  userId: Scalars['ID']['output'];
 };
 
 /** Воркспейс с агрегатами: выполнено / всего карточек. */
@@ -544,6 +603,7 @@ export type ResolversTypes = ResolversObject<{
   User: ResolverTypeWrapper<UserModel>;
   UserStats: ResolverTypeWrapper<UserStats>;
   Workspace: ResolverTypeWrapper<WorkspaceModel>;
+  WorkspaceMember: ResolverTypeWrapper<Omit<WorkspaceMember, 'user'> & { user: ResolversTypes['User'] }>;
   WorkspaceStatsItem: ResolverTypeWrapper<WorkspaceStatsItem>;
 }>;
 
@@ -572,6 +632,7 @@ export type ResolversParentTypes = ResolversObject<{
   User: UserModel;
   UserStats: UserStats;
   Workspace: WorkspaceModel;
+  WorkspaceMember: Omit<WorkspaceMember, 'user'> & { user: ResolversParentTypes['User'] };
   WorkspaceStatsItem: WorkspaceStatsItem;
 }>;
 
@@ -614,6 +675,8 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
 }
 
 export type MutationResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
+  acceptInvite?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationAcceptInviteArgs, 'token'>>;
+  acquireWorkspaceLock?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationAcquireWorkspaceLockArgs, 'workspaceId'>>;
   createCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationCreateCardArgs, 'input'>>;
   createColumn?: Resolver<ResolversTypes['Column'], ParentType, ContextType, RequireFields<MutationCreateColumnArgs, 'title' | 'workspaceId'>>;
   createRoadmap?: Resolver<ResolversTypes['Roadmap'], ParentType, ContextType, RequireFields<MutationCreateRoadmapArgs, 'title' | 'workspaceId'>>;
@@ -626,7 +689,11 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
   deleteRoadmapNode?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteRoadmapNodeArgs, 'id'>>;
   deleteTool?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteToolArgs, 'id'>>;
   deleteWorkspace?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteWorkspaceArgs, 'id'>>;
+  generateInviteToken?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationGenerateInviteTokenArgs, 'workspaceId'>>;
+  heartbeatWorkspaceLock?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationHeartbeatWorkspaceLockArgs, 'workspaceId'>>;
   moveCard?: Resolver<ResolversTypes['Card'], ParentType, ContextType, RequireFields<MutationMoveCardArgs, 'id' | 'order'>>;
+  releaseWorkspaceLock?: Resolver<ResolversTypes['Workspace'], ParentType, ContextType, RequireFields<MutationReleaseWorkspaceLockArgs, 'workspaceId'>>;
+  removeWorkspaceMember?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRemoveWorkspaceMemberArgs, 'userId' | 'workspaceId'>>;
   reorderColumns?: Resolver<Array<ResolversTypes['Column']>, ParentType, ContextType, RequireFields<MutationReorderColumnsArgs, 'columnIds' | 'workspaceId'>>;
   reorderRoadmapNodes?: Resolver<Array<ResolversTypes['RoadmapNode']>, ParentType, ContextType, RequireFields<MutationReorderRoadmapNodesArgs, 'nodeIds' | 'roadmapId'>>;
   signIn?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationSignInArgs, 'email' | 'password'>>;
@@ -713,14 +780,25 @@ export type WorkspaceResolvers<ContextType = Context, ParentType extends Resolve
   columns?: Resolver<Array<ResolversTypes['Column']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  editingBy?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  editingUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   icon?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  inviteToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  members?: Resolver<Array<ResolversTypes['WorkspaceMember']>, ParentType, ContextType>;
   owner?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   pinned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   roadmap?: Resolver<Maybe<ResolversTypes['Roadmap']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tools?: Resolver<Array<ResolversTypes['Tool']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+}>;
+
+export type WorkspaceMemberResolvers<ContextType = Context, ParentType extends ResolversParentTypes['WorkspaceMember'] = ResolversParentTypes['WorkspaceMember']> = ResolversObject<{
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  joinedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
 }>;
 
 export type WorkspaceStatsItemResolvers<ContextType = Context, ParentType extends ResolversParentTypes['WorkspaceStatsItem'] = ResolversParentTypes['WorkspaceStatsItem']> = ResolversObject<{
@@ -745,6 +823,7 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   User?: UserResolvers<ContextType>;
   UserStats?: UserStatsResolvers<ContextType>;
   Workspace?: WorkspaceResolvers<ContextType>;
+  WorkspaceMember?: WorkspaceMemberResolvers<ContextType>;
   WorkspaceStatsItem?: WorkspaceStatsItemResolvers<ContextType>;
 }>;
 

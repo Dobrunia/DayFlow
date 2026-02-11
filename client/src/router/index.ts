@@ -91,6 +91,12 @@ const router = createRouter({
       component: () => import('@/views/LearningView.vue'),
       meta: { requiresAuth: true, status: LEARNING_STATUSES.DEEPEN_KNOWLEDGE },
     },
+    {
+      path: '/invite/:token',
+      name: 'invite',
+      component: () => import('@/views/InviteView.vue'),
+      // No requiresAuth — component handles redirect itself to preserve token
+    },
   ],
 });
 

@@ -99,6 +99,10 @@ export type LearningStatus =
 
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Принять приглашение по токену. Возвращает воркспейс. */
+  acceptInvite: Workspace;
+  /** Захватить лок на редактирование воркспейса. */
+  acquireWorkspaceLock: Workspace;
   createCard: Card;
   createColumn: Column;
   createRoadmap: Roadmap;
@@ -111,19 +115,39 @@ export type Mutation = {
   deleteRoadmapNode: Scalars['Boolean']['output'];
   deleteTool: Scalars['Boolean']['output'];
   deleteWorkspace: Scalars['Boolean']['output'];
+  /** Сгенерировать (или перегенерировать) пригласительную ссылку. */
+  generateInviteToken: Workspace;
+  /** Heartbeat — продлить лок (вызывать каждые ~15с). */
+  heartbeatWorkspaceLock: Workspace;
   moveCard: Card;
+  /** Отпустить лок. */
+  releaseWorkspaceLock: Workspace;
+  /** Удалить участника из воркспейса (только владелец). */
+  removeWorkspaceMember: Scalars['Boolean']['output'];
   reorderColumns: Array<Column>;
   reorderRoadmapNodes: Array<RoadmapNode>;
   signIn: AuthPayload;
   signOut: Scalars['Boolean']['output'];
   signUp: AuthPayload;
   toggleWorkspacePinned: Workspace;
+  /** Передать права редактирования другому участнику. */
+  transferWorkspaceLock: Workspace;
   updateCard: Card;
   updateColumn: Column;
   updateProfile: User;
   updateRoadmapNode: RoadmapNode;
   updateTool: Tool;
   updateWorkspace: Workspace;
+};
+
+
+export type MutationAcceptInviteArgs = {
+  token: Scalars['String']['input'];
+};
+
+
+export type MutationAcquireWorkspaceLockArgs = {
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -192,10 +216,31 @@ export type MutationDeleteWorkspaceArgs = {
 };
 
 
+export type MutationGenerateInviteTokenArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationHeartbeatWorkspaceLockArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
 export type MutationMoveCardArgs = {
   columnId?: InputMaybe<Scalars['ID']['input']>;
   id: Scalars['ID']['input'];
   order: Scalars['Int']['input'];
+};
+
+
+export type MutationReleaseWorkspaceLockArgs = {
+  workspaceId: Scalars['ID']['input'];
+};
+
+
+export type MutationRemoveWorkspaceMemberArgs = {
+  userId: Scalars['ID']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -226,6 +271,12 @@ export type MutationSignUpArgs = {
 
 export type MutationToggleWorkspacePinnedArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationTransferWorkspaceLockArgs = {
+  toUserId: Scalars['ID']['input'];
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -417,8 +468,16 @@ export type Workspace = {
   columns: Array<Column>;
   createdAt: Scalars['DateTime']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  /** Кто сейчас редактирует воркспейс (userId). */
+  editingBy?: Maybe<Scalars['ID']['output']>;
+  /** Email/имя того, кто редактирует (resolved). */
+  editingUser?: Maybe<User>;
   icon?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  /** Токен пригласительной ссылки (виден только владельцу). */
+  inviteToken?: Maybe<Scalars['String']['output']>;
+  /** Участники воркспейса (кроме владельца). */
+  members: Array<WorkspaceMember>;
   owner: User;
   pinned: Scalars['Boolean']['output'];
   /** Роадмап воркспейса (один на воркспейс). */
@@ -427,6 +486,14 @@ export type Workspace = {
   /** Инструменты воркспейса. */
   tools: Array<Tool>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type WorkspaceMember = {
+  __typename?: 'WorkspaceMember';
+  id: Scalars['ID']['output'];
+  joinedAt: Scalars['DateTime']['output'];
+  user: User;
+  userId: Scalars['ID']['output'];
 };
 
 /** Воркспейс с агрегатами: выполнено / всего карточек. */
@@ -473,7 +540,7 @@ export type CreateWorkspaceMutationVariables = Exact<{
 }>;
 
 
-export type CreateWorkspaceMutation = { __typename?: 'Mutation', createWorkspace: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any } };
+export type CreateWorkspaceMutation = { __typename?: 'Mutation', createWorkspace: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any, owner: { __typename?: 'User', id: string, email: string } } };
 
 export type UpdateWorkspaceMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -633,6 +700,57 @@ export type ReorderRoadmapNodesMutationVariables = Exact<{
 
 export type ReorderRoadmapNodesMutation = { __typename?: 'Mutation', reorderRoadmapNodes: Array<{ __typename?: 'RoadmapNode', id: string, order: number }> };
 
+export type GenerateInviteTokenMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type GenerateInviteTokenMutation = { __typename?: 'Mutation', generateInviteToken: { __typename?: 'Workspace', id: string, inviteToken?: string | null } };
+
+export type AcceptInviteMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+
+export type AcceptInviteMutation = { __typename?: 'Mutation', acceptInvite: { __typename?: 'Workspace', id: string, title: string, icon?: string | null } };
+
+export type RemoveWorkspaceMemberMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveWorkspaceMemberMutation = { __typename?: 'Mutation', removeWorkspaceMember: boolean };
+
+export type AcquireWorkspaceLockMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type AcquireWorkspaceLockMutation = { __typename?: 'Mutation', acquireWorkspaceLock: { __typename?: 'Workspace', id: string, editingBy?: string | null, editingUser?: { __typename?: 'User', id: string, email: string, avatarUrl?: string | null } | null } };
+
+export type ReleaseWorkspaceLockMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type ReleaseWorkspaceLockMutation = { __typename?: 'Mutation', releaseWorkspaceLock: { __typename?: 'Workspace', id: string, editingBy?: string | null } };
+
+export type HeartbeatWorkspaceLockMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+}>;
+
+
+export type HeartbeatWorkspaceLockMutation = { __typename?: 'Mutation', heartbeatWorkspaceLock: { __typename?: 'Workspace', id: string, editingBy?: string | null } };
+
+export type TransferWorkspaceLockMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  toUserId: Scalars['ID']['input'];
+}>;
+
+
+export type TransferWorkspaceLockMutation = { __typename?: 'Mutation', transferWorkspaceLock: { __typename?: 'Workspace', id: string, editingBy?: string | null, editingUser?: { __typename?: 'User', id: string, email: string, avatarUrl?: string | null } | null } };
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -641,14 +759,14 @@ export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: st
 export type MyWorkspacesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MyWorkspacesQuery = { __typename?: 'Query', myWorkspaces: Array<{ __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any }> };
+export type MyWorkspacesQuery = { __typename?: 'Query', myWorkspaces: Array<{ __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, pinned: boolean, createdAt: any, updatedAt: any, owner: { __typename?: 'User', id: string, email: string } }> };
 
 export type WorkspaceQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type WorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, createdAt: any, updatedAt: any, tools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string> }>, columns: Array<{ __typename?: 'Column', id: string, title: string, order: number, hideCompleted: boolean, color?: string | null, cards: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> }>, backlog: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> } | null };
+export type WorkspaceQuery = { __typename?: 'Query', workspace?: { __typename?: 'Workspace', id: string, title: string, description?: string | null, icon?: string | null, inviteToken?: string | null, editingBy?: string | null, createdAt: any, updatedAt: any, editingUser?: { __typename?: 'User', id: string, email: string, avatarUrl?: string | null } | null, owner: { __typename?: 'User', id: string, email: string, avatarUrl?: string | null }, members: Array<{ __typename?: 'WorkspaceMember', id: string, userId: string, joinedAt: any, user: { __typename?: 'User', id: string, email: string, avatarUrl?: string | null } }>, tools: Array<{ __typename?: 'Tool', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, title: string, link?: string | null, description?: string | null, icon?: string | null, tags: Array<string> }>, columns: Array<{ __typename?: 'Column', id: string, title: string, order: number, hideCompleted: boolean, color?: string | null, cards: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> }>, backlog: Array<{ __typename?: 'Card', id: string, createdAt: any, updatedAt: any, ownerId: string, workspaceId?: string | null, columnId?: string | null, order?: number | null, type: CardType, title?: string | null, done: boolean, payload: string, tags: Array<string>, learningStatus?: LearningStatus | null }> } | null };
 
 export type CardsQueryVariables = Exact<{
   filter?: InputMaybe<CardFilter>;

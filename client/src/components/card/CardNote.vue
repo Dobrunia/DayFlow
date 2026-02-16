@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue';
 import type { NotePayload } from '@/lib/card-payload';
 import { linkify } from '@/lib/utils';
-import { toast } from 'vue-sonner';
 import CardActionBtn from './CardActionBtn.vue';
+import CopyButton from '@/components/common/CopyButton.vue';
 import {
   DialogRoot,
   DialogPortal,
@@ -18,18 +18,9 @@ const props = defineProps<{
 }>();
 
 const showContentModal = ref(false);
-const copied = ref(false);
 
 const contentHtml = computed(() => linkify(props.payload.content ?? ''));
 const hasLongContent = computed(() => (props.payload.content?.length ?? 0) > 100);
-
-function copyContent() {
-  navigator.clipboard.writeText(props.payload.content ?? '').then(() => {
-    copied.value = true;
-    toast.success('Текст скопирован');
-    setTimeout(() => (copied.value = false), 2000);
-  });
-}
 </script>
 
 <template>
@@ -60,16 +51,11 @@ function copyContent() {
           <div class="dialog-header">
             <DialogTitle class="dialog-title">Текст заметки</DialogTitle>
             <div class="flex items-center gap-1">
-              <button
-                type="button"
-                class="icon-btn-ghost transition-colors"
-                :class="copied && 'text-success!'"
+              <CopyButton
+                :text="payload.content ?? ''"
+                success-message="Текст скопирован"
                 title="Скопировать текст"
-                @click="copyContent"
-              >
-                <span v-if="copied" class="i-lucide-check" />
-                <span v-else class="i-lucide-copy" />
-              </button>
+              />
               <DialogClose class="icon-btn-close">
                 <span class="i-lucide-x" />
               </DialogClose>

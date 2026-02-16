@@ -8,7 +8,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/views/HomeView.vue'),
+      component: () => import('@/views/workspace/WorkspacesView.vue'),
     },
     {
       path: '/auth',
@@ -90,6 +90,12 @@ const router = createRouter({
       name: 'learning-deepen',
       component: () => import('@/views/LearningView.vue'),
       meta: { requiresAuth: true, status: LEARNING_STATUSES.DEEPEN_KNOWLEDGE },
+    },
+    {
+      path: '/invite/:token',
+      name: 'invite',
+      component: () => import('@/views/InviteView.vue'),
+      // No requiresAuth — component handles redirect itself to preserve token
     },
   ],
 });

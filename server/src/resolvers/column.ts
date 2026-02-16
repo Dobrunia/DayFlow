@@ -7,6 +7,7 @@ import type {
 } from '../generated/types.js';
 import { UnauthenticatedError, NotFoundError, BadRequestError } from '../lib/errors.js';
 import { MAX_TITLE_LENGTH, MAX_COLUMNS_PER_WORKSPACE } from '../lib/constants.js';
+import { hasWorkspaceAccess } from '../lib/workspace-access.js';
 
 export const columnResolvers = {
   Mutation: {
@@ -22,12 +23,8 @@ export const columnResolvers = {
         throw BadRequestError(`Название слишком длинное (макс. ${MAX_TITLE_LENGTH} символов)`);
       }
 
-      // Verify workspace ownership
-      const workspace = await context.prisma.workspace.findUnique({
-        where: { id: workspaceId },
-      });
-
-      if (!workspace || workspace.ownerId !== context.user.id) {
+      // Verify workspace access (owner or member)
+      if (!(await hasWorkspaceAccess(context.prisma, workspaceId, context.user.id))) {
         throw NotFoundError('Рабочее пространство не найдено');
       }
 
@@ -73,7 +70,7 @@ export const columnResolvers = {
         include: { workspace: true },
       });
 
-      if (!column || column.workspace.ownerId !== context.user.id) {
+      if (!column || !(await hasWorkspaceAccess(context.prisma, column.workspaceId, context.user.id))) {
         throw NotFoundError('Колонка не найдена');
       }
 
@@ -98,7 +95,7 @@ export const columnResolvers = {
         include: { workspace: true },
       });
 
-      if (!column || column.workspace.ownerId !== context.user.id) {
+      if (!column || !(await hasWorkspaceAccess(context.prisma, column.workspaceId, context.user.id))) {
         throw NotFoundError('Колонка не найдена');
       }
 
@@ -118,12 +115,7 @@ export const columnResolvers = {
         throw UnauthenticatedError();
       }
 
-      // Verify workspace ownership
-      const workspace = await context.prisma.workspace.findUnique({
-        where: { id: workspaceId },
-      });
-
-      if (!workspace || workspace.ownerId !== context.user.id) {
+      if (!(await hasWorkspaceAccess(context.prisma, workspaceId, context.user.id))) {
         throw NotFoundError('Рабочее пространство не найдено');
       }
 

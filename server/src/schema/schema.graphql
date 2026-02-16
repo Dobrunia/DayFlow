@@ -14,9 +14,17 @@ type Workspace {
   description: String
   icon: String
   pinned: Boolean!
+  """Токен пригласительной ссылки (виден только владельцу)."""
+  inviteToken: String
+  """Кто сейчас редактирует воркспейс (userId)."""
+  editingBy: ID
+  """Email/имя того, кто редактирует (resolved)."""
+  editingUser: User
   createdAt: DateTime!
   updatedAt: DateTime!
   owner: User!
+  """Участники воркспейса (кроме владельца)."""
+  members: [WorkspaceMember!]!
   columns: [Column!]!
   cards: [Card!]!
   """Карточки воркспейса без колонки (backlog)."""
@@ -25,6 +33,13 @@ type Workspace {
   tools: [Tool!]!
   """Роадмап воркспейса (один на воркспейс)."""
   roadmap: Roadmap
+}
+
+type WorkspaceMember {
+  id: ID!
+  userId: ID!
+  user: User!
+  joinedAt: DateTime!
 }
 
 type Column {
@@ -228,6 +243,24 @@ type Mutation {
   updateWorkspace(id: ID!, input: UpdateWorkspaceInput!): Workspace!
   deleteWorkspace(id: ID!): Boolean!
   toggleWorkspacePinned(id: ID!): Workspace!
+
+  # Workspace sharing
+  """Сгенерировать (или перегенерировать) пригласительную ссылку."""
+  generateInviteToken(workspaceId: ID!): Workspace!
+  """Принять приглашение по токену. Возвращает воркспейс."""
+  acceptInvite(token: String!): Workspace!
+  """Удалить участника из воркспейса (только владелец)."""
+  removeWorkspaceMember(workspaceId: ID!, userId: ID!): Boolean!
+
+  # Workspace editing lock
+  """Захватить лок на редактирование воркспейса."""
+  acquireWorkspaceLock(workspaceId: ID!): Workspace!
+  """Отпустить лок."""
+  releaseWorkspaceLock(workspaceId: ID!): Workspace!
+  """Heartbeat — продлить лок (вызывать каждые ~15с)."""
+  heartbeatWorkspaceLock(workspaceId: ID!): Workspace!
+  """Передать права редактирования другому участнику."""
+  transferWorkspaceLock(workspaceId: ID!, toUserId: ID!): Workspace!
 
   # Column
   createColumn(workspaceId: ID!, title: String!): Column!

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import Sortable from 'sortablejs';
 import { useWorkspaceStore } from '@/stores/workspace';
 import type { Column, CardGql } from '@/graphql/types';
@@ -31,15 +31,36 @@ const props = withDefaults(
     isFirst?: boolean;
     /** Это последняя колонка */
     isLast?: boolean;
+    /** Режим только чтение */
+    readOnly?: boolean;
   }>(),
-  { backlogCards: () => [], isBacklogColumn: false, searchQuery: '', isFirst: false, isLast: false }
+  {
+    backlogCards: () => [],
+    isBacklogColumn: false,
+    searchQuery: '',
+    isFirst: false,
+    isLast: false,
+    readOnly: false,
+  }
 );
 
 const COLUMN_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#84cc16', '#22c55e', '#14b8a6', '#06b6d4',
-  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
-  '#d946ef', '#ec4899', '#f43f5e', '#78716c',
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#eab308',
+  '#84cc16',
+  '#22c55e',
+  '#14b8a6',
+  '#06b6d4',
+  '#3b82f6',
+  '#6366f1',
+  '#8b5cf6',
+  '#a855f7',
+  '#d946ef',
+  '#ec4899',
+  '#f43f5e',
+  '#78716c',
 ];
 
 const workspaceStore = useWorkspaceStore();
@@ -149,9 +170,17 @@ onMounted(() => {
     animation: 150,
     ghostClass: 'opacity-50',
     filter: '.sortable-no-drag',
+    disabled: props.readOnly,
     onEnd: handleDragEnd,
   });
 });
+
+watch(
+  () => props.readOnly,
+  (ro) => {
+    if (sortable) sortable.option('disabled', ro);
+  }
+);
 
 onUnmounted(() => {
   sortable?.destroy();
@@ -218,12 +247,17 @@ async function moveRight() {
 <template>
   <div
     class="flex-shrink-0 w-72 flex flex-col rounded-xl"
-    :style="column.color
-      ? { background: `color-mix(in srgb, ${column.color} 6%, rgb(var(--bg)))`, borderTop: `2px solid color-mix(in srgb, ${column.color} 40%, transparent)` }
-      : { background: 'rgb(var(--fg) / 0.05)', borderTop: '2px solid transparent' }"
+    :style="
+      column.color
+        ? {
+            background: `color-mix(in srgb, ${column.color} 6%, rgb(var(--bg)))`,
+            borderTop: `2px solid color-mix(in srgb, ${column.color} 40%, transparent)`,
+          }
+        : { background: 'rgb(var(--fg) / 0.05)', borderTop: '2px solid transparent' }
+    "
   >
     <div ref="headerRef" class="group h-12 px-3 flex-between">
-      <div v-if="!isBacklog && isEditing" class="flex-1 mr-2 min-w-0">
+      <div v-if="!isBacklog && !readOnly && isEditing" class="flex-1 mr-2 min-w-0">
         <input
           ref="inputRef"
           v-model="editTitle"
@@ -236,21 +270,31 @@ async function moveRight() {
       <h3
         v-else
         class="flex items-baseline min-w-0 leading-none flex-1"
-        :class="{ 'cursor-text': !isBacklog }"
+        :class="{ 'cursor-text': !isBacklog && !readOnly }"
       >
         <span
           class="font-medium text-fg truncate"
           :title="column.title"
-          @dblclick="!isBacklog && startEdit()"
-        >{{ column.title || '!?' }}</span>
-        <span class="text-xs text-muted font-normal ml-1 tabular-nums shrink-0">{{ isBacklog ? filteredBacklogCards.length : filteredCards.length }}<template v-if="hideCompleted || searchQuery">/{{ isBacklog ? (backlogCards ?? []).length : cards.length }}</template></span>
+          @dblclick="!isBacklog && !readOnly && startEdit()"
+          >{{ column.title || '!?' }}</span
+        >
+        <span class="text-xs text-muted font-normal ml-1 tabular-nums shrink-0"
+          >{{ isBacklog ? filteredBacklogCards.length : filteredCards.length
+          }}<template v-if="hideCompleted || searchQuery"
+            >/{{ isBacklog ? (backlogCards ?? []).length : cards.length }}</template
+          ></span
+        >
       </h3>
 
-      <div class="flex items-center gap-0.5 shrink-0 leading-none">
+      <div v-if="!readOnly" class="flex items-center gap-0.5 shrink-0 leading-none">
         <button
           v-if="completedCount > 0"
           type="button"
-          @click="isBacklog ? (backlogHideCompleted = !backlogHideCompleted) : workspaceStore.toggleHideCompleted(column.id)"
+          @click="
+            isBacklog
+              ? (backlogHideCompleted = !backlogHideCompleted)
+              : workspaceStore.toggleHideCompleted(column.id)
+          "
           class="icon-btn-ghost"
           :class="{ 'text-primary': hideCompleted }"
           :title="hideCompleted ? `Показать выполненные (${completedCount})` : 'Скрыть выполненные'"
@@ -288,26 +332,7 @@ async function moveRight() {
       </div>
     </div>
 
-    <div
-      ref="cardsListRef"
-      class="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-2 min-h-[2rem]"
-      :data-column-id="isBacklog ? undefined : column.id"
-      :data-backlog="isBacklog ? true : undefined"
-    >
-      <template v-if="isBacklog">
-        <CardItem v-for="c in filteredBacklogCards" :key="c.id" :card="c" :is-backlog="true" />
-      </template>
-      <template v-else>
-        <CardItem
-          v-for="card in filteredCards"
-          :key="card.id"
-          :card="card"
-          :column-id="column.id"
-        />
-      </template>
-    </div>
-
-    <div class="px-2 pb-2 shrink-0">
+    <div v-if="!readOnly" class="px-2 pb-2 shrink-0">
       <button
         type="button"
         @click="showAddCard = true"
@@ -316,6 +341,32 @@ async function moveRight() {
         <span class="i-lucide-plus" />
         <span>Добавить карточку</span>
       </button>
+    </div>
+
+    <div
+      ref="cardsListRef"
+      class="flex-1 overflow-y-auto scrollbar-hide px-2 py-2 flex flex-col gap-2 min-h-[2rem]"
+      :data-column-id="isBacklog ? undefined : column.id"
+      :data-backlog="isBacklog ? true : undefined"
+    >
+      <template v-if="isBacklog">
+        <CardItem
+          v-for="c in filteredBacklogCards"
+          :key="c.id"
+          :card="c"
+          :is-backlog="true"
+          :read-only="readOnly"
+        />
+      </template>
+      <template v-else>
+        <CardItem
+          v-for="card in filteredCards"
+          :key="card.id"
+          :card="card"
+          :column-id="column.id"
+          :read-only="readOnly"
+        />
+      </template>
     </div>
 
     <CreateCardDialog
@@ -330,7 +381,11 @@ async function moveRight() {
     <DialogRoot v-model:open="showEditModal">
       <DialogPortal>
         <DialogOverlay class="dialog-overlay" @click="showEditModal = false" />
-        <DialogContent :aria-describedby="undefined" class="dialog-content" @escape-key-down="showEditModal = false">
+        <DialogContent
+          :aria-describedby="undefined"
+          class="dialog-content"
+          @escape-key-down="showEditModal = false"
+        >
           <div class="dialog-header">
             <DialogTitle class="dialog-title">Настройки колонки</DialogTitle>
             <DialogClose class="icon-btn-close">
@@ -346,7 +401,11 @@ async function moveRight() {
                 <button
                   type="button"
                   class="w-7 h-7 rounded-full border-2 flex-center transition-all"
-                  :class="editColor === null ? 'border-primary scale-110' : 'border-border hover:border-fg/30'"
+                  :class="
+                    editColor === null
+                      ? 'border-primary scale-110'
+                      : 'border-border hover:border-fg/30'
+                  "
                   title="Без цвета"
                   @click="selectColor(null)"
                 >
@@ -357,7 +416,11 @@ async function moveRight() {
                   :key="c"
                   type="button"
                   class="w-7 h-7 rounded-full border-2 transition-all"
-                  :class="editColor === c ? 'border-primary scale-110' : 'border-transparent hover:scale-110'"
+                  :class="
+                    editColor === c
+                      ? 'border-primary scale-110'
+                      : 'border-transparent hover:scale-110'
+                  "
                   :style="{ background: c }"
                   @click="selectColor(c)"
                 />

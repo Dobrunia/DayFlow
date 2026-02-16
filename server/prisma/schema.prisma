@@ -8,17 +8,19 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
-  avatarUrl    String?   // null = нет аватара
-  createdAt    DateTime  @default(now())
+  avatarUrl    String? // null = нет аватара
+  createdAt    DateTime @default(now())
 
-  sessions   Session[]
-  workspaces Workspace[]
-  cards      Card[]
-  tools      Tool[]
-  roadmaps   Roadmap[]
+  sessions             Session[]
+  workspaces           Workspace[]
+  workspaceMemberships WorkspaceMember[]
+  workspacePins        UserWorkspacePin[]
+  cards                Card[]
+  tools                Tool[]
+  roadmaps             Roadmap[]
 }
 
 model Session {
@@ -32,22 +34,52 @@ model Session {
 }
 
 model Workspace {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
-  description String?  @db.Text
-  icon        String?  // один эмодзи, например "📁"
-  pinned      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String?   @db.Text
+  icon        String? // один эмодзи, например "📁"
+  inviteToken String?   @unique // секретный токен для пригласительной ссылки
+  editingBy   String? // userId того, кто сейчас редактирует
+  editingAt   DateTime? // время последнего heartbeat
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   ownerId     String
 
-  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  columns  Column[]
-  cards    Card[]
-  tools    Tool[]
+  owner   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members WorkspaceMember[]
+  pins    UserWorkspacePin[]
+  columns Column[]
+  cards   Card[]
+  tools   Tool[]
   roadmap Roadmap?
 
   @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  joinedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model UserWorkspacePin {
+  id          String @id @default(cuid())
+  userId      String
+  workspaceId String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId])
 }
 
 model Column {
@@ -65,21 +97,21 @@ model Column {
 }
 
 model Card {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   ownerId     String
-  workspaceId String?  // null => "хаб" пользователя
-  columnId    String?  // null => не на доске (хаб или backlog)
-  order       Int?     // имеет смысл только если columnId != null
+  workspaceId String? // null => "хаб" пользователя
+  columnId    String? // null => не на доске (хаб или backlog)
+  order       Int? // имеет смысл только если columnId != null
 
-  type    CardType
-  title   String?
-  done    Boolean @default(false)
+  type  CardType
+  title String?
+  done  Boolean  @default(false)
 
   payload Json
-  tags    Json    @default("[]") // MySQL: массив строк как JSON
+  tags    Json @default("[]") // MySQL: массив строк как JSON
 
   learningStatus LearningStatus? // Новое поле: статус обучения
 
@@ -96,9 +128,9 @@ model Card {
 }
 
 model Tool {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   ownerId     String
   workspaceId String? // null => "хаб" (общий toolbox)
@@ -117,15 +149,15 @@ model Tool {
 }
 
 model Roadmap {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   ownerId     String
-  workspaceId String   @unique
+  workspaceId String @unique
 
-  title       String
-  sourceText  String?  @db.LongText
+  title      String
+  sourceText String? @db.LongText
 
   owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -140,11 +172,11 @@ model RoadmapNode {
   updatedAt DateTime @updatedAt
 
   roadmapId String
-  parentId  String?  // null => root node
+  parentId  String? // null => root node
 
-  order     Int      @default(0)
-  title     String
-  done      Boolean  @default(false)
+  order Int     @default(0)
+  title String
+  done  Boolean @default(false)
 
   roadmap  Roadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
   parent   RoadmapNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: Cascade)
